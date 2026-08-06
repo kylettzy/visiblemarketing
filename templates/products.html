@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Product Catalog | VTIC Systems</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/products.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <div class="shell header-inner">
+        <a class="wordmark" href="/">
+          <img
+            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+            alt="Visilile Technologies Intl Corp"
+          />
+        </a>
+        <nav>
+          <a class="active" href="/products">Products</a
+          ><a href="/#solutions">Solutions</a><a href="/#partners">Partners</a>
+        </nav>
+        <form action="/products">
+          <input
+            name="q"
+            value="{{ query }}"
+            placeholder="Search by product, brand or category"
+          /><button>Search</button>
+        </form>
+        <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
+      </div>
+    </header>
+
+    <main class="shell">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span>/</span> Product catalog
+      </div>
+      <section class="page-heading">
+        <div>
+          <p>ENTERPRISE PRODUCT CATALOG</p>
+          <h1>Specify with confidence.</h1>
+          <span
+            >Commercial IT products and configurable solutions from trusted
+            global manufacturers.</span
+          >
+        </div>
+        <dl>
+          <div>
+            <dt>{{ products|length }}</dt>
+            <dd>RESULTS</dd>
+          </div>
+          <div>
+            <dt>{{ brands|length }}</dt>
+            <dd>BRANDS</dd>
+          </div>
+        </dl>
+      </section>
+
+      <div class="catalog-layout">
+        <aside>
+          <div class="filter-head">
+            <b>FILTER CATALOG</b><a href="/products">Reset</a>
+          </div>
+          <section>
+            <h2>Solution category</h2>
+            {% for item in categories %}<a
+              class="{{ 'selected' if category == item }}"
+              href="/products?category={{ item|urlencode }}"
+              ><span>{{ item }}</span><i></i></a
+            >{% endfor %}
+          </section>
+          <section class="brands">
+            <h2>Manufacturer</h2>
+            {% for brand in brands %}<a
+              href="/products?brand={{ brand|urlencode }}"
+              >{{ brand }}</a
+            >{% endfor %}
+          </section>
+          <div class="help">
+            <b>Need help specifying?</b>
+            <p>Send your requirements to our solutions team.</p>
+            <a href="mailto:support@vtic.com.ph">Contact project desk →</a>
+          </div>
+        </aside>
+
+        <section class="results">
+          <div class="result-bar">
+            <span>Showing <b>{{ products|length }}</b> products</span
+            ><select aria-label="Sort catalog">
+              <option>Recommended</option>
+              <option>Price: low to high</option>
+              <option>Brand: A to Z</option>
+            </select>
+          </div>
+          <div class="grid">
+            {% for product in products %}
+            <article class="product-card">
+              <a class="product-media" href="/product/{{ product.id }}"
+                >{% if product.image_url %}<img
+                  src="{{ product.image_url }}"
+                  alt="{{ product.name }}"
+                />{% else %}<span>{{ product.brand[:2]|upper }}</span>{% endif
+                %} ><small>{{ product.brand }}</small
+                >{% if product.manufacturer_logo %}<span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>{% endif %}
+                ><i>{{ product.category }}</i></a
+              >
+              <div class="product-copy">
+                <p>{{ product.category }}</p>
+                <a href="/product/{{ product.id }}"
+                  ><h2>{{ product.name }}</h2></a
+                >
+                <span class="availability"><i></i> Available through VTIC</span>
+                {% if product.price %}
+                <div class="price">
+                  <b>₱{{ "{:,.2f}".format(product.price) }}</b
+                  ><small>{{ product.source }}</small>
+                </div>
+                <button class="add" data-add="{{ product|tojson|forceescape }}">
+                  Add to cart</button
+                >{% else %}
+                <div class="price">
+                  <b>Project pricing</b
+                  ><small>Configured to your requirements</small>
+                </div>
+                <a
+                  class="quote"
+                  href="mailto:sales@vtic.com.ph?subject=Quotation request: {{ product.name }}"
+                  >Request quotation</a
+                >{% endif %}
+              </div>
+            </article>
+            {% else %}
+            <div class="empty">
+              <span>NO RESULTS</span>
+              <h2>Nothing matched your search.</h2>
+              <p>Try a manufacturer name, model number or broader category.</p>
+              <a href="/products">Clear all filters</a>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+    </main>
+    <div id="toast" role="status">Added to cart</div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

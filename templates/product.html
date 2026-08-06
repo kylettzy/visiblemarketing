@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ product.name }} | VTIC Systems</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/product.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <div class="shell header-inner">
+        <a class="wordmark" href="/">
+          <img
+            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+            alt="Visilile Technologies Intl Corp"
+          />
+        </a>
+        <nav>
+          <a href="/products">Products</a><a href="/#solutions">Solutions</a
+          ><a href="mailto:sales@vtic.com.ph">Contact</a>
+        </nav>
+        <form action="/products">
+          <input name="q" placeholder="Search catalog" /><button>Search</button>
+        </form>
+        <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
+      </div>
+    </header>
+    <main class="shell">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span>/</span
+        ><a href="/products?category={{ product.category|urlencode }}"
+          >{{ product.category }}</a
+        ><span>/</span>{{ product.name }}
+      </div>
+      <section class="product-layout">
+        <div class="product-visual">
+          {% if product.image_url %}<img
+            class="product-photo"
+            src="{{ product.image_url }}"
+            alt="{{ product.name }}"
+          />{% else %}
+          <div class="brand-code">{{ product.brand[:2]|upper }}</div>
+          {% endif %}
+          {% if product.manufacturer_logo %}<span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>{% endif %}
+          <div class="visual-label">
+            <span>{{ product.brand }}</span
+            ><small>{{ product.category }}</small>
+          </div>
+          <div class="grid-lines"></div>
+        </div>
+        <div class="product-details">
+          <p class="eyebrow">{{ product.brand }} / {{ product.category }}</p>
+          <h1>{{ product.name }}</h1>
+          <div class="status">
+            <span><i></i>Available through VTIC</span
+            ><span>SKU VT-{{ "%04d"|format(product.id) }}</span>
+          </div>
+          <p class="description">{{ product.description }}</p>
+          {% if product.price %}
+          <div class="commercial">
+            <span>PH reference price</span
+            ><b>₱{{ "{:,.2f}".format(product.price) }}</b
+            ><small
+              >{{ product.source }}. Final price and availability are confirmed
+              in the formal quotation.</small
+            >
+          </div>
+          <div class="order-row">
+            <div class="qty">
+              <button data-qty="-1">−</button><b data-qty-value>1</b
+              ><button data-qty="1">+</button>
+            </div>
+            <button class="buy" data-add="{{ product|tojson|forceescape }}">
+              Add to cart
+            </button>
+          </div>
+          {% else %}
+          <div class="commercial">
+            <span>Commercial terms</span><b>Project pricing</b
+            ><small
+              >Final pricing depends on configuration, license term, support
+              coverage and quantity.</small
+            >
+          </div>
+          <a
+            class="buy quote"
+            href="mailto:sales@vtic.com.ph?subject=Quotation request: {{ product.name }}"
+            >Request an official quotation <span>→</span></a
+          >{% endif %}
+          <div class="assurance">
+            <div>
+              <b>Genuine sourcing</b
+              ><span>Products sourced through approved channels</span>
+            </div>
+            <div>
+              <b>Solution engineering</b
+              ><span>Compatibility and design assistance included</span>
+            </div>
+            <div>
+              <b>Deployment support</b
+              ><span>Installation and configuration available</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="specification">
+        <div>
+          <p>PRODUCT OVERVIEW</p>
+          <h2>Enterprise-ready.<br />Locally supported.</h2>
+        </div>
+        <div class="spec-list">
+          <div><span>Manufacturer</span><b>{{ product.brand }}</b></div>
+          <div><span>Solution category</span><b>{{ product.category }}</b></div>
+          <div><span>Deployment class</span><b>Business / Enterprise</b></div>
+          <div>
+            <span>Procurement model</span
+            ><b
+              >{% if product.price %}Direct purchase{% else %}Project
+              quotation{% endif %}</b
+            >
+          </div>
+        </div>
+      </section>
+      <section class="project-note">
+        <span>PROJECT SUPPORT</span>
+        <p>
+          Need this product as part of a larger deployment? Our team can prepare
+          the architecture, bill of materials, installation scope and support
+          plan.
+        </p>
+        <a href="mailto:sales@vtic.com.ph">Talk to a solutions engineer →</a>
+      </section>
+    </main>
+    <div id="toast" role="status">Added to cart</div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

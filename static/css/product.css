@@ -1,0 +1,423 @@
+:root {
+  --navy: #071a2b;
+  --ink: #102434;
+  --muted: #647581;
+  --line: #dce3e8;
+  --soft: #f3f6f7;
+  --blue: #2764ff;
+  --green: #b8f34a;
+  --shell: 1160px;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: Inter, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+button,
+input {
+  font: inherit;
+}
+.shell {
+  width: min(var(--shell), calc(100% - 48px));
+  margin-inline: auto;
+}
+header {
+  border-top: 4px solid var(--navy);
+  border-bottom: 1px solid var(--line);
+}
+.header-inner {
+  height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 42px;
+}
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.07em;
+}
+.wordmark img {
+  display: block;
+  width: 150px;
+  height: 52px;
+  object-fit: contain;
+}
+.wordmark > span {
+  color: var(--blue);
+}
+.wordmark small {
+  margin-left: 8px;
+  color: var(--muted);
+  font: 500 9px "DM Mono";
+  letter-spacing: 0.18em;
+}
+nav {
+  display: flex;
+  gap: 25px;
+  font-size: 12px;
+  font-weight: 600;
+}
+header form {
+  margin-left: auto;
+  width: 240px;
+  height: 36px;
+  display: flex;
+  border: 1px solid var(--line);
+  background: var(--soft);
+}
+header input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 0 10px;
+  outline: 0;
+  font-size: 10px;
+}
+header form button {
+  border: 0;
+  background: var(--navy);
+  color: #fff;
+  font-size: 9px;
+}
+.cart {
+  font-size: 12px;
+  font-weight: 700;
+}
+.cart span {
+  display: inline-grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  margin-left: 3px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-size: 9px;
+}
+.breadcrumb {
+  padding: 25px 0;
+  color: #81909b;
+  font: 9px "DM Mono";
+}
+.breadcrumb span {
+  margin: 0 9px;
+}
+.product-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 72px;
+  padding: 26px 0 90px;
+}
+.product-visual {
+  height: 560px;
+  position: relative;
+  display: grid;
+  place-content: center;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.brand-code {
+  position: relative;
+  z-index: 2;
+  color: #17364e;
+  font: 500 clamp(80px, 11vw, 145px) "DM Mono";
+  letter-spacing: -0.12em;
+}
+.product-photo {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.product-visual .manufacturer-mark {
+  position: absolute;
+  z-index: 3;
+  left: 22px;
+  top: 22px;
+  width: 104px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  padding: 7px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.product-visual .manufacturer-mark img { width: 100%; height: 100%; object-fit: contain; }
+.grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(#e4eaed 1px, transparent 1px),
+    linear-gradient(90deg, #e4eaed 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, transparent, #000, transparent);
+}
+.visual-label {
+  position: absolute;
+  z-index: 2;
+  left: 22px;
+  right: 22px;
+  bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  font: 500 9px "DM Mono";
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.visual-label small {
+  color: var(--muted);
+}
+.product-details {
+  padding-top: 18px;
+}
+.eyebrow {
+  margin: 0;
+  color: var(--blue);
+  font: 500 10px "DM Mono";
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.product-details h1 {
+  margin: 17px 0 19px;
+  font-size: 42px;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+.status {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font: 9px "DM Mono";
+}
+.status span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #42a567;
+}
+.description {
+  margin: 28px 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+.commercial {
+  padding: 22px;
+  background: var(--soft);
+  border-left: 3px solid var(--blue);
+  display: grid;
+  gap: 7px;
+}
+.commercial > span {
+  color: var(--muted);
+  font: 9px "DM Mono";
+  text-transform: uppercase;
+}
+.commercial > b {
+  font: 500 25px "DM Mono";
+}
+.commercial small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+.order-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.qty {
+  height: 45px;
+  display: flex;
+  border: 1px solid var(--line);
+}
+.qty button {
+  width: 39px;
+  border: 0;
+  background: #fff;
+}
+.qty b {
+  min-width: 28px;
+  display: grid;
+  place-items: center;
+  font: 500 11px "DM Mono";
+}
+.buy {
+  height: 45px;
+  flex: 1;
+  border: 1px solid var(--navy);
+  background: var(--navy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quote {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+}
+.buy:hover {
+  background: #143653;
+}
+.assurance {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.assurance div {
+  display: grid;
+  gap: 5px;
+}
+.assurance b {
+  font-size: 10px;
+}
+.assurance span {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.45;
+}
+.specification {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 90px;
+  padding: 70px;
+  background: var(--navy);
+  color: #fff;
+}
+.specification p {
+  margin: 0 0 15px;
+  color: var(--green);
+  font: 9px "DM Mono";
+  letter-spacing: 0.12em;
+}
+.specification h2 {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+.spec-list div {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-bottom: 1px solid #254056;
+  font-size: 11px;
+}
+.spec-list span {
+  color: #8fa1ae;
+}
+.spec-list b {
+  font-weight: 500;
+}
+.project-note {
+  margin: 80px 0;
+  display: grid;
+  grid-template-columns: 0.5fr 1.5fr auto;
+  align-items: center;
+  gap: 40px;
+  padding-block: 30px;
+  border-block: 1px solid var(--line);
+}
+.project-note > span {
+  color: var(--blue);
+  font: 9px "DM Mono";
+}
+.project-note p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.project-note a {
+  font-size: 10px;
+  font-weight: 700;
+}
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: -60px;
+  z-index: 20;
+  transform: translateX(-50%);
+  padding: 12px 18px;
+  background: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  transition: 0.25s;
+}
+#toast.show {
+  bottom: 22px;
+}
+@media (max-width: 800px) {
+  nav,
+  header form {
+    display: none;
+  }
+  .cart {
+    margin-left: auto;
+  }
+  .product-layout {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .product-visual {
+    height: 420px;
+  }
+  .specification {
+    grid-template-columns: 1fr;
+    padding: 40px;
+  }
+  .project-note {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+@media (max-width: 520px) {
+  .shell {
+    width: calc(100% - 28px);
+  }
+  .product-details h1 {
+    font-size: 34px;
+  }
+  .assurance {
+    grid-template-columns: 1fr;
+  }
+  .product-layout {
+    padding-bottom: 60px;
+  }
+  .specification {
+    width: calc(100% + 28px);
+    margin-left: -14px;
+  }
+  .order-row {
+    flex-direction: column;
+  }
+  .qty {
+    width: max-content;
+  }
+}

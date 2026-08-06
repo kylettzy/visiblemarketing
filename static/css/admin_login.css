@@ -1,0 +1,169 @@
+:root {
+  --navy: #071a2b;
+  --muted: #718391;
+  --line: #dce3e8;
+  --blue: #2764ff;
+  --green: #b8f34a;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  color: #102434;
+}
+main {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.brand-panel {
+  padding: 60px 8vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--navy);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.brand-panel:after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  right: -210px;
+  bottom: -210px;
+  border: 1px solid #2a475c;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 80px #0c263d,
+    0 0 0 81px #284459;
+}
+.brand-panel > a {
+  position: relative;
+  z-index: 1;
+  width: max-content;
+  padding: 8px;
+  background: #fff;
+}
+.brand-panel img {
+  display: block;
+  width: 210px;
+}
+.brand-panel > div {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+}
+.brand-panel p,
+.login-box > p {
+  color: var(--green);
+  font: 500 10px "DM Mono";
+  letter-spacing: 0.12em;
+}
+.brand-panel h1 {
+  margin: 18px 0;
+  font-size: 58px;
+  letter-spacing: -0.055em;
+}
+.brand-panel span {
+  color: #91a4b2;
+  line-height: 1.7;
+}
+.brand-panel small {
+  position: relative;
+  z-index: 1;
+  color: #728a9b;
+  font: 9px "DM Mono";
+}
+.login-panel {
+  display: grid;
+  place-items: center;
+  padding: 40px;
+}
+.login-box {
+  width: min(390px, 100%);
+}
+.login-box > p {
+  color: var(--blue);
+}
+.login-box h2 {
+  margin: 16px 0 8px;
+  font-size: 35px;
+  letter-spacing: -0.04em;
+}
+.login-box > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.alert {
+  margin-top: 20px;
+  padding: 12px;
+  border-left: 3px solid #c53a3a;
+  background: #fff0f0;
+  font-size: 11px;
+}
+.alert.success {
+  border-color: #3e9b63;
+  background: #eef9f2;
+}
+.login-box form {
+  margin-top: 32px;
+  display: grid;
+  gap: 19px;
+}
+.login-box label {
+  display: grid;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.login-box input {
+  height: 45px;
+  border: 1px solid var(--line);
+  background: #f5f7f8;
+  padding: 0 13px;
+  outline: 0;
+  font: 12px "DM Mono";
+}
+.login-box input:focus {
+  border-color: var(--blue);
+}
+.password-control { position: relative; display: flex; }
+.password-control input { width: 100%; padding-right: 58px; }
+.login-box .password-control button { position: absolute; right: 1px; top: 1px; width: 54px; height: 43px; border: 0; background: transparent; color: var(--blue); font-size: 9px; font-weight: 700; cursor: pointer; }
+.login-box button {
+  height: 46px;
+  border: 0;
+  background: var(--navy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.login-box form + a {
+  display: inline-block;
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 10px;
+}
+@media (max-width: 750px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+  .brand-panel {
+    min-height: 320px;
+    padding: 35px;
+  }
+  .brand-panel h1 {
+    font-size: 42px;
+  }
+  .brand-panel small {
+    display: none;
+  }
+  .login-panel {
+    padding: 50px 25px;
+  }
+}

@@ -1,0 +1,33 @@
+# ==========================================
+# Python Cache Files
+# ==========================================
+__pycache__/
+*.pyc
+
+# ==========================================
+# Environment Variables (Do NOT commit secrets)
+# ==========================================
+.env
+
+# ==========================================
+# Local Database Files
+# ==========================================
+vtic_store.db
+
+# ==========================================
+# (Optional) Virtual Environment
+# Uncomment if you use a local virtual environment
+# ==========================================
+# .venv/
+# venv/
+
+# ==========================================
+# (Optional) IDE Settings
+# Uncomment if you don't want to share VS Code settings
+# ==========================================
+# .vscode/
+
+# ==========================================
+# (Optional) Log Files
+# ==========================================
+# *.log

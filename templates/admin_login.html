@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Sign In | VTIC Systems</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_login.css') }}"
+    />
+  </head>
+  <body>
+    <main>
+      <section class="brand-panel">
+        <a href="/"
+          ><img
+            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+            alt="Visilile Technologies Intl Corp"
+        /></a>
+        <div>
+          <p>SECURE ADMINISTRATION</p>
+          <h1>Catalog operations.</h1>
+          <span
+            >Manage products, commercial references and catalog content from one
+            protected workspace.</span
+          >
+        </div>
+        <small>Authorized personnel only</small>
+      </section>
+      <section class="login-panel">
+        <div class="login-box">
+          <p>ADMIN PORTAL / SIGN IN</p>
+          <h2>Welcome back.</h2>
+          <span>Use your administrator credentials to continue.</span>{% with
+          messages = get_flashed_messages(with_categories=true) %}{% for
+          category, message in messages %}
+          <div class="alert {{ category }}">{{ message }}</div>
+          {% endfor %}{% endwith %}
+          <form method="post">
+            <label
+              >Username<input
+                name="username"
+                autocomplete="username"
+                required
+                autofocus /></label
+            ><label
+              >Password<div class="password-control"><input
+                  type="password"
+                  name="password"
+                  autocomplete="current-password"
+                  required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label
+            ><button>Sign in securely →</button>
+          </form>
+          <a href="/">← Return to storefront</a>
+        </div>
+      </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+  </body>
+</html>

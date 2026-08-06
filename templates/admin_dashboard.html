@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catalog Admin | VTIC Systems</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin.css') }}"
+    />
+  </head>
+  <body>
+    <aside>
+      <a class="logo" href="/"
+        ><img
+          src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+          alt="VTIC"
+      /></a>
+      <nav>
+        <a class="active" href="/admin"><span>01</span>Products</a
+        ><a href="/admin/manufacturers"><span>02</span>Manufacturers</a
+        ><a href="/admin/account"><span>03</span>Account</a
+        ><a href="/products" target="_blank"><span>04</span>View storefront</a>
+      </nav>
+      <div class="admin-user">
+        <p>Signed in as</p>
+        <b>{{ session.admin_username }}</b>
+        <form action="/admin/logout" method="post">
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ session.csrf_token }}"
+          /><button>Sign out</button>
+        </form>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <p>CATALOG MANAGEMENT</p>
+          <h1>Products</h1>
+        </div>
+        <a href="/admin/products/new">+ Add product</a>
+      </header>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for
+      category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}{% endwith %}
+      <section class="toolbar">
+        <form>
+          <input
+            name="q"
+            value="{{ query }}"
+            placeholder="Search name or manufacturer"
+          /><button>Search</button>
+        </form>
+        <span>{{ products|length }} records</span>
+      </section>
+      <section class="table">
+        <div class="table-head">
+          <span>Product</span><span>Category</span><span>Commercial</span
+          ><span>Updated</span><span></span>
+        </div>
+        {% for product in products %}
+        <article>
+          <div class="product">
+            <i
+              >{% if product.image_url %}<img
+                src="{{ product.image_url }}"
+                alt=""
+              />{% else %}{{ product.brand[:2]|upper }}{% endif %}</i
+            ><span
+              ><b>{{ product.name }}</b
+              ><small
+                >{{ product.brand }} · VT-{{ "%04d"|format(product.id) }}</small
+              ></span
+            >
+          </div>
+          <span>{{ product.category }}</span
+          ><span
+            >{% if product.price %}₱{{ "{:,.2f}".format(product.price) }}{% else
+            %}Project pricing{% endif %}</span
+          ><span>{{ product.updated_at[:10] }}</span>
+          <div class="actions">
+            <a href="/admin/products/{{ product.id }}/edit">Edit</a>
+            <form
+              action="/admin/products/{{ product.id }}/delete"
+              method="post"
+              onsubmit="return confirm('Delete this product?')"
+            >
+              <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ session.csrf_token }}"
+              /><button>Delete</button>
+            </form>
+          </div>
+        </article>
+        {% else %}
+        <div class="no-results">No products found.</div>
+        {% endfor %}
+      </section>
+    </main>
+  </body>
+</html>

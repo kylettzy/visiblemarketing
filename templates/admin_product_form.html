@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      {% if product %}Edit product{% else %}Add product{% endif %} | VTIC
+      Systems
+    </title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin.css') }}"
+    />
+  </head>
+  <body class="form-page">
+    <aside>
+      <a class="logo" href="/"
+        ><img
+          src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+          alt="VTIC"
+      /></a>
+      <nav>
+        <a class="active" href="/admin"><span>←</span>Back to products</a>
+        <a href="/admin/manufacturers"><span>02</span>Manufacturers</a>
+        <a href="/admin/account"><span>03</span>Account</a>
+      </nav>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <p>CATALOG MANAGEMENT</p>
+          <h1>{% if product %}Edit product{% else %}Add product{% endif %}</h1>
+        </div>
+      </header>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for
+      category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}{% endwith %}
+      <form class="product-form" method="post" enctype="multipart/form-data">
+        <input
+          type="hidden"
+          name="csrf_token"
+          value="{{ session.csrf_token }}"
+        />
+        <section>
+          <h2>Product identity</h2>
+          <div class="form-grid">
+            <label
+              >Manufacturer *<select name="brand" required>
+                <option value="" disabled{% if not product %} selected{% endif %}>Select manufacturer</option>
+                {% for manufacturer in manufacturers %}
+                <option value="{{ manufacturer.name }}"{% if product and product.brand == manufacturer.name %} selected{% endif %}>{{ manufacturer.name }}</option>
+                {% endfor %}
+              </select><small class="field-help">Missing a brand? <a href="/admin/manufacturers">Add manufacturer</a></small></label
+            ><label
+              >Product name *<input
+                name="name"
+                value="{{ product.name if product else '' }}"
+                required /></label
+            ><label
+              >Category *<select name="category" required>
+                {% for category in categories %}
+                <option value="{{ category }}"{% if product and product.category == category %} selected{% endif %}>
+                  {{ category }}
+                </option>
+                {% endfor %}
+              </select></label
+            ><label
+              >Reference price (PHP)<input
+                type="number"
+                min="0"
+                step="0.01"
+                name="price"
+                value="{{ product.price if product and product.price is not none else '' }}"
+                placeholder="Leave blank for project pricing"
+            /></label>
+          </div>
+        </section>
+        <section>
+          <h2>Catalog content</h2>
+          <label
+            >Description *<textarea name="description" rows="5" required>
+{{ product.description if product else '' }}</textarea
+            >
+          </label>
+          <div class="form-grid">
+            <label
+              >Price source<input
+                name="source"
+                value="{{ product.source if product else 'Partner quotation' }}" /></label
+            ><label
+              >Upload product picture<input type="file" name="image_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" /><small class="field-help">PNG, JPG or WebP, maximum 4 MB.</small></label
+            ><label
+              >Or use a product image URL<input
+                type="url"
+                name="image_url"
+                value="{{ product.image_url if product and product.image_url else '' }}"
+                placeholder="https://..." /></label
+            ><label
+              >Card background color<input
+                type="color"
+                name="color"
+                value="{{ product.color if product else '#e8f0ff' }}"
+            /></label>
+          </div>
+          {% if product and product.image_url %}<div class="current-product-image"><img src="{{ product.image_url }}" alt="Current image for {{ product.name }}" /><label><input type="checkbox" name="remove_image" value="1" /> Remove current product picture</label></div>{% endif %}
+        </section>
+        <div class="form-actions">
+          <a href="/admin">Cancel</a
+          ><button>
+            {% if product %}Save changes{% else %}Create product{% endif %}
+          </button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

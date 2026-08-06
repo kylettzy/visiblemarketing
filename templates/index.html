@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Enterprise networking, cybersecurity, cloud and infrastructure solutions in the Philippines."
+    />
+    <title>VTIC Systems | Enterprise IT Solutions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/index.css') }}"
+    />
+  </head>
+  <body>
+    <div class="utility-bar">
+      <div class="shell">
+        <span>Enterprise technology procurement and integration</span>
+        <div>
+          <a class="admin-login-link" href="/admin/login">Admin Login</a
+          ><span>Metro Manila, Philippines</span>
+        </div>
+      </div>
+    </div>
+
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="wordmark" href="/" aria-label="Visilile Technologies home">
+          <img
+            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+            alt="Visilile Technologies Intl Corp"
+          />
+        </a>
+        <nav aria-label="Primary navigation">
+          <a href="/products">Products</a>
+          <a href="#solutions">Solutions</a>
+          <a href="#partners">Partners</a>
+          <a href="mailto:sales@vtic.com.ph">Contact</a>
+        </nav>
+        <div class="header-actions">
+          <form class="search" action="/products">
+            <label class="sr-only" for="site-search">Search catalog</label>
+            <input id="site-search" name="q" placeholder="Search catalog" />
+            <button aria-label="Submit search">/</button>
+          </form>
+          <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero shell">
+        <div class="hero-copy">
+          <p class="kicker">IT INFRASTRUCTURE / CYBERSECURITY / CLOUD</p>
+          <h1>Technology that keeps your business moving.</h1>
+          <p class="lede">
+            Source, deploy and support enterprise technology through one
+            accountable partner. From a single access point to a nationwide
+            rollout.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="/products"
+              >Explore the catalog <span>→</span></a
+            >
+            <a class="button button-secondary" href="mailto:sales@vtic.com.ph"
+              >Discuss a project</a
+            >
+          </div>
+          <dl class="hero-stats">
+            <div>
+              <dt>48+</dt>
+              <dd>Enterprise products</dd>
+            </div>
+            <div>
+              <dt>40+</dt>
+              <dd>Global technology partners</dd>
+            </div>
+            <div>
+              <dt>01</dt>
+              <dd>Accountable delivery team</dd>
+            </div>
+          </dl>
+        </div>
+        <div
+          class="system-visual"
+          aria-label="Connected infrastructure diagram"
+        >
+          <div class="visual-head">
+            <span>NETWORK OVERVIEW</span><b>LIVE</b>
+          </div>
+          <div class="network-map">
+            <span class="node core"><b>CORE</b><small>SECURE</small></span>
+            <span class="node branch branch-a"
+              ><b>HQ</b><small>ONLINE</small></span
+            >
+            <span class="node branch branch-b"
+              ><b>BR-01</b><small>ONLINE</small></span
+            >
+            <span class="node branch branch-c"
+              ><b>CLOUD</b><small>SYNCED</small></span
+            >
+            <i class="line line-a"></i><i class="line line-b"></i
+            ><i class="line line-c"></i>
+          </div>
+          <div class="visual-foot">
+            <span>Uptime <b>99.99%</b></span
+            ><span>Sites <b>03</b></span
+            ><span>Alerts <b>00</b></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="trust-strip" id="partners">
+        <div class="shell">
+          <p>Solutions from leading technology manufacturers</p>
+          <div class="partner-list">
+            <b>CISCO</b><b>FORTINET</b><b>UBIQUITI</b><b>DELL</b><b>HPE</b
+            ><b>HIKVISION</b><b>PANDUIT</b><b>MICROSOFT</b>
+          </div>
+        </div>
+      </section>
+
+      <section class="solutions shell" id="solutions">
+        <div class="section-intro">
+          <p class="kicker">CAPABILITIES</p>
+          <h2>Built around the way your organization works.</h2>
+          <p>
+            Practical technology decisions, specified correctly and delivered
+            with the documentation your team needs.
+          </p>
+        </div>
+        <div class="solution-grid">
+          {% set solution_items = [ ('01', 'Network infrastructure', 'Switching,
+          routing, enterprise wireless and software-defined networking.',
+          'Wireless'), ('02', 'Cybersecurity', 'Next-generation firewalls,
+          endpoint protection and privileged access.', 'Cybersecurity'), ('03',
+          'Structured cabling', 'Copper, fiber, racks, patching and
+          standards-based certification.', 'Cabling'), ('04', 'Physical
+          security', 'IP surveillance, video management and access-control
+          platforms.', 'CCTV'), ('05', 'Data center', 'Servers, storage,
+          virtualization and resilient power architecture.', 'Servers & Cloud'),
+          ('06', 'Cloud & collaboration', 'Cloud migration, productivity,
+          communications and managed services.', 'Cloud Software') ] %} {% for
+          number, title, copy, category in solution_items %}
+          <a
+            class="solution-card"
+            href="/products?category={{ category|urlencode }}"
+          >
+            <span>{{ number }}</span>
+            <h3>{{ title }}</h3>
+            <p>{{ copy }}</p>
+            <i>View products →</i>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="catalog shell">
+        <div class="section-row">
+          <div>
+            <p class="kicker">SELECTED PRODUCTS</p>
+            <h2>Ready for your next deployment.</h2>
+          </div>
+          <a href="/products">View full catalog →</a>
+        </div>
+        <div class="product-grid">
+          {% for product in products if product.price %} {% if loop.index <= 4
+          %}
+          <article class="product-card">
+            <a class="product-media" href="/product/{{ product.id }}">
+              {% if product.image_url %}<img
+                src="{{ product.image_url }}"
+                alt="{{ product.name }}"
+              />{% else %}<span>{{ product.brand[:2]|upper }}</span>{% endif %}
+              {% if product.manufacturer_logo %}<span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>{% endif %}
+              <small>{{ product.brand }}</small>
+            </a>
+            <div class="product-body">
+              <p>{{ product.category }}</p>
+              <a href="/product/{{ product.id }}"
+                ><h3>{{ product.name }}</h3></a
+              >
+              <div class="product-meta">
+                <b>₱{{ "{:,.2f}".format(product.price) }}</b
+                ><span>PH reference price</span>
+              </div>
+              <button class="add" data-add="{{ product|tojson|forceescape }}">
+                Add to cart
+              </button>
+            </div>
+          </article>
+          {% endif %} {% endfor %}
+        </div>
+      </section>
+
+      <section class="project-cta shell">
+        <div>
+          <p class="kicker">PROJECT DESK</p>
+          <h2>Planning a rollout or refresh?</h2>
+        </div>
+        <p>
+          Send us your requirements. Our team will prepare a compatible bill of
+          materials and commercial proposal.
+        </p>
+        <a class="button button-light" href="mailto:sales@vtic.com.ph"
+          >Request a proposal <span>→</span></a
+        >
+      </section>
+    </main>
+
+    <footer>
+      <div class="shell footer-grid">
+        <div>
+          <a class="wordmark inverse" href="/">
+            <img
+              src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+              alt="Visilile Technologies Intl Corp"
+            />
+          </a>
+          <p>Enterprise technology, delivered responsibly.</p>
+        </div>
+        <div>
+          <b>Catalog</b><a href="/products?category=Wireless">Networking</a
+          ><a href="/products?category=Cybersecurity">Cybersecurity</a
+          ><a href="/products?category=CCTV">Physical security</a>
+        </div>
+        <div>
+          <b>Company</b><a href="#solutions">Solutions</a
+          ><a href="#partners">Partners</a
+          ><a href="mailto:sales@vtic.com.ph">Contact</a>
+        </div>
+        <div>
+          <b>Project inquiries</b
+          ><a href="mailto:sales@vtic.com.ph">sales@vtic.com.ph</a
+          ><span>Mon–Fri, 8:30–17:30 PHT</span>
+        </div>
+      </div>
+      <div class="shell copyright">
+        <span>© 2026 VTIC Systems. All rights reserved.</span
+        ><span>Philippines</span>
+      </div>
+    </footer>
+    <div id="toast" role="status">Added to cart</div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

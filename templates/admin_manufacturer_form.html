@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Edit Manufacturer | VTIC Systems</title><link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /><link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" /></head>
+  <body class="form-page">
+    <aside><a class="logo" href="/"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a><nav><a class="active" href="/admin/manufacturers"><span>←</span>Back to manufacturers</a><a href="/admin"><span>01</span>Products</a><a href="/admin/account"><span>03</span>Account</a></nav></aside>
+    <main>
+      <header><div><p>CATALOG MANAGEMENT</p><h1>Edit manufacturer</h1></div></header>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+      <form class="product-form manufacturer-form" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><section><h2>Manufacturer details</h2><div class="logo-editor"><div class="logo-preview" data-logo-preview>{% if manufacturer.logo_url %}<img src="{{ manufacturer.logo_url }}" alt="{{ manufacturer.name }} logo" />{% else %}<span>{{ manufacturer.name[:2]|upper }}</span>{% endif %}</div><div class="logo-fields"><label>Manufacturer name *<input name="name" value="{{ manufacturer.name }}" required /></label><label>Upload new logo<input type="file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-logo-input /><small class="field-help">PNG, JPG or WebP, maximum 4 MB. The preview updates immediately.</small></label><label>Or use a logo URL<input type="url" name="logo_url" value="{{ manufacturer.logo_url or '' }}" placeholder="https://..." data-logo-url /></label>{% if manufacturer.logo_url %}<label class="checkbox"><input type="checkbox" name="remove_logo" value="1" /> Remove current logo</label>{% endif %}</div></div></section><div class="form-actions"><a href="/admin/manufacturers">Cancel</a><button>Save manufacturer</button></div></form>
+      <script src="{{ url_for('static', filename='js/manufacturer-preview.js') }}"></script>
+    </main>
+  </body>
+</html>

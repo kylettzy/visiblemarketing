@@ -1,0 +1,10 @@
+.account-form { max-width: 760px; }
+.account-intro { display: flex; align-items: center; gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.account-intro > span { width: 62px; height: 62px; display: grid; place-items: center; flex: 0 0 auto; background: var(--navy); color: #fff; font: 500 16px "DM Mono"; }
+.account-intro h2 { margin: 0 0 7px; }
+.account-intro p { margin: 0; color: var(--muted); font-size: 10px; }
+.account-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; margin-top: 25px; }
+.password-control { position: relative; display: flex; }
+.password-control input { width: 100%; padding-right: 58px; }
+.password-control button { position: absolute; right: 1px; top: 1px; width: 54px; height: calc(100% - 2px); border: 0; background: transparent; color: var(--blue); font-size: 9px; font-weight: 700; cursor: pointer; }
+@media (max-width: 800px) { .account-fields { grid-template-columns: 1fr; } }

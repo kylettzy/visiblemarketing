@@ -8,6 +8,7 @@ __pycache__/
 # Environment Variables (Do NOT commit secrets)
 # ==========================================
 .env
+.vercel/
 
 # ==========================================
 # Local Database Files

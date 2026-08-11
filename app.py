@@ -12,25 +12,55 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_from_directory,
     session,
     url_for,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("VTIC_SECRET_KEY", secrets.token_hex(32))
-DATABASE = Path(__file__).with_name("vtic_store.db")
-MANUFACTURER_UPLOADS = Path(app.static_folder) / "images" / "manufacturers"
-PRODUCT_UPLOADS = Path(app.static_folder) / "images" / "products"
+APP_ROOT = Path(__file__).resolve().parent
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+DEFAULT_RUNTIME_ROOT = Path("/tmp/vtic-store") if IS_VERCEL else APP_ROOT
+RUNTIME_ROOT = Path(os.environ.get("VTIC_RUNTIME_ROOT", DEFAULT_RUNTIME_ROOT))
+STATIC_ROOT = APP_ROOT / "static"
+
+# Vercel's deployed bundle is read-only. Flask's normal static handler is also
+# bypassed by Vercel, so static assets are served explicitly from the bundle and
+# runtime writes are confined to /tmp.
+app = Flask(__name__, static_folder=None)
+app.config["SECRET_KEY"] = os.environ.get(
+    "VTIC_SECRET_KEY", "development-only-change-me"
+)
+DATABASE = Path(os.environ.get("VTIC_DATABASE_PATH", RUNTIME_ROOT / "vtic_store.db"))
+UPLOAD_ROOT = RUNTIME_ROOT / "uploads"
+MANUFACTURER_UPLOADS = UPLOAD_ROOT / "manufacturers"
+PRODUCT_UPLOADS = UPLOAD_ROOT / "products"
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 MANUFACTURER_UPLOADS.mkdir(parents=True, exist_ok=True)
 PRODUCT_UPLOADS.mkdir(parents=True, exist_ok=True)
 
 
+@app.route("/static/<path:filename>", endpoint="static")
+def static_files(filename):
+    return send_from_directory(STATIC_ROOT, filename)
+
+
+@app.route("/uploads/<kind>/<path:filename>")
+def uploaded_file(kind, filename):
+    upload_directories = {
+        "manufacturers": MANUFACTURER_UPLOADS,
+        "products": PRODUCT_UPLOADS,
+    }
+    directory = upload_directories.get(kind)
+    if directory is None:
+        abort(404)
+    return send_from_directory(directory, filename)
+
+
 def get_db():
-    connection = sqlite3.connect(DATABASE)
+    connection = sqlite3.connect(DATABASE, timeout=10)
     connection.row_factory = sqlite3.Row
     return connection
 
@@ -78,7 +108,9 @@ def save_manufacturer_logo(upload):
         raise ValueError("Logo must be a PNG, JPG, JPEG, or WebP image.")
     stored_name = f"{secrets.token_hex(12)}.{extension}"
     upload.save(MANUFACTURER_UPLOADS / stored_name)
-    return url_for("static", filename=f"images/manufacturers/{stored_name}")
+    return url_for(
+        "uploaded_file", kind="manufacturers", filename=stored_name
+    )
 
 
 def save_product_image(upload):
@@ -90,7 +122,7 @@ def save_product_image(upload):
         raise ValueError("Product image must be a PNG, JPG, JPEG, or WebP file.")
     stored_name = f"{secrets.token_hex(12)}.{extension}"
     upload.save(PRODUCT_UPLOADS / stored_name)
-    return url_for("static", filename=f"images/products/{stored_name}")
+    return url_for("uploaded_file", kind="products", filename=stored_name)
 
 
 def p(

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "flask",
+  "functions": {
+    "app.py": {
+      "excludeFiles": "{.venv/**,__pycache__/**,**/*.pyc,vtic_store.db}"
+    }
+  }
+}

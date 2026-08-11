@@ -102,15 +102,18 @@
           <div class="grid">
             {% for product in products %}
             <article class="product-card">
-              <a class="product-media" href="/product/{{ product.id }}"
-                >{% if product.image_url %}<img
-                  src="{{ product.image_url }}"
-                  alt="{{ product.name }}"
-                />{% else %}<span>{{ product.brand[:2]|upper }}</span>{% endif
-                %} ><small>{{ product.brand }}</small
-                >{% if product.manufacturer_logo %}<span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>{% endif %}
-                ><i>{{ product.category }}</i></a
-              >
+              <a class="product-media" href="/product/{{ product.id }}">
+                {% if product.image_url %}
+                <img class="product-image" src="{{ product.image_url }}" alt="{{ product.name }}" />
+                {% else %}
+                <span class="product-initials">{{ product.brand[:2]|upper }}</span>
+                {% endif %}
+                <small>{{ product.brand }}</small>
+                {% if product.manufacturer_logo %}
+                <span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>
+                {% endif %}
+                <i>{{ product.category }}</i>
+              </a>
               <div class="product-copy">
                 <p>{{ product.category }}</p>
                 <a href="/product/{{ product.id }}"

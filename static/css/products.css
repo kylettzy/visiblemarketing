@@ -265,8 +265,10 @@ aside section > a {
 .product-media {
   height: 205px;
   position: relative;
-  display: grid;
-  place-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   background: var(--soft);
   border-bottom: 1px solid var(--line);
 }
@@ -275,7 +277,10 @@ aside section > a {
   letter-spacing: -0.08em;
   color: #19364e;
 }
-.product-media > img {
+.product-media > .product-image {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;

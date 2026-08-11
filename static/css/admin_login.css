@@ -49,8 +49,12 @@ main {
   background: #fff;
 }
 .brand-panel img {
-  display: block;
-  width: 210px;
+    display: block;
+    width: 210px;
+    height: auto;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 .brand-panel > div {
   position: relative;

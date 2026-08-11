@@ -687,7 +687,7 @@ def initialize_database():
                SELECT DISTINCT brand FROM products WHERE trim(brand) != ''"""
         )
         admin_username = os.environ.get("VTIC_ADMIN_USERNAME", "admin")
-        admin_password = os.environ.get("VTIC_ADMIN_PASSWORD", "ChangeMe-VTIC-2026!")
+        admin_password = os.environ.get("VTIC_ADMIN_PASSWORD", "visibletechintlcorp")
         if database.execute("SELECT COUNT(*) FROM admins").fetchone()[0] == 0:
             database.execute(
                 "INSERT INTO admins (username, password_hash) VALUES (?, ?)",

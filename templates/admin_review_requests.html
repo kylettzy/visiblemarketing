@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Review Requests | VTIC Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_review_requests.css') }}" />
+  </head>
+  <body>
+    <aside>
+      <a class="logo" href="/admin"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a>
+      <nav><a href="/admin"><span>01</span>Products</a><a href="/admin/manufacturers"><span>02</span>Manufacturers</a><a class="active" href="/admin/review-requests"><span>03</span>Review requests</a><a href="/admin/account"><span>04</span>My account</a>{% if session.admin_role == 'superadmin' %}<a href="/admin/accounts"><span>05</span>Manage accounts</a><a href="/admin/activity"><span>06</span>Activity logs</a>{% endif %}<a href="/storefront" target="_blank"><span>07</span>View storefront</a></nav>
+      <div class="admin-user"><p>Signed in as</p><b>{{ session.admin_username }}</b><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><button>Sign out</button></form></div>
+    </aside>
+    <main>
+      <header><div><p>SALES / CUSTOMER REQUESTS</p><h1>Review requests</h1></div><span>{{ requests|length }} submissions</span></header>
+      <section class="requests">
+        {% for review in requests %}<article>
+          <header><div><span>REQUEST #{{ "%05d"|format(review.id) }}</span><h2>{{ review.customer_name }}</h2><a href="mailto:{{ review.customer_email }}">{{ review.customer_email }}</a></div><div><b>{{ review.status }}</b><time>{{ review.created_at }}</time></div></header>
+          {% if review.ai_option_name %}<div class="ai-context"><b>AI-ASSISTED SOLUTION · {{ review.ai_option_name }}</b><span>{{ review.ai_requirements_summary }}</span></div>{% endif %}
+          {% if review.notes %}<p class="notes"><b>Project notes</b>{{ review.notes }}</p>{% endif %}
+          <div class="request-items"><div class="item-head"><span>Product</span><span>Quantity</span><span>Unit price</span><span>Line total</span></div>{% for item in items_by_request.get(review.id, []) %}<div class="item"><div><b>{{ item.product_name }}</b><small>{{ item.brand }} · VT-{{ "%04d"|format(item.product_id) }}</small></div><span>{{ item.quantity }}</span><span>{% if item.unit_price is not none %}₱{{ "{:,.2f}".format(item.unit_price) }}{% else %}Unpriced{% endif %}</span><strong>{% if item.unit_price is not none %}₱{{ "{:,.2f}".format(item.unit_price * item.quantity) }}{% else %}For quotation{% endif %}</strong></div>{% endfor %}</div>
+          <footer><span>{{ review.item_count }} total item(s)</span><div><small>Internal calculated total</small><b>{% if review.total_price is not none %}₱{{ "{:,.2f}".format(review.total_price) }}{% else %}No priced items{% endif %}</b>{% if review.unpriced_count %}<em>{{ review.unpriced_count }} unpriced line(s)</em>{% endif %}</div></footer>
+        </article>{% else %}<div class="empty"><h2>No review requests yet.</h2><p>Customer submissions will appear here with internal pricing.</p></div>{% endfor %}
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Account Management | VTIC Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_accounts.css') }}" />
+  </head>
+  <body>
+    <aside>
+      <a class="logo" href="/"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a>
+      <nav>
+        <a href="/admin"><span>01</span>Products</a>
+        <a href="/admin/manufacturers"><span>02</span>Manufacturers</a>
+        <a href="/admin/review-requests"><span>03</span>Review requests</a>
+        <a href="/admin/account"><span>04</span>My account</a>
+        <a class="active" href="/admin/accounts"><span>05</span>Manage accounts</a>
+        <a href="/admin/activity"><span>06</span>Activity logs</a>
+        <a href="/storefront" target="_blank"><span>07</span>View storefront</a>
+      </nav>
+      <div class="admin-user"><p>Signed in as</p><b>{{ session.admin_username }}</b><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form></div>
+    </aside>
+    <main>
+      <header class="accounts-heading">
+        <div><p>SUPERADMIN / ACCESS CONTROL</p><h1>Account management</h1></div>
+        <div class="create-actions"><a href="/admin/accounts/new/customer">Create customer</a><a class="primary" href="/admin/accounts/new/admin">Create administrator</a></div>
+      </header>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+      <section class="account-section">
+        <div class="section-title"><div><span>01</span><h2>Administrators</h2></div><p>{{ administrators|length }} account(s) with catalog access</p></div>
+        <div class="account-table">
+          <div class="account-row account-row--head"><span>Administrator</span><span>Role</span><span>Created</span><span></span></div>
+          {% for item in administrators %}
+          <div class="account-row">
+            <div class="identity"><i>{{ item.username[:2]|upper }}</i><div><b>{{ item.username }}</b><small>Administrator ID #{{ item.id }}</small></div></div>
+            <span><em class="role role--{{ item.role }}">{{ item.role }}</em>{% if item.id == session.admin_id %}<small class="current-user">Current account</small>{% endif %}</span>
+            <time>{{ item.created_at[:10] }}</time>
+            <a href="/admin/accounts/admin/{{ item.id }}/edit">Edit account →</a>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      <section class="account-section">
+        <div class="section-title"><div><span>02</span><h2>Customers</h2></div><p>{{ customers|length }} registered storefront account(s)</p></div>
+        <div class="account-table">
+          <div class="account-row account-row--customer account-row--head"><span>Customer</span><span>Email</span><span>Last sign in</span><span></span></div>
+          {% for item in customers %}
+          <div class="account-row account-row--customer">
+            <div class="identity"><i>{{ item.full_name[:2]|upper }}</i><div><b>{{ item.full_name }}</b><small>Customer ID #{{ item.id }}</small></div></div>
+            <span class="email">{{ item.email }}</span>
+            <time>{{ item.last_login_at[:16] if item.last_login_at else 'Never' }}</time>
+            <a href="/admin/accounts/customer/{{ item.id }}/edit">Edit account →</a>
+          </div>
+          {% else %}<div class="empty-row">No customer accounts have been created.</div>{% endfor %}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

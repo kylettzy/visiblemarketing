@@ -13,13 +13,6 @@ const saveCart = (cart) => {
   updateCartCount();
 };
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-  }).format(value);
-
 const escapeHtml = (value) =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -121,7 +114,7 @@ function renderCart() {
             <button type="button" data-remove="${item.id}">Remove</button>
           </div>
           <div class="item-end">
-            <b>${formatCurrency(item.price * item.qty)}</b>
+            <b>For review</b>
             <div class="qty">
               <button type="button" data-change="${item.id},-1" aria-label="Decrease quantity">−</button>
               <span>${item.qty}</span>
@@ -131,14 +124,6 @@ function renderCart() {
         </article>`;
     })
     .join("");
-
-  const subtotal = cart.reduce(
-    (total, item) => total + item.price * item.qty,
-    0,
-  );
-  document.querySelector("[data-subtotal]").textContent =
-    formatCurrency(subtotal);
-  document.querySelector("[data-total]").textContent = formatCurrency(subtotal);
 
   document.querySelectorAll("[data-remove]").forEach((button) => {
     button.addEventListener("click", () =>
@@ -154,9 +139,43 @@ function renderCart() {
   });
 }
 
-document.getElementById("checkout")?.addEventListener("click", () => {
-  window.location.href =
-    "mailto:sales@vtic.com.ph?subject=Procurement cart review request";
+document.getElementById("checkout")?.addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  const status = document.getElementById("review-status");
+  const cart = getCart();
+  if (!cart.length) return;
+
+  button.disabled = true;
+  button.textContent = "Submitting…";
+  status.textContent = "";
+  try {
+    const response = await fetch("/api/review-requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || "",
+      },
+      body: JSON.stringify({
+        items: cart.map(({ id, qty }) => ({ id, qty })),
+        ai_solution_option_id:
+          cart.find((item) => item.ai_solution_option_id)?.ai_solution_option_id || null,
+        notes: document.getElementById("review-notes")?.value || "",
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Unable to submit request.");
+    saveCart([]);
+    document.getElementById("cart-items").innerHTML = "";
+    document.querySelector("[data-cart-title]").textContent = "Submitted";
+    status.textContent = `Request #${result.request_id} was submitted successfully.`;
+    status.className = "success";
+  } catch (error) {
+    status.textContent = error.message;
+    status.className = "error";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Submit for review →";
+  }
 });
 
 updateCartCount();

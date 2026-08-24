@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Create Account | VTIC Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/customer_register.css') }}" />
+  </head>
+  <body>
+    <main>
+      <section class="brand-panel">
+        <a href="/"><img src="{{ url_for('static', filename='images/vtic-logo-t.png') }}" alt="Visible Technologies Intl Corp" /></a>
+        <div><p>CREATE YOUR VTIC ACCOUNT</p><h1>Your procurement workspace.</h1><span>Register once to access enterprise products from VTIC's global technology partners.</span></div>
+        <small>Customer registration</small>
+      </section>
+      <section class="login-panel">
+        <div class="login-box">
+          <p>CUSTOMER PORTAL / REGISTER</p><h2>Create account.</h2><span>All fields are required. Use a password with at least 12 characters.</span>
+          {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label>Full name<input name="full_name" value="{{ request.form.get('full_name', '') }}" autocomplete="name" required autofocus /></label>
+            <label>Email address<input type="email" name="email" value="{{ request.form.get('email', '') }}" autocomplete="email" required /></label>
+            <label>Password<div class="password-control"><input type="password" name="password" autocomplete="new-password" minlength="12" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
+            <label>Confirm password<div class="password-control"><input type="password" name="confirm_password" autocomplete="new-password" minlength="12" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
+            <button>Create customer account →</button>
+          </form>
+          <p class="account-link">Already registered? <a href="/login">Sign in</a></p>
+        </div>
+      </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+  </body>
+</html>

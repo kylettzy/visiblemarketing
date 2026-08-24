@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Procurement Cart | VTIC Systems</title>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
@@ -12,11 +13,13 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/cart.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
   </head>
   <body>
     <header>
       <div class="shell">
-        <a class="wordmark" href="/">
+        <a class="wordmark" href="/storefront">
           <img
             src="{{ url_for('static', filename='images/vtic-logo.png') }}"
             alt="Visilile Technologies Intl Corp"
@@ -26,12 +29,13 @@
           <b>01 CART</b><span></span><i>02 REVIEW</i><span></span
           ><i>03 CONFIRMATION</i>
         </div>
-        <a href="/products">Continue shopping →</a>
+        <a class="continue-shopping" href="/products">Continue shopping →</a>
+        {% include '_admin_storefront_menu.html' %}
       </div>
     </header>
     <main class="shell">
       <div class="breadcrumb">
-        <a href="/">Home</a><span>/</span> Procurement cart
+        <a href="/storefront">Storefront</a><span>/</span> Procurement cart
       </div>
       <section class="heading">
         <div>
@@ -43,19 +47,15 @@
       <div class="cart-layout">
         <section id="cart-items"></section>
         <aside>
-          <p>ORDER SUMMARY</p>
-          <h2>Commercial estimate</h2>
-          <div><span>Product subtotal</span><b data-subtotal>₱0.00</b></div>
-          <div><span>Delivery</span><b>To be confirmed</b></div>
-          <div><span>VAT</span><b>Calculated in quotation</b></div>
-          <div class="total">
-            <span>Estimated total</span><b data-total>₱0.00</b>
-          </div>
+          <p>REVIEW REQUEST</p>
+          <h2>Ready for VTIC review?</h2>
+          <label class="review-notes">Project notes<textarea id="review-notes" maxlength="2000" placeholder="Tell us about the project, delivery location or technical requirements."></textarea></label>
           <button id="checkout">Submit for review →</button
           ><small
-            >Prices shown are references. A VTIC representative will confirm
-            stock, delivery and final commercial terms.</small
+            >No pricing is shown in the customer storefront. The VTIC team will
+            review your complete selection and prepare the commercial response.</small
           >
+          <div id="review-status" role="status" aria-live="polite"></div>
         </aside>
       </div>
       <section class="empty-cart" id="empty-cart">
@@ -68,6 +68,8 @@
         <a href="/products">Browse product catalog →</a>
       </section>
     </main>
+    {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>
   </body>
 </html>

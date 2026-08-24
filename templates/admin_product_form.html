@@ -51,11 +51,25 @@
           <div class="form-grid">
             <label
               >Manufacturer *<select name="brand" required>
-                <option value="" disabled{% if not product %} selected{% endif %}>Select manufacturer</option>
-                {% for manufacturer in manufacturers %}
-                <option value="{{ manufacturer.name }}"{% if product and product.brand == manufacturer.name %} selected{% endif %}>{{ manufacturer.name }}</option>
-                {% endfor %}
-              </select><small class="field-help">Missing a brand? <a href="/admin/manufacturers">Add manufacturer</a></small></label
+                {% if not product and not request.args.get('manufacturer') %}
+                <option value="" disabled selected>Select manufacturer</option>
+                {% else %}
+                <option value="" disabled>Select manufacturer</option>
+                {% endif %} {% for manufacturer in manufacturers %} {% if
+                (product and product.brand == manufacturer.name) or (not product
+                and request.args.get('manufacturer') == manufacturer.name) %}
+                <option value="{{ manufacturer.name }}" selected>
+                  {{ manufacturer.name }}
+                </option>
+                {% else %}
+                <option value="{{ manufacturer.name }}">
+                  {{ manufacturer.name }}
+                </option>
+                {% endif %} {% endfor %}</select
+              ><small class="field-help"
+                >Missing a brand?
+                <a href="/admin/manufacturers">Add manufacturer</a></small
+              ></label
             ><label
               >Product name *<input
                 name="name"
@@ -64,7 +78,19 @@
             ><label
               >Category *<select name="category" required>
                 {% for category in categories %}
-                <option value="{{ category }}"{% if product and product.category == category %} selected{% endif %}>
+                <option
+                  value="{{ category }}"
+                  {%
+                  if
+                  product
+                  and
+                  product.category=""
+                  ="category"
+                  %}
+                  selected{%
+                  endif
+                  %}
+                >
                   {{ category }}
                 </option>
                 {% endfor %}
@@ -93,7 +119,13 @@
                 name="source"
                 value="{{ product.source if product else 'Partner quotation' }}" /></label
             ><label
-              >Upload product picture<input type="file" name="image_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" /><small class="field-help">PNG, JPG or WebP, maximum 4 MB.</small></label
+              >Upload product picture<input
+                type="file"
+                name="image_file"
+                accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+              /><small class="field-help"
+                >PNG, JPG or WebP, maximum 4 MB.</small
+              ></label
             ><label
               >Or use a product image URL<input
                 type="url"
@@ -107,7 +139,17 @@
                 value="{{ product.color if product else '#e8f0ff' }}"
             /></label>
           </div>
-          {% if product and product.image_url %}<div class="current-product-image"><img src="{{ product.image_url }}" alt="Current image for {{ product.name }}" /><label><input type="checkbox" name="remove_image" value="1" /> Remove current product picture</label></div>{% endif %}
+          {% if product and product.image_url %}
+          <div class="current-product-image">
+            <img
+              src="{{ product.image_url }}"
+              alt="Current image for {{ product.name }}"
+            /><label
+              ><input type="checkbox" name="remove_image" value="1" /> Remove
+              current product picture</label
+            >
+          </div>
+          {% endif %}
         </section>
         <div class="form-actions">
           <a href="/admin">Cancel</a

@@ -1,0 +1,57 @@
+@import url("admin.css");
+
+main > header > span {
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--blue);
+  font: 9px "DM Mono";
+  text-transform: uppercase;
+}
+.log-table {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.log-head,
+.log-table article {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px 1.6fr 130px;
+  gap: 18px;
+  align-items: center;
+  padding: 13px 16px;
+}
+.log-head {
+  background: var(--soft);
+  color: var(--muted);
+  font: 8px "DM Mono";
+  text-transform: uppercase;
+}
+.log-table article {
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+}
+.log-table time,
+.log-table code,
+.log-table article > span:last-child {
+  color: var(--muted);
+  font: 9px "DM Mono";
+}
+.log-table article div b,
+.log-table article div small {
+  display: block;
+}
+.log-table article div small {
+  margin-top: 4px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font: 8px "DM Mono";
+}
+.empty {
+  padding: 35px;
+  color: var(--muted);
+}
+@media (max-width: 1000px) {
+  .log-table { overflow-x: auto; }
+  .log-head, .log-table article { min-width: 900px; }
+}

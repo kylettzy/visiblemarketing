@@ -1,0 +1,15 @@
+.admin-storefront-menu { position: relative; z-index: 50; }
+.admin-storefront-menu summary { display: flex; align-items: center; gap: 7px; min-height: 34px; padding: 5px 10px; border: 1px solid #d8e0e5; background: #fff; color: #102434; list-style: none; cursor: pointer; font: 600 10px Inter, Arial, sans-serif; white-space: nowrap; }
+.admin-storefront-menu summary::-webkit-details-marker { display: none; }
+.admin-storefront-menu summary::after { content: "⌄"; margin-left: 3px; color: #647581; }
+.admin-storefront-menu summary > span { display: grid; width: 21px; height: 21px; place-items: center; border-radius: 50%; background: #071a2b; color: #b8f34a; font: 500 9px "DM Mono", monospace; }
+.admin-menu-panel { position: absolute; top: calc(100% + 8px); right: 0; width: 220px; padding: 7px; background: #fff; border: 1px solid #d8e0e5; box-shadow: 0 18px 45px rgba(7, 26, 43, 0.18); }
+.admin-menu-panel header { padding: 10px 11px 12px; border-bottom: 1px solid #e5eaed; }
+.admin-menu-panel header small, .admin-menu-panel header b { display: block; }
+.admin-menu-panel header small { margin-bottom: 4px; color: #647581; font: 8px "DM Mono", monospace; letter-spacing: 0.1em; }
+.admin-menu-panel header b { overflow: hidden; color: #102434; font-size: 11px; text-overflow: ellipsis; }
+.admin-menu-panel > a, .admin-menu-panel form button { display: block; width: 100%; padding: 10px 11px; border: 0; background: transparent; color: #304654; text-align: left; text-decoration: none; font: 500 10px Inter, Arial, sans-serif; cursor: pointer; }
+.admin-menu-panel > a:hover { background: #f1f5f7; color: #2764ff; }
+.admin-menu-panel form { margin: 5px 0 0; padding-top: 5px; border-top: 1px solid #e5eaed; }
+.admin-menu-panel form button { color: #a32c2c; }
+.admin-menu-panel form button:hover { background: #fff1f1; }

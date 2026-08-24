@@ -41,6 +41,7 @@
           <div class="alert {{ category }}">{{ message }}</div>
           {% endfor %}{% endwith %}
           <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
             <label
               >Username<input
                 name="username"

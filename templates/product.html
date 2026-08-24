@@ -12,29 +12,32 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/product.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
   </head>
   <body>
     <header>
       <div class="shell header-inner">
-        <a class="wordmark" href="/">
+        <a class="wordmark" href="/storefront">
           <img
             src="{{ url_for('static', filename='images/vtic-logo.png') }}"
             alt="Visilile Technologies Intl Corp"
           />
         </a>
         <nav>
-          <a href="/products">Products</a><a href="/#solutions">Solutions</a
+          <a href="/products">Products</a><a href="/solution-advisor">AI Advisor</a><a href="/#solutions">Solutions</a
           ><a href="mailto:sales@vtic.com.ph">Contact</a>
         </nav>
         <form action="/products">
           <input name="q" placeholder="Search catalog" /><button>Search</button>
         </form>
         <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
+        {% include '_admin_storefront_menu.html' %}
       </div>
     </header>
     <main class="shell">
       <div class="breadcrumb">
-        <a href="/">Home</a><span>/</span
+        <a href="/storefront">Storefront</a><span>/</span
         ><a href="/products?category={{ product.category|urlencode }}"
           >{{ product.category }}</a
         ><span>/</span>{{ product.name }}
@@ -63,13 +66,12 @@
             ><span>SKU VT-{{ "%04d"|format(product.id) }}</span>
           </div>
           <p class="description">{{ product.description }}</p>
-          {% if product.price %}
           <div class="commercial">
-            <span>PH reference price</span
-            ><b>₱{{ "{:,.2f}".format(product.price) }}</b
+            <span>Commercial review</span
+            ><b>Pricing available after review</b
             ><small
-              >{{ product.source }}. Final price and availability are confirmed
-              in the formal quotation.</small
+              >Add this product to your cart. VTIC will confirm configuration,
+              availability and commercial terms.</small
             >
           </div>
           <div class="order-row">
@@ -81,19 +83,6 @@
               Add to cart
             </button>
           </div>
-          {% else %}
-          <div class="commercial">
-            <span>Commercial terms</span><b>Project pricing</b
-            ><small
-              >Final pricing depends on configuration, license term, support
-              coverage and quantity.</small
-            >
-          </div>
-          <a
-            class="buy quote"
-            href="mailto:sales@vtic.com.ph?subject=Quotation request: {{ product.name }}"
-            >Request an official quotation <span>→</span></a
-          >{% endif %}
           <div class="assurance">
             <div>
               <b>Genuine sourcing</b
@@ -122,8 +111,7 @@
           <div>
             <span>Procurement model</span
             ><b
-              >{% if product.price %}Direct purchase{% else %}Project
-              quotation{% endif %}</b
+              >Review and quotation</b
             >
           </div>
         </div>
@@ -139,6 +127,9 @@
       </section>
     </main>
     <div id="toast" role="status">Added to cart</div>
+    {% set chat_product = product %}
+    {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>
   </body>
 </html>

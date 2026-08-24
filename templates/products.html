@@ -13,11 +13,13 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/products.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
   </head>
   <body>
     <header>
       <div class="shell header-inner">
-        <a class="wordmark" href="/">
+        <a class="wordmark" href="/storefront">
           <img
             src="{{ url_for('static', filename='images/vtic-logo.png') }}"
             alt="Visilile Technologies Intl Corp"
@@ -25,7 +27,7 @@
         </a>
         <nav>
           <a class="active" href="/products">Products</a
-          ><a href="/#solutions">Solutions</a><a href="/#partners">Partners</a>
+          ><a href="/solution-advisor">AI Advisor</a><a href="/#solutions">Solutions</a><a href="/#partners">Partners</a>
         </nav>
         <form action="/products">
           <input
@@ -35,12 +37,13 @@
           /><button>Search</button>
         </form>
         <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
+        {% include '_admin_storefront_menu.html' %}
       </div>
     </header>
 
     <main class="shell">
       <div class="breadcrumb">
-        <a href="/">Home</a><span>/</span> Product catalog
+        <a href="/storefront">Storefront</a><span>/</span> Product catalog
       </div>
       <section class="page-heading">
         <div>
@@ -120,23 +123,13 @@
                   ><h2>{{ product.name }}</h2></a
                 >
                 <span class="availability"><i></i> Available through VTIC</span>
-                {% if product.price %}
                 <div class="price">
-                  <b>₱{{ "{:,.2f}".format(product.price) }}</b
-                  ><small>{{ product.source }}</small>
+                  <b>Pricing upon review</b
+                  ><small>Add products to your review cart</small>
                 </div>
                 <button class="add" data-add="{{ product|tojson|forceescape }}">
                   Add to cart</button
-                >{% else %}
-                <div class="price">
-                  <b>Project pricing</b
-                  ><small>Configured to your requirements</small>
-                </div>
-                <a
-                  class="quote"
-                  href="mailto:sales@vtic.com.ph?subject=Quotation request: {{ product.name }}"
-                  >Request quotation</a
-                >{% endif %}
+                >
               </div>
             </article>
             {% else %}
@@ -152,6 +145,8 @@
       </div>
     </main>
     <div id="toast" role="status">Added to cart</div>
+    {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>
   </body>
 </html>

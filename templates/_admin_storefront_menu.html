@@ -1,0 +1,15 @@
+{% if session.admin_id %}
+<details class="admin-storefront-menu">
+  <summary><span>{{ session.admin_username[:1]|upper }}</span>Admin</summary>
+  <div class="admin-menu-panel">
+    <header><small>ADMINISTRATOR</small><b>{{ session.admin_username }}</b></header>
+    <a href="/admin">Product management</a>
+    <a href="/admin/products/new">Add product</a>
+    <a href="/admin/manufacturers">Manufacturers</a>
+    <a href="/admin/review-requests">Review requests</a>
+    <a href="/admin/account">Admin settings</a>
+    {% if session.admin_role == 'superadmin' %}<a href="/admin/accounts">Manage accounts</a><a href="/admin/activity">Activity logs</a>{% endif %}
+    <form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form>
+  </div>
+</details>
+{% endif %}

@@ -1,0 +1,20 @@
+@import url("admin_login.css");
+
+.login-panel {
+  padding-top: 25px;
+  padding-bottom: 25px;
+}
+.login-box form {
+  margin-top: 24px;
+  gap: 14px;
+}
+.account-link {
+  margin: 20px 0 0;
+  color: var(--muted) !important;
+  font: 11px Inter, Arial, sans-serif !important;
+  letter-spacing: 0 !important;
+}
+.account-link a {
+  color: var(--blue);
+  font-weight: 700;
+}

@@ -1,0 +1,342 @@
+.form-page > main {
+  max-width: 1500px;
+}
+.workspace-summary {
+  display: grid;
+  grid-template-columns: 1fr 0.55fr 1fr;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.workspace-summary > div {
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 18px 22px;
+  border-right: 1px solid var(--line);
+}
+.workspace-summary > div:last-child {
+  border-right: 0;
+}
+.workspace-summary span {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font: 8px "DM Mono";
+  letter-spacing: 0.08em;
+}
+.workspace-summary b {
+  font-size: 14px;
+}
+.workspace-summary b.visible {
+  color: #26734d;
+}
+.workspace-summary b.hidden {
+  color: #986700;
+}
+.workspace-card {
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.workspace-card > header,
+.workspace-card > summary {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+}
+.workspace-card > header > div,
+.workspace-card > summary > div {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.workspace-card > header > div > span,
+.workspace-card > summary > div > span {
+  color: var(--blue);
+  font: 10px "DM Mono";
+}
+.workspace-card h2 {
+  margin: 0 0 5px;
+  font-size: 16px;
+}
+.workspace-card header p,
+.workspace-card summary p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+.manufacturer-settings > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.manufacturer-settings > summary::-webkit-details-marker {
+  display: none;
+}
+.manufacturer-settings > summary > b {
+  color: var(--blue);
+  font-size: 9px;
+}
+.manufacturer-settings[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+.manufacturer-settings .product-form {
+  max-width: none;
+  padding: 22px;
+}
+.manufacturer-settings .product-form section {
+  padding: 0;
+  border: 0;
+}
+.csv-import {
+  padding-bottom: 20px;
+}
+.csv-import header a {
+  color: var(--blue);
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.csv-columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 22px 18px;
+  padding: 12px;
+  background: var(--soft);
+}
+.csv-columns b {
+  margin-right: 3px;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.csv-columns code {
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #536571;
+  font: 8px "DM Mono";
+}
+.csv-import form {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  padding: 0 22px;
+}
+.csv-import form label {
+  flex: 1;
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+.csv-import input[type="file"] {
+  height: 42px;
+  border: 1px solid var(--line);
+  padding: 8px;
+  background: #fafbfb;
+  font-size: 9px;
+}
+.csv-import button {
+  height: 42px;
+  border: 0;
+  padding: 0 18px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+.csv-import > small {
+  display: block;
+  margin: 10px 22px 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+.assigned-products > header {
+  border-bottom: 1px solid var(--line);
+}
+.assigned-products > header > b {
+  color: var(--muted);
+  font: 9px "DM Mono";
+}
+.workspace-product {
+  border-bottom: 1px solid var(--line);
+}
+.workspace-product:last-child {
+  border-bottom: 0;
+}
+.workspace-product > summary {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 1fr 150px 90px;
+  gap: 18px;
+  align-items: center;
+  padding: 10px 20px;
+  list-style: none;
+  cursor: pointer;
+}
+.workspace-product > summary::-webkit-details-marker {
+  display: none;
+}
+.workspace-product > summary:hover {
+  background: #fafbfb;
+}
+.workspace-product[open] > summary {
+  background: var(--soft);
+}
+.workspace-product-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.workspace-product-identity i {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--line);
+  font: normal 9px "DM Mono";
+}
+.workspace-product-identity img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.workspace-product-identity b,
+.workspace-product-identity small {
+  display: block;
+}
+.workspace-product-identity b {
+  font-size: 10px;
+}
+.workspace-product-identity small {
+  margin-top: 5px;
+  color: var(--muted);
+  font: 8px "DM Mono";
+}
+.workspace-product > summary > span {
+  color: #425866;
+  font: 9px "DM Mono";
+}
+.workspace-product > summary > em {
+  color: var(--blue);
+  font-size: 9px;
+  font-style: normal;
+  text-align: right;
+}
+.workspace-product > form {
+  padding: 22px;
+  border-top: 1px solid var(--line);
+  background: #fbfcfc;
+}
+.quick-edit-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 0.7fr 1fr;
+  gap: 14px;
+}
+.quick-edit-grid label {
+  display: grid;
+  gap: 7px;
+  color: #425866;
+  font-size: 8px;
+  font-weight: 700;
+}
+.quick-edit-grid .wide {
+  grid-column: 1 / -1;
+}
+.quick-edit-grid input,
+.quick-edit-grid select,
+.quick-edit-grid textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  padding: 10px;
+  background: #fff;
+  color: var(--ink);
+  outline: 0;
+  font-size: 10px;
+}
+.quick-edit-grid input:focus,
+.quick-edit-grid select:focus,
+.quick-edit-grid textarea:focus {
+  border-color: var(--blue);
+}
+.quick-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  margin-top: 14px;
+}
+.quick-actions a {
+  color: var(--blue);
+  font-size: 9px;
+  text-decoration: underline;
+}
+.quick-actions button {
+  height: 38px;
+  border: 0;
+  padding: 0 17px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+.no-manufacturer-products {
+  padding: 55px;
+  text-align: center;
+}
+.no-manufacturer-products > span {
+  color: var(--blue);
+  font: 8px "DM Mono";
+}
+.no-manufacturer-products h3 {
+  margin: 12px 0 8px;
+  font-size: 19px;
+}
+.no-manufacturer-products p {
+  margin: 0 auto;
+  max-width: 520px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+@media (max-width: 950px) {
+  .workspace-summary {
+    grid-template-columns: 1fr;
+  }
+  .workspace-summary > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .quick-edit-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .quick-edit-grid .wide {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 650px) {
+  .csv-import form,
+  .workspace-card > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .workspace-product > summary {
+    grid-template-columns: 1fr;
+  }
+  .workspace-product > summary > em {
+    text-align: left;
+  }
+  .quick-edit-grid {
+    grid-template-columns: 1fr;
+  }
+  .quick-edit-grid .wide {
+    grid-column: auto;
+  }
+}

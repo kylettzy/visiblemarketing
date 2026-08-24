@@ -12,6 +12,8 @@
 * {
   box-sizing: border-box;
 }
+.utility-logout { display: inline; margin: 0; }
+.utility-logout button { border: 0; padding: 0; background: transparent; color: #b8f34a; font: inherit; cursor: pointer; }
 html {
   scroll-behavior: smooth;
 }
@@ -369,6 +371,26 @@ nav a:hover:after {
 .partner-list b {
   font-size: 14px;
   letter-spacing: 0.06em;
+}
+.partner-list a {
+  min-width: 90px;
+  height: 45px;
+  display: grid;
+  place-items: center;
+  color: inherit;
+}
+.partner-list img {
+  display: block;
+  max-width: 110px;
+  max-height: 38px;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: 0.72;
+  transition: 0.2s;
+}
+.partner-list a:hover img {
+  filter: grayscale(0);
+  opacity: 1;
 }
 .solutions {
   padding-block: 110px;

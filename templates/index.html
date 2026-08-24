@@ -18,21 +18,24 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/index.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
   </head>
   <body>
     <div class="utility-bar">
       <div class="shell">
         <span>Enterprise technology procurement and integration</span>
         <div>
-          <a class="admin-login-link" href="/admin/login">Admin Login</a
-          ><span>Metro Manila, Philippines</span>
+          {% if session.customer_id %}<span>Signed in as {{ session.customer_name }}</span>
+          <form action="/logout" method="post" class="utility-logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form>{% else %}<span>Administrator preview</span>{% endif %}
+          <span>Metro Manila, Philippines</span>
         </div>
       </div>
     </div>
 
     <header class="site-header">
       <div class="shell header-inner">
-        <a class="wordmark" href="/" aria-label="Visilile Technologies home">
+        <a class="wordmark" href="/storefront" aria-label="Visible Technologies storefront">
           <img
             src="{{ url_for('static', filename='images/vtic-logo.png') }}"
             alt="Visilile Technologies Intl Corp"
@@ -40,6 +43,7 @@
         </a>
         <nav aria-label="Primary navigation">
           <a href="/products">Products</a>
+          <a href="/solution-advisor">AI Advisor</a>
           <a href="#solutions">Solutions</a>
           <a href="#partners">Partners</a>
           <a href="mailto:sales@vtic.com.ph">Contact</a>
@@ -51,6 +55,7 @@
             <button aria-label="Submit search">/</button>
           </form>
           <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
+          {% include '_admin_storefront_menu.html' %}
         </div>
       </div>
     </header>
@@ -121,8 +126,7 @@
         <div class="shell">
           <p>Solutions from leading technology manufacturers</p>
           <div class="partner-list">
-            <b>CISCO</b><b>FORTINET</b><b>UBIQUITI</b><b>DELL</b><b>HPE</b
-            ><b>HIKVISION</b><b>PANDUIT</b><b>MICROSOFT</b>
+            {% for partner in partners %}<a href="/products?brand={{ partner.name|urlencode }}">{% if partner.logo_url %}<img src="{{ partner.logo_url }}" alt="{{ partner.name }} logo" />{% else %}<b>{{ partner.name }}</b>{% endif %}</a>{% endfor %}
           </div>
         </div>
       </section>
@@ -171,7 +175,7 @@
           <a href="/products">View full catalog →</a>
         </div>
         <div class="product-grid">
-          {% for product in products if product.price %} {% if loop.index <= 4
+          {% for product in products %} {% if loop.index <= 4
           %}
           <article class="product-card">
             <a class="product-media" href="/product/{{ product.id }}">
@@ -188,8 +192,7 @@
                 ><h3>{{ product.name }}</h3></a
               >
               <div class="product-meta">
-                <b>₱{{ "{:,.2f}".format(product.price) }}</b
-                ><span>PH reference price</span>
+                <b>Request pricing</b><span>Reviewed by the VTIC team</span>
               </div>
               <button class="add" data-add="{{ product|tojson|forceescape }}">
                 Add to cart
@@ -218,7 +221,7 @@
     <footer>
       <div class="shell footer-grid">
         <div>
-          <a class="wordmark inverse" href="/">
+          <a class="wordmark inverse" href="/storefront">
             <img
               src="{{ url_for('static', filename='images/vtic-logo.png') }}"
               alt="Visilile Technologies Intl Corp"
@@ -248,6 +251,8 @@
       </div>
     </footer>
     <div id="toast" role="status">Added to cart</div>
+    {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>
   </body>
 </html>

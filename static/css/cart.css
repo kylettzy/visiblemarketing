@@ -79,7 +79,7 @@ header > .shell {
   height: 1px;
   background: var(--line);
 }
-header > .shell > a:last-child {
+.continue-shopping {
   font-size: 10px;
   font-weight: 700;
 }
@@ -232,6 +232,13 @@ aside > div b {
   font-weight: 800;
   cursor: pointer;
 }
+.review-notes { display: grid; gap: 8px; margin: 22px 0; color: #647581; font-size: 10px; font-weight: 700; }
+.review-notes textarea { min-height: 120px; resize: vertical; border: 1px solid #dce3e8; padding: 12px; color: #102434; background: #f7f9fa; font: 11px Inter, Arial, sans-serif; line-height: 1.5; }
+.review-notes textarea:focus { outline: 2px solid rgba(39, 100, 255, 0.18); border-color: #2764ff; }
+#review-status { margin-top: 14px; font-size: 10px; line-height: 1.5; }
+#review-status.success { color: #26734d; }
+#review-status.error { color: #b62f2f; }
+#checkout:disabled { opacity: 0.55; cursor: wait; }
 aside > small {
   display: block;
   margin-top: 15px;

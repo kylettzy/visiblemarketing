@@ -1,12 +1,283 @@
 <!doctype html>
 <html lang="en">
-  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Edit Manufacturer | VTIC Systems</title><link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /><link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" /></head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ manufacturer.name }} Workspace | VTIC Systems</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_manufacturer_workspace.css') }}"
+    />
+  </head>
   <body class="form-page">
-    <aside><a class="logo" href="/"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a><nav><a class="active" href="/admin/manufacturers"><span>←</span>Back to manufacturers</a><a href="/admin"><span>01</span>Products</a><a href="/admin/account"><span>03</span>Account</a></nav></aside>
+    <aside>
+      <a class="logo" href="/"
+        ><img
+          src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+          alt="VTIC"
+      /></a>
+      <nav>
+        <a class="active" href="/admin/manufacturers"
+          ><span>←</span>Back to manufacturers</a
+        ><a href="/admin"><span>01</span>Products</a
+        ><a href="/admin/review-requests"><span>03</span>Review requests</a
+        ><a href="/admin/account"><span>04</span>Account</a>
+      </nav>
+    </aside>
     <main>
-      <header><div><p>CATALOG MANAGEMENT</p><h1>Edit manufacturer</h1></div></header>
-      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
-      <form class="product-form manufacturer-form" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><section><h2>Manufacturer details</h2><div class="logo-editor"><div class="logo-preview" data-logo-preview>{% if manufacturer.logo_url %}<img src="{{ manufacturer.logo_url }}" alt="{{ manufacturer.name }} logo" />{% else %}<span>{{ manufacturer.name[:2]|upper }}</span>{% endif %}</div><div class="logo-fields"><label>Manufacturer name *<input name="name" value="{{ manufacturer.name }}" required /></label><label>Upload new logo<input type="file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" data-logo-input /><small class="field-help">PNG, JPG or WebP, maximum 4 MB. The preview updates immediately.</small></label><label>Or use a logo URL<input type="url" name="logo_url" value="{{ manufacturer.logo_url or '' }}" placeholder="https://..." data-logo-url /></label>{% if manufacturer.logo_url %}<label class="checkbox"><input type="checkbox" name="remove_logo" value="1" /> Remove current logo</label>{% endif %}</div></div></section><div class="form-actions"><a href="/admin/manufacturers">Cancel</a><button>Save manufacturer</button></div></form>
+      <header>
+        <div>
+          <p>MANUFACTURER WORKSPACE</p>
+          <h1>{{ manufacturer.name }}</h1>
+        </div>
+        <a
+          href="/admin/products/new?manufacturer={{ manufacturer.name|urlencode }}"
+          >+ Add one product</a
+        >
+      </header>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for
+      category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}{% endwith %}
+      <section class="workspace-summary">
+        <div><span>MANUFACTURER</span><b>{{ manufacturer.name }}</b></div>
+        <div><span>ASSIGNED PRODUCTS</span><b>{{ products|length }}</b></div>
+        <div>
+          <span>STOREFRONT STATUS</span
+          ><b class="{{ 'visible' if products else 'hidden' }}"
+            >{{ 'Visible' if products else 'Hidden until a product is added'
+            }}</b
+          >
+        </div>
+      </section>
+
+      <details class="workspace-card manufacturer-settings">
+        <summary>
+          <div>
+            <span>01</span>
+            <div>
+              <h2>Manufacturer settings</h2>
+              <p>Edit the partner name and logo.</p>
+            </div>
+          </div>
+          <b>Open settings</b>
+        </summary>
+        <form
+          class="product-form manufacturer-form"
+          method="post"
+          enctype="multipart/form-data"
+        >
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ session.csrf_token }}"
+          />
+          <section>
+            <div class="logo-editor">
+              <div class="logo-preview" data-logo-preview>
+                {% if manufacturer.logo_url %}<img
+                  src="{{ manufacturer.logo_url }}"
+                  alt="{{ manufacturer.name }} logo"
+                />{% else %}<span>{{ manufacturer.name[:2]|upper }}</span>{%
+                endif %}
+              </div>
+              <div class="logo-fields">
+                <label
+                  >Manufacturer name *<input
+                    name="name"
+                    value="{{ manufacturer.name }}"
+                    required /></label
+                ><label
+                  >Upload new logo<input
+                    type="file"
+                    name="logo_file"
+                    accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                    data-logo-input
+                  /><small class="field-help"
+                    >PNG, JPG or WebP, maximum 4 MB.</small
+                  ></label
+                ><label
+                  >Or use a logo URL<input
+                    type="url"
+                    name="logo_url"
+                    value="{{ manufacturer.logo_url or '' }}"
+                    placeholder="https://..."
+                    data-logo-url /></label
+                >{% if manufacturer.logo_url %}<label class="checkbox"
+                  ><input type="checkbox" name="remove_logo" value="1" /> Remove
+                  current logo</label
+                >{% endif %}
+              </div>
+            </div>
+          </section>
+          <div class="form-actions">
+            <button>Save manufacturer settings</button>
+          </div>
+        </form>
+      </details>
+
+      <section class="workspace-card csv-import">
+        <header>
+          <div>
+            <span>02</span>
+            <div>
+              <h2>Import multiple products</h2>
+              <p>
+                The manufacturer is automatically set to {{ manufacturer.name
+                }}.
+              </p>
+            </div>
+          </div>
+          <a href="/admin/manufacturers/products-template.csv"
+            >Download CSV template</a
+          >
+        </header>
+        <div class="csv-columns">
+          <b>Required</b><code>name</code><code>category</code
+          ><code>description</code><b>Optional</b><code>price</code
+          ><code>source</code><code>color</code><code>image_url</code>
+        </div>
+        <form
+          action="/admin/manufacturers/{{ manufacturer.id }}/products/import"
+          method="post"
+          enctype="multipart/form-data"
+        >
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ session.csrf_token }}"
+          /><label
+            ><span>UTF-8 CSV file</span
+            ><input
+              type="file"
+              name="csv_file"
+              accept=".csv,text/csv"
+              required /></label
+          ><button>Validate and import products</button>
+        </form>
+        <small
+          >The complete file is validated first. If any row has an error,
+          nothing is imported.</small
+        >
+      </section>
+
+      <section class="workspace-card assigned-products">
+        <header>
+          <div>
+            <span>03</span>
+            <div>
+              <h2>Products under {{ manufacturer.name }}</h2>
+              <p>
+                Quick-edit common fields or open the full editor for pictures
+                and advanced settings.
+              </p>
+            </div>
+          </div>
+          <b>{{ products|length }} records</b>
+        </header>
+        <div class="product-workspace-list">
+          {% for product in products %}
+          <details class="workspace-product">
+            <summary>
+              <div class="workspace-product-identity">
+                <i
+                  >{% if product.image_url %}<img
+                    src="{{ product.image_url }}"
+                    alt=""
+                  />{% else %}{{ product.name[:2]|upper }}{% endif %}</i
+                >
+                <div>
+                  <b>{{ product.name }}</b
+                  ><small
+                    >{{ product.category }} · VT-{{ "%04d"|format(product.id)
+                    }}</small
+                  >
+                </div>
+              </div>
+              <span
+                >{% if product.price is not none %}₱{{
+                "{:,.2f}".format(product.price) }}{% else %}Unpriced{% endif
+                %}</span
+              ><em>Quick edit</em>
+            </summary>
+            <form
+              action="/admin/manufacturers/{{ manufacturer.id }}/products/{{ product.id }}/quick-edit"
+              method="post"
+            >
+              <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ session.csrf_token }}"
+              />
+              <div class="quick-edit-grid">
+                <label
+                  >Product name<input
+                    name="name"
+                    value="{{ product.name }}"
+                    required /></label
+                ><label
+                  >Category<select name="category" required>
+                    {% for category in categories %}
+                    <option
+                      value="{{ category }}"
+                      {%
+                      if
+                      category=""
+                      ="product.category"
+                      %}
+                      selected{%
+                      endif
+                      %}
+                    >
+                      {{ category }}
+                    </option>
+                    {% endfor %}
+                  </select></label
+                ><label
+                  >Internal price (PHP)<input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="price"
+                    value="{{ product.price if product.price is not none else '' }}"
+                    placeholder="Leave blank if unpriced" /></label
+                ><label
+                  >Price source<input
+                    name="source"
+                    value="{{ product.source }}" /></label
+                ><label class="wide"
+                  >Description<textarea name="description" rows="3" required>
+{{ product.description }}</textarea
+                  >
+                </label>
+              </div>
+              <div class="quick-actions">
+                <a href="/admin/products/{{ product.id }}/edit"
+                  >Open full editor</a
+                ><button>Save quick changes</button>
+              </div>
+            </form>
+          </details>
+          {% else %}
+          <div class="no-manufacturer-products">
+            <span>NO PRODUCTS</span>
+            <h3>This partner is hidden from the storefront.</h3>
+            <p>
+              Add one product manually or import a CSV to make the manufacturer
+              visible to customers.
+            </p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
       <script src="{{ url_for('static', filename='js/manufacturer-preview.js') }}"></script>
     </main>
   </body>

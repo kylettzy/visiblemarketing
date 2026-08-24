@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Visible Technologies International Corporation delivers enterprise IT infrastructure, cybersecurity, communications and physical security solutions in the Philippines."
+    />
+    <title>Visible Technologies International Corporation</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/landing.css') }}"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="/" aria-label="Visible Technologies home">
+          <img
+            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+            alt="Visible Technologies International Corporation"
+          />
+        </a>
+        <nav aria-label="Main navigation">
+          <a href="#company">Company</a>
+          <a href="#capabilities">Capabilities</a>
+          <a href="#approach">Our approach</a>
+          <a href="mailto:sales@vtic.com.ph">Contact</a>
+        </nav>
+        <div class="account-actions">
+          {% if session.get('customer_id') %}
+          <span>Welcome, {{ session.customer_name }}</span>
+          <a class="button button--solid" href="/storefront">Enter storefront</a>
+          {% else %}
+          <a class="sign-in" href="/login">Sign in</a>
+          <a class="button button--solid" href="/register">Create account</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="shell hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">PHILIPPINE ENTERPRISE TECHNOLOGY PARTNER</p>
+            <h1>Technology made<br />visible. Solutions<br />made practical.</h1>
+            <p class="hero-intro">
+              Visible Technologies International Corporation helps organizations
+              plan, source and deploy dependable IT systems—from network
+              infrastructure and cybersecurity to communications and physical
+              security.
+            </p>
+            <div class="hero-actions">
+              {% if session.get('customer_id') %}
+              <a class="button button--accent" href="/storefront">Browse solutions</a>
+              {% else %}
+              <a class="button button--accent" href="/register">Create customer account</a>
+              <a class="text-link" href="/login">Already registered? Sign in →</a>
+              {% endif %}
+            </div>
+          </div>
+          <div class="hero-system" aria-label="VTIC solution disciplines">
+            <div class="system-heading">
+              <span>VTIC / SOLUTION MAP</span>
+              <b>One accountable technology partner</b>
+            </div>
+            <div class="system-core">
+              <span>VISIBLE</span>
+              <strong>VT</strong>
+              <small>DESIGN · SOURCE · DEPLOY · SUPPORT</small>
+            </div>
+            <div class="system-node node--one"><i>01</i><b>Infrastructure</b></div>
+            <div class="system-node node--two"><i>02</i><b>Cybersecurity</b></div>
+            <div class="system-node node--three"><i>03</i><b>Communications</b></div>
+            <div class="system-node node--four"><i>04</i><b>Physical security</b></div>
+          </div>
+        </div>
+        <div class="hero-strip">
+          <div class="shell">
+            <span>NETWORKS</span><i></i><span>DATA CENTER</span><i></i
+            ><span>CLOUD</span><i></i><span>CYBERSECURITY</span><i></i
+            ><span>CCTV</span><i></i><span>ENTERPRISE COMMUNICATIONS</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="company shell" id="company">
+        <div class="section-index">
+          <span>01 / WHO WE ARE</span>
+          <div></div>
+        </div>
+        <div class="company-grid">
+          <h2>A solutions company built around real operational needs.</h2>
+          <div class="company-copy">
+            <p>
+              Visible is an IT solutions company and your trusted partner in
+              navigating the digital landscape. From tailored software
+              development to cutting-edge cybersecurity and transformative
+              cloud services, we deliver seamless technology solutions that
+              drive efficiency, productivity and growth for your organization.
+            </p>
+            <a href="mailto:sales@vtic.com.ph">Start a conversation with VTIC →</a>
+          </div>
+        </div>
+        <div class="vision-mission">
+          <article>
+            <div class="statement-icon statement-icon--vision" aria-hidden="true">
+              <span></span>
+            </div>
+            <p class="statement-label">OUR DIRECTION / 01</p>
+            <h3>Our Vision</h3>
+            <p>
+              Our vision is to be globally present in providing competitive IT
+              solutions and systems integration that support our customers,
+              partners and employees. We strive to achieve this through
+              innovation, quality and a commitment to first-class service.
+            </p>
+          </article>
+          <article>
+            <div class="statement-icon statement-icon--mission" aria-hidden="true">
+              <span></span>
+            </div>
+            <p class="statement-label">OUR PURPOSE / 02</p>
+            <h3>Our Mission</h3>
+            <p>
+              Our mission is to be the leading provider of Information and
+              Communications Technology (ICT) strategies and services that
+              deliver long-term commercial benefits based on our customers’ key
+              business requirements. In addition, Visible aims to be your
+              partner in ensuring the application of economical, efficient,
+              durable and flexible solutions that allow your organization to
+              respond rapidly to both market and customer needs.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="capabilities" id="capabilities">
+        <div class="shell">
+          <div class="section-index section-index--light">
+            <span>02 / WHAT WE DELIVER</span><div></div>
+          </div>
+          <div class="capability-heading">
+            <h2>Connected expertise.<br />One delivery team.</h2>
+            <p>Explore the systems VTIC can design, source and support for your organization.</p>
+          </div>
+          <div class="capability-grid">
+            <article><span>01</span><h3>Network & infrastructure</h3><p>Routing, switching, wireless, structured cabling, fiber, racks and data-center foundations.</p><small>CONNECTIVITY / PERFORMANCE</small></article>
+            <article><span>02</span><h3>Cybersecurity</h3><p>Perimeter protection, endpoint security, secure access and layered enterprise defense.</p><small>PROTECTION / RESILIENCE</small></article>
+            <article><span>03</span><h3>Communication systems</h3><p>Business telephony, unified communications and collaboration platforms.</p><small>VOICE / COLLABORATION</small></article>
+            <article><span>04</span><h3>Physical security</h3><p>CCTV, video management and integrated site-security technologies.</p><small>VISIBILITY / CONTROL</small></article>
+            <article><span>05</span><h3>Cloud & compute</h3><p>Servers, storage, virtualization, cloud services and resilient workloads.</p><small>CAPACITY / SCALE</small></article>
+            <article class="capability-cta"><p>Not sure where to begin?</p><h3>Describe the challenge. We’ll help define the system.</h3>{% if session.get('customer_id') %}<a href="/solution-advisor">Open AI Solution Advisor →</a>{% else %}<a href="/register">Create an account to begin →</a>{% endif %}</article>
+          </div>
+        </div>
+      </section>
+
+      <section class="approach shell" id="approach">
+        <div class="section-index"><span>03 / HOW WE WORK</span><div></div></div>
+        <div class="approach-grid">
+          <div><p>DISCOVERY</p><strong>Understand the environment and define the requirement.</strong></div>
+          <div><p>ENGINEERING</p><strong>Develop the architecture and select compatible products.</strong></div>
+          <div><p>COMMERCIAL REVIEW</p><strong>Validate quantities, availability, scope and project pricing.</strong></div>
+          <div><p>DELIVERY</p><strong>Coordinate sourcing, implementation and ongoing support.</strong></div>
+        </div>
+      </section>
+
+      <section class="leadership" id="leadership">
+        <div class="shell">
+          <div class="section-index">
+            <span>04 / LEADERSHIP</span><div></div>
+          </div>
+          <div class="leadership-grid">
+            <div class="leadership-portrait">
+              <div class="portrait-frame">
+                <span>VISIBLE / EXECUTIVE LEADERSHIP</span>
+                <img
+                  src="{{ url_for('static', filename='images/ceo-resil-fuscablo.png') }}"
+                  alt="Ms. Resil B. Fuscablo, CEO of Visible Technologies International Corporation"
+                />
+                <i aria-hidden="true"></i>
+              </div>
+            </div>
+            <div class="leadership-copy">
+              <p class="leadership-eyebrow">MEET OUR CEO</p>
+              <h2>Resil B.<br />Fuscablo</h2>
+              <p class="leadership-role">
+                Chief Executive Officer<br />Visible Technologies International Corporation
+              </p>
+              <div class="leadership-biography">
+                <p>
+                  With a passion for innovation and a relentless drive for
+                  success, Ms. Resil B. Fuscablo leads Visible Technologies
+                  International Corporation as its CEO. With over 17 years of
+                  experience in business, she brings a wealth of expertise in
+                  strategic leadership, business development and operational
+                  excellence.
+                </p>
+                <p>
+                  Prior to her role as CEO, Ms. Fuscablo held key leadership
+                  positions within Visible Technologies International
+                  Corporation, where she spearheaded initiatives that propelled
+                  the company to new heights. Her commitment to fostering a
+                  culture of innovation and customer centricity has been
+                  instrumental in Visible’s success.
+                </p>
+              </div>
+              <blockquote>
+                <span>LEADERSHIP PRINCIPLE</span>
+                <p>Innovation with purpose. Technology with lasting value.</p>
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="portal-callout">
+        <div class="shell">
+          <div class="appointment-index">
+            <span>PROJECT DESK</span><b>01</b>
+          </div>
+          <div class="appointment-copy">
+            <p>MAKE AN APPOINTMENT</p>
+            <h2>Put the right technology<br />behind your next move.</h2>
+            <span>Tell us what you need to improve, protect or build. VTIC will help define the practical next step.</span>
+          </div>
+          <div class="appointment-actions">
+            <a class="button button--appointment" href="mailto:sales@vtic.ph?subject=VTIC%20Appointment%20Request">Book an appointment →</a>
+            {% if session.get('customer_id') %}<a href="/storefront">Enter customer storefront</a>{% else %}<a href="/register">Create customer account</a>{% endif %}
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="shell footer-grid">
+        <div class="footer-company">
+          <img src="{{ url_for('static', filename='images/vtic-logo-t.png') }}" alt="Visible Technologies International Corporation" />
+          <p>Technology systems designed around the way your organization needs to work.</p>
+          <small>FOLLOW VISIBLE</small>
+          <div class="social-links" aria-label="Visible Technologies social channels">
+            <span title="Facebook" aria-label="Facebook">f</span>
+            <span title="Instagram" aria-label="Instagram">◎</span>
+            <span title="LinkedIn" aria-label="LinkedIn">in</span>
+          </div>
+        </div>
+        <div class="footer-navigation">
+          <b>Explore</b>
+          <a href="#company">Who we are</a>
+          <a href="#capabilities">Capabilities</a>
+          <a href="#leadership">Leadership</a>
+          <a href="/admin/login">Administrator access</a>
+        </div>
+        <address class="footer-contact">
+          <b>Project desk</b>
+          <div><span class="contact-icon" aria-hidden="true">●</span><p>GF Unit 102 Ridgewood Towers 3, C5 (Northbound), Ususan, Taguig City 1639</p></div>
+          <div><span class="contact-icon" aria-hidden="true">⌕</span><p><a href="tel:+63282446562">(02) 8244 6562</a><a href="tel:+639497402779">0949 740 2779</a><a href="tel:+639174655234">0917 465 5234</a></p></div>
+          <div><span class="contact-icon" aria-hidden="true">✉</span><p><a href="mailto:sales@vtic.ph">sales@vtic.ph</a></p></div>
+        </address>
+      </div>
+      <div class="shell footer-bottom"><span>© 2026 Visible Technologies International Corporation</span><span>Power up your business. Be Visible.</span></div>
+    </footer>
+  </body>
+</html>

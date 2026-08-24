@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Activity Logs | VTIC Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_activity.css') }}" />
+  </head>
+  <body>
+    <aside>
+      <a class="logo" href="/admin"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a>
+      <nav><a href="/admin"><span>01</span>Products</a><a href="/admin/manufacturers"><span>02</span>Manufacturers</a><a href="/admin/review-requests"><span>03</span>Review requests</a><a href="/admin/account"><span>04</span>My account</a><a href="/admin/accounts"><span>05</span>Manage accounts</a><a class="active" href="/admin/activity"><span>06</span>Activity logs</a><a href="/storefront" target="_blank"><span>07</span>View storefront</a></nav>
+      <div class="admin-user"><p>SUPERADMIN</p><b>{{ session.admin_username }}</b><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><button>Sign out</button></form></div>
+    </aside>
+    <main>
+      <header><div><p>SECURITY / AUDIT TRAIL</p><h1>Activity logs</h1></div><span>Superadmin only</span></header>
+      <section class="log-table">
+        <div class="log-head"><span>Time</span><span>Actor</span><span>Action</span><span>Details</span><span>IP address</span></div>
+        {% for log in logs %}<article><time>{{ log.created_at }}</time><div><b>{{ log.actor_name }}</b><small>{{ log.actor_type }}</small></div><code>{{ log.action }}</code><span>{{ log.details or '—' }}</span><span>{{ log.ip_address or '—' }}</span></article>{% else %}<p class="empty">No activity has been recorded.</p>{% endfor %}
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+.accounts-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 25px; }
+.create-actions { display: flex; gap: 10px; }
+.create-actions a { padding: 12px 15px; border: 1px solid var(--line); background: #fff; font-size: 9px; font-weight: 700; }
+.create-actions a.primary { color: #fff; background: var(--navy); border-color: var(--navy); }
+.account-section { margin-top: 34px; }
+.section-title { display: flex; margin-bottom: 13px; align-items: flex-end; justify-content: space-between; }
+.section-title > div { display: flex; align-items: center; gap: 13px; }
+.section-title span { color: var(--blue); font: 500 8px "DM Mono", monospace; }
+.section-title h2 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.section-title p { margin: 0; color: var(--muted); font-size: 9px; }
+.account-table { border: 1px solid var(--line); background: #fff; }
+.account-row { display: grid; min-height: 76px; padding: 12px 18px; grid-template-columns: minmax(240px, 1.35fr) .65fr .65fr 120px; align-items: center; border-top: 1px solid var(--line); gap: 20px; }
+.account-row:first-child { border-top: 0; }
+.account-row--customer { grid-template-columns: minmax(240px, 1.1fr) minmax(220px, 1fr) .65fr 120px; }
+.account-row--head { min-height: 38px; color: var(--muted); background: #f5f7f8; font: 500 7px "DM Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
+.identity { display: flex; align-items: center; gap: 13px; }
+.identity i { display: grid; width: 38px; height: 38px; place-items: center; color: #fff; background: var(--navy); font: normal 9px "DM Mono", monospace; }
+.identity b, .identity small, .account-row small { display: block; }
+.identity b { font-size: 10px; }
+.identity small { margin-top: 4px; color: var(--muted); font-size: 7px; }
+.account-row time, .email { color: #506674; font-size: 9px; }
+.account-row > a { color: var(--blue); font-size: 8px; font-weight: 700; text-align: right; }
+.role { display: inline-block; padding: 5px 7px; font: normal 7px "DM Mono", monospace; text-transform: uppercase; }
+.role--superadmin { color: #244900; background: #dff2ba; }
+.role--admin { color: #16476b; background: #dcecf5; }
+.current-user { margin-top: 5px; color: var(--muted); font-size: 7px; }
+.empty-row { padding: 30px; color: var(--muted); font-size: 10px; text-align: center; }
+@media (max-width: 900px) { .accounts-heading, .section-title { align-items: flex-start; flex-direction: column; } .account-row, .account-row--customer { grid-template-columns: 1fr; gap: 10px; } .account-row--head { display: none; } .account-row > a { text-align: left; } }

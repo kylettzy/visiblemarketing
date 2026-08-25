@@ -39,10 +39,11 @@ Without activating the virtual environment, run:
 
 ### Configure local environment values
 
-Open the project `.env` file and paste the OpenAI key after the equals sign:
+Open the project `.env` file and paste the Gemini API key after the equals sign:
 
 ```env
-OPENAI_API_KEY=your-secret-key
+GEMINI_API_KEY=your-secret-key
+GEMINI_MODEL=gemini-3.6-flash
 ```
 
 The application automatically loads `.env` at startup. The file is excluded
@@ -151,15 +152,15 @@ Install the current requirements and configure the server-side API key:
 
 ```powershell
 python -m pip install -r requirements.txt
-$env:OPENAI_API_KEY = "your-project-api-key"
-$env:OPENAI_MODEL = "gpt-5.6-terra"
+$env:GEMINI_API_KEY = "your-google-ai-studio-key"
+$env:GEMINI_MODEL = "gemini-3.6-flash"
 python app.py
 ```
 
-Never place `OPENAI_API_KEY` in HTML, JavaScript, Git, or a public Vercel
+Never place `GEMINI_API_KEY` in HTML, JavaScript, Git, or a public Vercel
 environment variable. On Vercel, add it in **Project → Settings → Environment
-Variables** for the server runtime. `OPENAI_MODEL` is optional and defaults to
-`gpt-5.6-terra`.
+Variables** for the server runtime. `GEMINI_MODEL` is optional and defaults to
+`gemini-3.6-flash`.
 
 ### Anam AI representative
 

@@ -1,0 +1,41 @@
+<script>
+  (() => {
+    const saved = localStorage.getItem("vtic-appearance-theme");
+    const theme =
+      saved === "light" || saved === "dark"
+        ? saved
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  })();
+</script>
+<link
+  rel="icon"
+  type="image/png"
+  href="{{ url_for('static', filename='images/vtic-logo-t.png') }}"
+/>
+<link
+  rel="apple-touch-icon"
+  href="{{ url_for('static', filename='images/vtic-logo-t.png') }}"
+/>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/theme.css') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/figma-system.css') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/storefront_footer.css') }}"
+/>
+<script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>

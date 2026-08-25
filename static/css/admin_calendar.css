@@ -1,0 +1,107 @@
+@import url("admin.css");
+
+main > header > span {
+  padding: 9px 12px;
+  border: 1px solid var(--admin-border, var(--theme-border));
+  color: var(--admin-accent, #13bee7);
+  background: var(--admin-panel, var(--theme-surface));
+  font: 9px "DM Mono", monospace;
+  text-transform: uppercase;
+}
+.calendar-toolbar {
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--admin-border, var(--theme-border));
+  background: var(--admin-panel, var(--theme-surface));
+}
+.calendar-toolbar b,
+.calendar-toolbar small {
+  display: block;
+}
+.calendar-toolbar b {
+  color: var(--admin-text, var(--theme-text));
+  font-size: 12px;
+}
+.calendar-toolbar small {
+  margin-top: 5px;
+  color: var(--admin-muted, var(--theme-muted));
+  font-size: 8px;
+}
+.calendar-toolbar nav {
+  display: flex;
+  gap: 6px;
+}
+.calendar-toolbar a {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--admin-border, var(--theme-border));
+  color: var(--admin-text, var(--theme-text));
+  background: var(--admin-panel-soft, var(--theme-surface-raised));
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  overflow-x: auto;
+  border-top: 1px solid var(--admin-border, var(--theme-border));
+  border-left: 1px solid var(--admin-border, var(--theme-border));
+}
+.calendar-weekday {
+  min-width: 120px;
+  padding: 10px 12px;
+  border-right: 1px solid var(--admin-border, var(--theme-border));
+  border-bottom: 1px solid var(--admin-border, var(--theme-border));
+  color: var(--admin-muted, var(--theme-muted));
+  background: var(--admin-panel-soft, var(--theme-surface-raised));
+  font: 8px "DM Mono", monospace;
+  text-transform: uppercase;
+}
+.calendar-day {
+  min-width: 120px;
+  min-height: 130px;
+  padding: 10px;
+  border-right: 1px solid var(--admin-border, var(--theme-border));
+  border-bottom: 1px solid var(--admin-border, var(--theme-border));
+  background: var(--admin-panel, var(--theme-surface));
+}
+.calendar-day.outside {
+  opacity: 0.45;
+}
+.calendar-day > time {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  color: var(--admin-muted, var(--theme-muted));
+  font: 9px "DM Mono", monospace;
+}
+.calendar-day.today > time {
+  border-radius: 50%;
+  color: white;
+  background: linear-gradient(135deg, #2764ff, #11bae2);
+}
+.calendar-day > div {
+  margin-top: 7px;
+  display: grid;
+  gap: 5px;
+}
+.calendar-event {
+  padding: 7px;
+  border-left: 3px solid #16bee6;
+  color: var(--admin-text, var(--theme-text));
+  background: color-mix(in srgb, #16bee6 10%, var(--admin-panel-soft, var(--theme-surface-raised)));
+}
+.calendar-event b,
+.calendar-event span {
+  display: block;
+  font-size: 7px;
+  line-height: 1.4;
+}
+.calendar-event span {
+  margin-top: 3px;
+  color: var(--admin-muted, var(--theme-muted));
+}

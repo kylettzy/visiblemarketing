@@ -1,18 +1,12 @@
 @import url("admin_login.css");
 
-.account-link {
-  margin: 22px 0 0;
-  color: var(--muted) !important;
-  font: 11px Inter, Arial, sans-serif !important;
-  letter-spacing: 0 !important;
-}
-.account-link a,
-.admin-entry {
-  color: var(--blue);
-  font-weight: 700;
-}
-.admin-entry {
-  display: inline-block;
-  margin-top: 14px;
-  font-size: 10px;
+.customer-shell .brand-message h1 { max-width: 760px; }
+.account-actions { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.account-actions p { margin: 0; color: var(--muted); font-size: 11px; }
+.account-actions a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+.admin-entry { color: #8da3b4 !important; font-size: 10px; }
+.account-actions a:hover { color: white; }
+
+@media (max-width: 540px) {
+  .account-actions { align-items: flex-start; flex-direction: column; }
 }

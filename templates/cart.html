@@ -13,27 +13,27 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/cart.css') }}"
     />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
+    />
+    {% include '_theme.html' %}
   </head>
   <body>
-    <header>
-      <div class="shell">
-        <a class="wordmark" href="/storefront">
-          <img
-            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-            alt="Visilile Technologies Intl Corp"
-          />
-        </a>
-        <div class="steps">
-          <b>01 CART</b><span></span><i>02 REVIEW</i><span></span
-          ><i>03 CONFIRMATION</i>
-        </div>
-        <a class="continue-shopping" href="/products">Continue shopping →</a>
-        {% include '_admin_storefront_menu.html' %}
-      </div>
-    </header>
+    {% set storefront_section = 'cart' %} {% include '_storefront_header.html'
+    %}
     <main class="shell">
+      <div class="cart-progress" aria-label="Request progress">
+        <b><span>01</span> Cart</b>
+        <i></i>
+        <span><b>02</b> Review</span>
+        <i></i>
+        <span><b>03</b> Confirmation</span>
+      </div>
       <div class="breadcrumb">
         <a href="/storefront">Storefront</a><span>/</span> Procurement cart
       </div>
@@ -49,11 +49,22 @@
         <aside>
           <p>REVIEW REQUEST</p>
           <h2>Ready for VTIC review?</h2>
-          <label class="review-notes">Project notes<textarea id="review-notes" maxlength="2000" placeholder="Tell us about the project, delivery location or technical requirements."></textarea></label>
-          <button id="checkout">Submit for review →</button
+          <div class="review-selection" aria-live="polite">
+            <span>Selected for review</span>
+            <b data-review-selection-count>0 product lines</b>
+          </div>
+          <label class="review-notes"
+            >Project notes<textarea
+              id="review-notes"
+              maxlength="2000"
+              placeholder="Tell us about the project, delivery location or technical requirements."
+            ></textarea>
+          </label>
+          <button id="checkout" disabled>Select products to continue</button
           ><small
             >No pricing is shown in the customer storefront. The VTIC team will
-            review your complete selection and prepare the commercial response.</small
+            review only the products you select and prepare the commercial
+            response.</small
           >
           <div id="review-status" role="status" aria-live="polite"></div>
         </aside>
@@ -68,6 +79,7 @@
         <a href="/products">Browse product catalog →</a>
       </section>
     </main>
+    {% include '_storefront_footer.html' %}
     {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>

@@ -1,0 +1,61 @@
+<section class="vtic-footer-cta" aria-labelledby="footer-cta-title">
+  <div class="shell vtic-footer-cta__inner">
+    <div class="vtic-footer-cta__index" aria-hidden="true">
+      <span>PROJECT DESK</span><b>01</b>
+    </div>
+    <div class="vtic-footer-cta__copy">
+      <p>MAKE AN APPOINTMENT</p>
+      <h2 id="footer-cta-title">Put the right technology behind your next move.</h2>
+      <span>
+        Tell us what you need to improve, protect or build. VTIC will help
+        define the practical next step.
+      </span>
+    </div>
+    <div class="vtic-footer-cta__actions">
+      <a href="mailto:sales@vtic.com.ph?subject=VTIC%20Project%20Inquiry"
+        >Book an appointment <span>→</span></a
+      >
+      {% if session.get('customer_id') %}<a href="/storefront"
+        >Enter customer storefront</a
+      >{% else %}<a href="/register">Create customer account</a>{% endif %}
+    </div>
+  </div>
+</section>
+
+<footer class="vtic-footer">
+  <div class="shell vtic-footer__grid">
+    <div class="vtic-footer__company">
+      <img
+        src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+        alt="Visible Technologies International Corporation"
+      />
+      <p>
+        Technology systems designed around the way your organization needs to
+        work.
+      </p>
+      <small>FOLLOW VISIBLE</small>
+      <div class="vtic-footer__social" aria-label="Social channels">
+        <span aria-label="Facebook">f</span><span aria-label="Instagram">◎</span
+        ><span aria-label="LinkedIn">in</span>
+      </div>
+    </div>
+    <nav class="vtic-footer__navigation" aria-label="Footer navigation">
+      <b>Explore</b>
+      <a href="/">Who we are</a>
+      <a href="/storefront#solutions">Capabilities</a>
+      <a href="/storefront#partners">Technology partners</a>
+      <a href="/products">Product catalog</a>
+      <a href="/solution-advisor">VTIC Advisor</a>
+    </nav>
+    <address class="vtic-footer__contact">
+      <b>Project desk</b>
+      <div><span aria-hidden="true">●</span><p>GF Unit 102 Ridgewood Towers 3, C5 (Northbound), Ususan, Taguig City 1639</p></div>
+      <div><span aria-hidden="true">⌕</span><p><a href="tel:+63282446562">(02) 8244 6562</a><a href="tel:+639497402779">0949 740 2779</a><a href="tel:+639174655234">0917 465 5234</a></p></div>
+      <div><span aria-hidden="true">✉</span><p><a href="mailto:sales@vtic.com.ph">sales@vtic.com.ph</a></p></div>
+    </address>
+  </div>
+  <div class="shell vtic-footer__bottom">
+    <span>© 2026 Visible Technologies International Corporation</span>
+    <span>Power up your business. Be Visible.</span>
+  </div>
+</footer>

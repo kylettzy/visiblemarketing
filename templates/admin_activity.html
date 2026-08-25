@@ -4,21 +4,66 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Activity Logs | VTIC Systems</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_activity.css') }}" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_activity.css') }}"
+    />
+    <script src="{{ url_for('static', filename='js/admin_activity.js') }}" defer></script>
+    {% include '_theme.html' %}
   </head>
   <body>
-    <aside>
-      <a class="logo" href="/admin"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a>
-      <nav><a href="/admin"><span>01</span>Products</a><a href="/admin/manufacturers"><span>02</span>Manufacturers</a><a href="/admin/review-requests"><span>03</span>Review requests</a><a href="/admin/account"><span>04</span>My account</a><a href="/admin/accounts"><span>05</span>Manage accounts</a><a class="active" href="/admin/activity"><span>06</span>Activity logs</a><a href="/storefront" target="_blank"><span>07</span>View storefront</a></nav>
-      <div class="admin-user"><p>SUPERADMIN</p><b>{{ session.admin_username }}</b><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><button>Sign out</button></form></div>
-    </aside>
+    {% include '_admin_sidebar.html' %}
     <main>
-      <header><div><p>SECURITY / AUDIT TRAIL</p><h1>Activity logs</h1></div><span>Superadmin only</span></header>
-      <section class="log-table">
-        <div class="log-head"><span>Time</span><span>Actor</span><span>Action</span><span>Details</span><span>IP address</span></div>
-        {% for log in logs %}<article><time>{{ log.created_at }}</time><div><b>{{ log.actor_name }}</b><small>{{ log.actor_type }}</small></div><code>{{ log.action }}</code><span>{{ log.details or '—' }}</span><span>{{ log.ip_address or '—' }}</span></article>{% else %}<p class="empty">No activity has been recorded.</p>{% endfor %}
+      <header>
+        <div>
+          <p>SECURITY / AUDIT TRAIL</p>
+          <h1>Activity logs</h1>
+        </div>
+        <span>Superadmin only</span>
+      </header>
+      <section class="audit-overview" aria-label="Activity log categories">
+        <div><span>01</span><b>{{ log_groups.superadmin|length }}</b><small>Superadmin events</small></div>
+        <div><span>02</span><b>{{ log_groups.admin|length }}</b><small>Administrator events</small></div>
+        <div><span>03</span><b>{{ log_groups.customer|length }}</b><small>Customer events</small></div>
       </section>
+      <nav class="audit-filters" aria-label="Filter activity logs">
+        <button class="active" type="button" data-log-filter="all">All activity</button>
+        <button type="button" data-log-filter="superadmin">Superadmins</button>
+        <button type="button" data-log-filter="admin">Administrators</button>
+        <button type="button" data-log-filter="customer">Customers</button>
+      </nav>
+      {% set group_labels = {
+        'superadmin': ('01', 'Superadmin activity', 'Full access and security-sensitive events'),
+        'admin': ('02', 'Administrator activity', 'Catalog and customer-request operations'),
+        'customer': ('03', 'Customer activity', 'Storefront, advisor and review-request events')
+      } %}
+      {% for group_key in ['superadmin', 'admin', 'customer'] %}
+      {% set group = group_labels[group_key] %}
+      <section class="audit-group" data-log-group="{{ group_key }}">
+        <header class="audit-group-heading">
+          <div><span>{{ group[0] }}</span><div><h2>{{ group[1] }}</h2><p>{{ group[2] }}</p></div></div>
+          <b>{{ log_groups[group_key]|length }} events</b>
+        </header>
+        <div class="log-table">
+          <div class="log-head">
+            <span>Time</span><span>Actor</span><span>Action</span><span>Details</span><span>IP address</span>
+          </div>
+          {% for log in log_groups[group_key] %}
+          <article>
+            <time>{{ log.created_at }}</time>
+            <div><b>{{ log.actor_name }}</b><small>{{ 'Superadmin' if group_key == 'superadmin' else 'Administrator' if group_key == 'admin' else 'Customer' }}</small></div>
+            <code>{{ log.action }}</code><span>{{ log.details or '—' }}</span><span>{{ log.ip_address or '—' }}</span>
+          </article>
+          {% else %}
+          <p class="empty">No {{ group[1]|lower }} has been recorded.</p>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
     </main>
   </body>
 </html>

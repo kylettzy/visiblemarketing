@@ -18,47 +18,19 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/index.css') }}"
     />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
+    />
+    {% include '_theme.html' %}
   </head>
   <body>
-    <div class="utility-bar">
-      <div class="shell">
-        <span>Enterprise technology procurement and integration</span>
-        <div>
-          {% if session.customer_id %}<span>Signed in as {{ session.customer_name }}</span>
-          <form action="/logout" method="post" class="utility-logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form>{% else %}<span>Administrator preview</span>{% endif %}
-          <span>Metro Manila, Philippines</span>
-        </div>
-      </div>
-    </div>
-
-    <header class="site-header">
-      <div class="shell header-inner">
-        <a class="wordmark" href="/storefront" aria-label="Visible Technologies storefront">
-          <img
-            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-            alt="Visilile Technologies Intl Corp"
-          />
-        </a>
-        <nav aria-label="Primary navigation">
-          <a href="/products">Products</a>
-          <a href="/solution-advisor">AI Advisor</a>
-          <a href="#solutions">Solutions</a>
-          <a href="#partners">Partners</a>
-          <a href="mailto:sales@vtic.com.ph">Contact</a>
-        </nav>
-        <div class="header-actions">
-          <form class="search" action="/products">
-            <label class="sr-only" for="site-search">Search catalog</label>
-            <input id="site-search" name="q" placeholder="Search catalog" />
-            <button aria-label="Submit search">/</button>
-          </form>
-          <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
-          {% include '_admin_storefront_menu.html' %}
-        </div>
-      </div>
-    </header>
+    {% set storefront_section = 'home' %} {% include '_storefront_header.html'
+    %}
 
     <main>
       <section class="hero shell">
@@ -125,8 +97,28 @@
       <section class="trust-strip" id="partners">
         <div class="shell">
           <p>Solutions from leading technology manufacturers</p>
-          <div class="partner-list">
-            {% for partner in partners %}<a href="/products?brand={{ partner.name|urlencode }}">{% if partner.logo_url %}<img src="{{ partner.logo_url }}" alt="{{ partner.name }} logo" />{% else %}<b>{{ partner.name }}</b>{% endif %}</a>{% endfor %}
+          <div class="partner-list" aria-label="Technology partners">
+            <div class="partner-track">
+              <div class="partner-group">
+                {% for partner in partners %}<a
+                  href="/products?brand={{ partner.name|urlencode }}"
+                  >{% if partner.logo_url %}<img
+                    src="{{ partner.logo_url }}"
+                    alt="{{ partner.name }} logo"
+                  />{% else %}<b>{{ partner.name }}</b>{% endif %}</a
+                >{% endfor %}
+              </div>
+              <div class="partner-group" aria-hidden="true">
+                {% for partner in partners %}<a
+                  href="/products?brand={{ partner.name|urlencode }}"
+                  tabindex="-1"
+                  >{% if partner.logo_url %}<img
+                    src="{{ partner.logo_url }}"
+                    alt=""
+                  />{% else %}<b>{{ partner.name }}</b>{% endif %}</a
+                >{% endfor %}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -175,15 +167,22 @@
           <a href="/products">View full catalog →</a>
         </div>
         <div class="product-grid">
-          {% for product in products %} {% if loop.index <= 4
-          %}
+          {% for product in products %} {% if loop.index <= 4 %}
           <article class="product-card">
             <a class="product-media" href="/product/{{ product.id }}">
               {% if product.image_url %}<img
                 src="{{ product.image_url }}"
                 alt="{{ product.name }}"
+              />{% elif product.manufacturer_logo %}<img
+                class="brand-fallback"
+                src="{{ product.manufacturer_logo }}"
+                alt="{{ product.brand }} logo — product image not available"
               />{% else %}<span>{{ product.brand[:2]|upper }}</span>{% endif %}
-              {% if product.manufacturer_logo %}<span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>{% endif %}
+              {% if product.manufacturer_logo and product.image_url %}<span class="manufacturer-mark"
+                ><img
+                  src="{{ product.manufacturer_logo }}"
+                  alt="{{ product.brand }} logo" /></span
+              >{% endif %}
               <small>{{ product.brand }}</small>
             </a>
             <div class="product-body">
@@ -192,7 +191,20 @@
                 ><h3>{{ product.name }}</h3></a
               >
               <div class="product-meta">
-                <b>Request pricing</b><span>Reviewed by the VTIC team</span>
+                {% if can_view_prices %} {% if product.price is not none %}<b
+                  >₱{{ "{:,.2f}".format(product.price) }}</b
+                >
+                <span>{{ product.source }}</span>{% else %}<b
+                  >No internal price set</b
+                >
+                <span
+                  ><a
+                    href="{{ url_for('admin_product_edit', product_id=product.id) }}"
+                    >Add internal price →</a
+                  ></span
+                >{% endif %} {% else %} <b>Request pricing</b
+                ><span>Reviewed by the VTIC team</span>
+                {% endif %}
               </div>
               <button class="add" data-add="{{ product|tojson|forceescape }}">
                 Add to cart
@@ -203,53 +215,8 @@
         </div>
       </section>
 
-      <section class="project-cta shell">
-        <div>
-          <p class="kicker">PROJECT DESK</p>
-          <h2>Planning a rollout or refresh?</h2>
-        </div>
-        <p>
-          Send us your requirements. Our team will prepare a compatible bill of
-          materials and commercial proposal.
-        </p>
-        <a class="button button-light" href="mailto:sales@vtic.com.ph"
-          >Request a proposal <span>→</span></a
-        >
-      </section>
     </main>
-
-    <footer>
-      <div class="shell footer-grid">
-        <div>
-          <a class="wordmark inverse" href="/storefront">
-            <img
-              src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-              alt="Visilile Technologies Intl Corp"
-            />
-          </a>
-          <p>Enterprise technology, delivered responsibly.</p>
-        </div>
-        <div>
-          <b>Catalog</b><a href="/products?category=Wireless">Networking</a
-          ><a href="/products?category=Cybersecurity">Cybersecurity</a
-          ><a href="/products?category=CCTV">Physical security</a>
-        </div>
-        <div>
-          <b>Company</b><a href="#solutions">Solutions</a
-          ><a href="#partners">Partners</a
-          ><a href="mailto:sales@vtic.com.ph">Contact</a>
-        </div>
-        <div>
-          <b>Project inquiries</b
-          ><a href="mailto:sales@vtic.com.ph">sales@vtic.com.ph</a
-          ><span>Mon–Fri, 8:30–17:30 PHT</span>
-        </div>
-      </div>
-      <div class="shell copyright">
-        <span>© 2026 VTIC Systems. All rights reserved.</span
-        ><span>Philippines</span>
-      </div>
-    </footer>
+    {% include '_storefront_footer.html' %}
     <div id="toast" role="status">Added to cart</div>
     {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>

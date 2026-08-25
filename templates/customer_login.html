@@ -3,29 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Customer Sign In | VTIC Systems</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Customer Access | VTIC</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    {% include '_theme.html' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/customer_login.css') }}" />
   </head>
   <body>
-    <main>
-      <section class="brand-panel">
-        <a href="/"><img src="{{ url_for('static', filename='images/vtic-logo-t.png') }}" alt="Visible Technologies Intl Corp" /></a>
-        <div><p>VTIC CUSTOMER ACCESS</p><h1>Enterprise technology, one account.</h1><span>Sign in to browse the product catalog, build your procurement cart and request project pricing.</span></div>
-        <small>Secure customer storefront</small>
+    <main class="access-shell customer-shell">
+      <section class="brand-panel" aria-labelledby="access-title">
+        <a class="brand-mark" href="/" aria-label="Return to VTIC home"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" /></a>
+        <div class="brand-message">
+          <p class="eyebrow"><span></span> VTIC CUSTOMER NETWORK</p>
+          <h1 id="access-title">Technology selected<br />with confidence.</h1>
+          <p class="brand-copy">Explore enterprise technology, build a procurement shortlist and submit one clear request to the VTIC solutions team.</p>
+          <dl class="system-metrics" aria-label="Storefront capabilities">
+            <div><dt>1K+</dt><dd>Catalog products</dd></div>
+            <div><dt>40+</dt><dd>Technology partners</dd></div>
+            <div><dt>VTIC</dt><dd>Guided solutions</dd></div>
+          </dl>
+        </div>
+        <div class="system-status"><span class="status-dot"></span><span>CUSTOMER STOREFRONT</span><strong>AVAILABLE</strong></div>
       </section>
-      <section class="login-panel">
+      <section class="login-panel" aria-label="Customer sign in">
         <div class="login-box">
-          <p>CUSTOMER PORTAL / SIGN IN</p><h2>Welcome back.</h2><span>Use your customer account to access the storefront.</span>
-          {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+          <header>
+            <p class="portal-label">CUSTOMER ACCESS / 02</p>
+            <h2>Continue to VTIC.</h2>
+            <span>Sign in to access your catalog, cart and requests.</span>
+          </header>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="alert {{ category }}" role="alert">{{ message }}</div>{% endfor %}
+          {% endwith %}
           <form method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <label>Email address<input type="email" name="email" autocomplete="email" required autofocus /></label>
-            <label>Password<div class="password-control"><input type="password" name="password" autocomplete="current-password" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
-            <button>Sign in to storefront →</button>
+            <label><span>Email address</span><input type="email" name="email" autocomplete="email" placeholder="name@company.com" required autofocus /></label>
+            <label><span>Password</span><div class="password-control"><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
+            <label class="remember-session"><input type="checkbox" name="remember_me" value="1" /><span><b>Keep me signed in</b><small>Stay signed in on this device for 30 days.</small></span></label>
+            <button class="submit-button" type="submit">Open customer storefront <span>→</span></button>
           </form>
-          <p class="account-link">New to VTIC? <a href="/register">Create a customer account</a></p>
-          <a class="admin-entry" href="/admin/login">Administrator sign in</a>
+          <div class="account-actions"><p>New to VTIC? <a href="/register">Create an account →</a></p><a class="admin-entry" href="/admin/login">Administrator access</a></div>
+          <footer class="login-footer"><a href="/">← Return to company website</a><span>Secure customer access</span></footer>
         </div>
       </section>
     </main>

@@ -1,0 +1,99 @@
+{% set catalog_open = request.path == '/admin' or
+request.path.startswith('/admin/products') or
+request.path.startswith('/admin/manufacturers') %} {% set requests_open =
+request.path.startswith('/admin/review-requests') or request.path.startswith('/admin/calendar') or request.path.startswith('/admin/catered-customers') %} {% set account_open =
+request.path.startswith('/admin/account') or
+request.path.startswith('/admin/activity') %}
+
+<aside class="admin-sidebar">
+  <a class="logo" href="/admin" aria-label="VTIC admin home">
+    <img
+      src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+      alt="VTIC"
+    />
+  </a>
+  <nav class="admin-navigation" aria-label="Administrator navigation">
+    <details class="admin-nav-group" {% if catalog_open %}open{% endif %}>
+      <summary>
+        <span class="admin-nav-icon" aria-hidden="true">▦</span
+        ><span>Catalog</span><i aria-hidden="true"></i>
+      </summary>
+      <div class="admin-nav-children">
+        <a
+          class="{{ 'active' if request.path.startswith('/admin/manufacturers') else '' }}"
+          href="/admin/manufacturers"
+          >Manufacturers</a
+        >
+        <a
+          class="{{ 'active' if request.path == '/admin' or request.path.startswith('/admin/products') else '' }}"
+          href="/admin"
+          >Products</a
+        >
+      </div>
+    </details>
+    <details class="admin-nav-group" {% if requests_open %}open{% endif %}>
+      <summary>
+        <span class="admin-nav-icon" aria-hidden="true">◎</span
+        ><span>Customer requests</span><i aria-hidden="true"></i>
+      </summary>
+      <div class="admin-nav-children">
+        <a
+          class="{{ 'active' if request.path.startswith('/admin/review-requests') else '' }}"
+          href="/admin/review-requests"
+          >Review requests</a
+        >
+        <a
+          class="{{ 'active' if request.path.startswith('/admin/calendar') else '' }}"
+          href="/admin/calendar"
+          >Calendar</a
+        >
+        {% if session.admin_role in ['admin_marketing', 'superadmin'] %}
+        <a
+          class="{{ 'active' if request.path.startswith('/admin/catered-customers') else '' }}"
+          href="/admin/catered-customers"
+          >Catered customers<b class="admin-nav-count">{{ catered_customer_count }}</b></a
+        >
+        {% endif %}
+      </div>
+    </details>
+    <details class="admin-nav-group" {% if account_open %}open{% endif %}>
+      <summary>
+        <span class="admin-nav-icon" aria-hidden="true">◇</span
+        ><span>Manage account</span><i aria-hidden="true"></i>
+      </summary>
+      <div class="admin-nav-children">
+        <a
+          class="{{ 'active' if request.path == '/admin/account' else '' }}"
+          href="/admin/account"
+          >Account settings</a
+        >
+        {% if session.admin_role == 'superadmin' %}
+        <a
+          class="{{ 'active' if request.path.startswith('/admin/accounts') else '' }}"
+          href="/admin/accounts"
+          >Manage accounts</a
+        >
+        <a
+          class="{{ 'active' if request.path.startswith('/admin/activity') else '' }}"
+          href="/admin/activity"
+          >Activity logs</a
+        >
+        {% endif %}
+        <form class="admin-nav-signout" action="/admin/logout" method="post" data-confirm-signout>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <button type="submit">Sign out</button>
+        </form>
+      </div>
+    </details>
+    <a class="admin-nav-home" href="/storefront" target="_blank">
+      <span class="admin-nav-icon" aria-hidden="true">↗</span
+      ><span>View storefront</span>
+    </a>
+  </nav>
+  <div class="admin-sidebar-footer">
+    <span>Signed in as</span>
+    <p>{{ session.admin_username }}</p>
+    <small>{{ session.admin_role }}</small>
+  </div>
+  <script src="{{ url_for('static', filename='js/signout-confirm.js') }}" defer></script>
+</aside>

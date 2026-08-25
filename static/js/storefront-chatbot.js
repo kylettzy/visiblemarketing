@@ -7,7 +7,26 @@
   const messages = widget.querySelector("[data-chat-messages]");
   const form = widget.querySelector("[data-chat-form]");
   const input = widget.querySelector("[data-chat-input]");
+  const hideButton = widget.querySelector("[data-chat-hide]");
+  const showButton = widget.querySelector("[data-chat-show]");
+  const minimizedStorageKey = "vtic-storefront-chat-minimized";
   let conversationId = null;
+
+  const setMinimized = (minimized) => {
+    widget.classList.toggle("is-minimized", minimized);
+    showButton.hidden = !minimized;
+    try {
+      localStorage.setItem(minimizedStorageKey, minimized ? "true" : "false");
+    } catch {
+      // The control still works when browser storage is unavailable.
+    }
+  };
+
+  try {
+    setMinimized(localStorage.getItem(minimizedStorageKey) === "true");
+  } catch {
+    setMinimized(false);
+  }
 
   const openChat = () => {
     panel.hidden = false;
@@ -31,21 +50,41 @@
   };
 
   launcher.addEventListener("click", openChat);
-  widget.querySelector("[data-chat-close]").addEventListener("click", closeChat);
+  hideButton.addEventListener("click", () => setMinimized(true));
+  showButton.addEventListener("click", () => setMinimized(false));
+  widget
+    .querySelector("[data-chat-close]")
+    .addEventListener("click", closeChat);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !panel.hidden) closeChat();
   });
 
-  widget.querySelector("[data-chat-add-product]")?.addEventListener("click", () => {
-    const product = JSON.parse(widget.dataset.product);
-    const cart = getCart();
-    const existingItem = cart.find((item) => item.id === product.id);
-    if (existingItem) existingItem.qty += 1;
-    else cart.push({ ...product, qty: 1 });
-    saveCart(cart);
-    showToast(`${product.name} added to cart`);
-    appendMessage(`${product.name} was added to your cart.`, "assistant");
+  input.addEventListener("keydown", (event) => {
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.isComposing ||
+      input.disabled
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    form.requestSubmit();
   });
+
+  widget
+    .querySelector("[data-chat-add-product]")
+    ?.addEventListener("click", () => {
+      const product = JSON.parse(widget.dataset.product);
+      const cart = getCart();
+      const existingItem = cart.find((item) => item.id === product.id);
+      if (existingItem) existingItem.qty += 1;
+      else cart.push({ ...product, qty: 1 });
+      saveCart(cart);
+      showToast(`${product.name} added to cart`);
+      appendMessage(`${product.name} was added to your cart.`, "assistant");
+    });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -75,10 +114,16 @@
       const result = await response.json();
       conversationId = result.conversation_id || conversationId;
       pending.remove();
-      appendMessage(result.answer || result.error || "No response was received.", response.ok ? "assistant" : "error");
+      appendMessage(
+        result.answer || result.error || "No response was received.",
+        response.ok ? "assistant" : "error",
+      );
     } catch {
       pending.remove();
-      appendMessage("The assistant could not connect. Please try again.", "error");
+      appendMessage(
+        "The assistant could not connect. Please try again.",
+        "error",
+      );
     } finally {
       input.disabled = false;
       sendButton.disabled = false;

@@ -16,6 +16,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/landing.css') }}"
     />
+    {% include '_theme.html' %}
   </head>
   <body>
     <header class="site-header">
@@ -35,7 +36,9 @@
         <div class="account-actions">
           {% if session.get('customer_id') %}
           <span>Welcome, {{ session.customer_name }}</span>
-          <a class="button button--solid" href="/storefront">Enter storefront</a>
+          <a class="button button--solid" href="/storefront"
+            >Enter storefront</a
+          >
           {% else %}
           <a class="sign-in" href="/login">Sign in</a>
           <a class="button button--solid" href="/register">Create account</a>
@@ -46,10 +49,14 @@
 
     <main>
       <section class="hero">
+        <div class="hero-glow hero-glow--left" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow--right" aria-hidden="true"></div>
         <div class="shell hero-grid">
           <div class="hero-copy">
             <p class="eyebrow">PHILIPPINE ENTERPRISE TECHNOLOGY PARTNER</p>
-            <h1>Technology made<br />visible. Solutions<br />made practical.</h1>
+            <h1>
+              Transforming your Businesses<br /><span>through innovative IT Solutions!</span>
+            </h1>
             <p class="hero-intro">
               Visible Technologies International Corporation helps organizations
               plan, source and deploy dependable IT systems—from network
@@ -58,27 +65,60 @@
             </p>
             <div class="hero-actions">
               {% if session.get('customer_id') %}
-              <a class="button button--accent" href="/storefront">Browse solutions</a>
+              <a class="button button--accent" href="/storefront"
+                >Browse solutions</a
+              >
               {% else %}
-              <a class="button button--accent" href="/register">Create customer account</a>
-              <a class="text-link" href="/login">Already registered? Sign in →</a>
+              <a class="button button--accent" href="/register"
+                >Create customer account</a
+              >
+              <a class="text-link" href="/login"
+                >Already registered? Sign in →</a
+              >
               {% endif %}
             </div>
           </div>
-          <div class="hero-system" aria-label="VTIC solution disciplines">
-            <div class="system-heading">
-              <span>VTIC / SOLUTION MAP</span>
-              <b>One accountable technology partner</b>
+          <div
+            class="hero-architecture"
+            aria-label="VTIC delivery architecture"
+          >
+            <span class="architecture-label">VTIC / DELIVERY ARCHITECTURE</span>
+            <div class="architecture-ring architecture-ring--outer"></div>
+            <div class="architecture-ring architecture-ring--middle"></div>
+            <div class="architecture-core">
+              <small>ONE ACCOUNTABLE PARTNER</small>
+              <img
+                src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+                alt="Visible Technologies International Corporation"
+              />
+              <span>DESIGN · SOURCE · DEPLOY · SUPPORT</span>
             </div>
-            <div class="system-core">
-              <span>VISIBLE</span>
-              <strong>VT</strong>
-              <small>DESIGN · SOURCE · DEPLOY · SUPPORT</small>
+            <div class="architecture-node architecture-node--network">
+              <i>01</i><b>Networks</b>
             </div>
-            <div class="system-node node--one"><i>01</i><b>Infrastructure</b></div>
-            <div class="system-node node--two"><i>02</i><b>Cybersecurity</b></div>
-            <div class="system-node node--three"><i>03</i><b>Communications</b></div>
-            <div class="system-node node--four"><i>04</i><b>Physical security</b></div>
+            <div class="architecture-node architecture-node--security">
+              <i>02</i><b>Security</b>
+            </div>
+            <div class="architecture-node architecture-node--cloud">
+              <i>03</i><b>Cloud</b>
+            </div>
+            <div class="architecture-node architecture-node--physical">
+              <i>04</i><b>Physical</b>
+            </div>
+          </div>
+        </div>
+        <div class="hero-metrics shell" aria-label="VTIC service commitments">
+          <div>
+            <span>17+</span>
+            <p>YEARS OF INDUSTRY LEADERSHIP</p>
+          </div>
+          <div>
+            <span>06</span>
+            <p>CONNECTED SOLUTION DISCIPLINES</p>
+          </div>
+          <div>
+            <span>01</span>
+            <p>ACCOUNTABLE DELIVERY PARTNER</p>
           </div>
         </div>
         <div class="hero-strip">
@@ -101,16 +141,21 @@
             <p>
               Visible is an IT solutions company and your trusted partner in
               navigating the digital landscape. From tailored software
-              development to cutting-edge cybersecurity and transformative
-              cloud services, we deliver seamless technology solutions that
-              drive efficiency, productivity and growth for your organization.
+              development to cutting-edge cybersecurity and transformative cloud
+              services, we deliver seamless technology solutions that drive
+              efficiency, productivity and growth for your organization.
             </p>
-            <a href="mailto:sales@vtic.com.ph">Start a conversation with VTIC →</a>
+            <a href="mailto:sales@vtic.com.ph"
+              >Start a conversation with VTIC →</a
+            >
           </div>
         </div>
         <div class="vision-mission">
           <article>
-            <div class="statement-icon statement-icon--vision" aria-hidden="true">
+            <div
+              class="statement-icon statement-icon--vision"
+              aria-hidden="true"
+            >
               <span></span>
             </div>
             <p class="statement-label">OUR DIRECTION / 01</p>
@@ -123,7 +168,10 @@
             </p>
           </article>
           <article>
-            <div class="statement-icon statement-icon--mission" aria-hidden="true">
+            <div
+              class="statement-icon statement-icon--mission"
+              aria-hidden="true"
+            >
               <span></span>
             </div>
             <p class="statement-label">OUR PURPOSE / 02</p>
@@ -144,37 +192,113 @@
       <section class="capabilities" id="capabilities">
         <div class="shell">
           <div class="section-index section-index--light">
-            <span>02 / WHAT WE DELIVER</span><div></div>
+            <span>02 / WHAT WE DELIVER</span>
+            <div></div>
           </div>
           <div class="capability-heading">
             <h2>Connected expertise.<br />One delivery team.</h2>
-            <p>Explore the systems VTIC can design, source and support for your organization.</p>
+            <p>
+              Explore the systems VTIC can design, source and support for your
+              organization.
+            </p>
           </div>
           <div class="capability-grid">
-            <article><span>01</span><h3>Network & infrastructure</h3><p>Routing, switching, wireless, structured cabling, fiber, racks and data-center foundations.</p><small>CONNECTIVITY / PERFORMANCE</small></article>
-            <article><span>02</span><h3>Cybersecurity</h3><p>Perimeter protection, endpoint security, secure access and layered enterprise defense.</p><small>PROTECTION / RESILIENCE</small></article>
-            <article><span>03</span><h3>Communication systems</h3><p>Business telephony, unified communications and collaboration platforms.</p><small>VOICE / COLLABORATION</small></article>
-            <article><span>04</span><h3>Physical security</h3><p>CCTV, video management and integrated site-security technologies.</p><small>VISIBILITY / CONTROL</small></article>
-            <article><span>05</span><h3>Cloud & compute</h3><p>Servers, storage, virtualization, cloud services and resilient workloads.</p><small>CAPACITY / SCALE</small></article>
-            <article class="capability-cta"><p>Not sure where to begin?</p><h3>Describe the challenge. We’ll help define the system.</h3>{% if session.get('customer_id') %}<a href="/solution-advisor">Open AI Solution Advisor →</a>{% else %}<a href="/register">Create an account to begin →</a>{% endif %}</article>
+            <article>
+              <span>01</span>
+              <h3>Network & infrastructure</h3>
+              <p>
+                Routing, switching, wireless, structured cabling, fiber, racks
+                and data-center foundations.
+              </p>
+              <small>CONNECTIVITY / PERFORMANCE</small>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>Cybersecurity</h3>
+              <p>
+                Perimeter protection, endpoint security, secure access and
+                layered enterprise defense.
+              </p>
+              <small>PROTECTION / RESILIENCE</small>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Communication systems</h3>
+              <p>
+                Business telephony, unified communications and collaboration
+                platforms.
+              </p>
+              <small>VOICE / COLLABORATION</small>
+            </article>
+            <article>
+              <span>04</span>
+              <h3>Physical security</h3>
+              <p>
+                CCTV, video management and integrated site-security
+                technologies.
+              </p>
+              <small>VISIBILITY / CONTROL</small>
+            </article>
+            <article>
+              <span>05</span>
+              <h3>Cloud & compute</h3>
+              <p>
+                Servers, storage, virtualization, cloud services and resilient
+                workloads.
+              </p>
+              <small>CAPACITY / SCALE</small>
+            </article>
+            <article class="capability-cta">
+              <p>Not sure where to begin?</p>
+              <h3>Describe the challenge. We’ll help define the system.</h3>
+              {% if session.get('customer_id') %}<a href="/solution-advisor"
+                >Open VTIC Advisor →</a
+              >{% else %}<a href="/register">Create an account to begin →</a>{%
+              endif %}
+            </article>
           </div>
         </div>
       </section>
 
       <section class="approach shell" id="approach">
-        <div class="section-index"><span>03 / HOW WE WORK</span><div></div></div>
+        <div class="section-index">
+          <span>03 / HOW WE WORK</span>
+          <div></div>
+        </div>
         <div class="approach-grid">
-          <div><p>DISCOVERY</p><strong>Understand the environment and define the requirement.</strong></div>
-          <div><p>ENGINEERING</p><strong>Develop the architecture and select compatible products.</strong></div>
-          <div><p>COMMERCIAL REVIEW</p><strong>Validate quantities, availability, scope and project pricing.</strong></div>
-          <div><p>DELIVERY</p><strong>Coordinate sourcing, implementation and ongoing support.</strong></div>
+          <div>
+            <p>DISCOVERY</p>
+            <strong
+              >Understand the environment and define the requirement.</strong
+            >
+          </div>
+          <div>
+            <p>ENGINEERING</p>
+            <strong
+              >Develop the architecture and select compatible products.</strong
+            >
+          </div>
+          <div>
+            <p>COMMERCIAL REVIEW</p>
+            <strong
+              >Validate quantities, availability, scope and project
+              pricing.</strong
+            >
+          </div>
+          <div>
+            <p>DELIVERY</p>
+            <strong
+              >Coordinate sourcing, implementation and ongoing support.</strong
+            >
+          </div>
         </div>
       </section>
 
       <section class="leadership" id="leadership">
         <div class="shell">
           <div class="section-index">
-            <span>04 / LEADERSHIP</span><div></div>
+            <span>04 / LEADERSHIP</span>
+            <div></div>
           </div>
           <div class="leadership-grid">
             <div class="leadership-portrait">
@@ -191,7 +315,8 @@
               <p class="leadership-eyebrow">MEET OUR CEO</p>
               <h2>Resil B.<br />Fuscablo</h2>
               <p class="leadership-role">
-                Chief Executive Officer<br />Visible Technologies International Corporation
+                Chief Executive Officer<br />Visible Technologies International
+                Corporation
               </p>
               <div class="leadership-biography">
                 <p>
@@ -220,6 +345,70 @@
         </div>
       </section>
 
+      <section class="landing-faq" id="faq">
+        <div class="shell faq-layout">
+          <div class="faq-heading">
+            <p class="eyebrow">PROJECT QUESTIONS / ANSWERED</p>
+            <h2>Start with the requirement.<br />We’ll make the path clear.</h2>
+            <span>
+              VTIC helps clients move from an operational concern to a
+              practical, commercially reviewed technology solution.
+            </span>
+          </div>
+          <div class="faq-list">
+            <details open>
+              <summary>
+                <i>01</i
+                ><span
+                  >Can VTIC recommend products for an existing
+                  environment?</span
+                ><b>+</b>
+              </summary>
+              <p>
+                Yes. Share the current setup, constraints and intended outcome.
+                Our team can identify compatible products and prepare options
+                for commercial review.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <i>02</i
+                ><span>Why are storefront prices submitted for review?</span
+                ><b>+</b>
+              </summary>
+              <p>
+                Enterprise equipment pricing depends on configuration,
+                quantities, licensing, availability and project scope. Review
+                ensures that the proposed solution is accurate.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <i>03</i
+                ><span
+                  >Can multiple technology disciplines be included in one
+                  project?</span
+                ><b>+</b>
+              </summary>
+              <p>
+                Yes. VTIC can coordinate networking, cybersecurity, cloud,
+                communications and physical security as one integrated
+                requirement.
+              </p>
+            </details>
+            <details>
+              <summary>
+                <i>04</i><span>How do we begin a consultation?</span><b>+</b>
+              </summary>
+              <p>
+                Create a customer account, use the VTIC Advisor or
+                contact the project desk. We will help structure the next step.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
       <section class="portal-callout">
         <div class="shell">
           <div class="appointment-index">
@@ -228,11 +417,21 @@
           <div class="appointment-copy">
             <p>MAKE AN APPOINTMENT</p>
             <h2>Put the right technology<br />behind your next move.</h2>
-            <span>Tell us what you need to improve, protect or build. VTIC will help define the practical next step.</span>
+            <span
+              >Tell us what you need to improve, protect or build. VTIC will
+              help define the practical next step.</span
+            >
           </div>
           <div class="appointment-actions">
-            <a class="button button--appointment" href="mailto:sales@vtic.ph?subject=VTIC%20Appointment%20Request">Book an appointment →</a>
-            {% if session.get('customer_id') %}<a href="/storefront">Enter customer storefront</a>{% else %}<a href="/register">Create customer account</a>{% endif %}
+            <a
+              class="button button--appointment"
+              href="mailto:sales@vtic.ph?subject=VTIC%20Appointment%20Request"
+              >Book an appointment →</a
+            >
+            {% if session.get('customer_id') %}<a href="/storefront"
+              >Enter customer storefront</a
+            >{% else %}<a href="/register">Create customer account</a>{% endif
+            %}
           </div>
         </div>
       </section>
@@ -241,10 +440,19 @@
     <footer>
       <div class="shell footer-grid">
         <div class="footer-company">
-          <img src="{{ url_for('static', filename='images/vtic-logo-t.png') }}" alt="Visible Technologies International Corporation" />
-          <p>Technology systems designed around the way your organization needs to work.</p>
+          <img
+            src="{{ url_for('static', filename='images/vtic-logo-t.png') }}"
+            alt="Visible Technologies International Corporation"
+          />
+          <p>
+            Technology systems designed around the way your organization needs
+            to work.
+          </p>
           <small>FOLLOW VISIBLE</small>
-          <div class="social-links" aria-label="Visible Technologies social channels">
+          <div
+            class="social-links"
+            aria-label="Visible Technologies social channels"
+          >
             <span title="Facebook" aria-label="Facebook">f</span>
             <span title="Instagram" aria-label="Instagram">◎</span>
             <span title="LinkedIn" aria-label="LinkedIn">in</span>
@@ -259,12 +467,31 @@
         </div>
         <address class="footer-contact">
           <b>Project desk</b>
-          <div><span class="contact-icon" aria-hidden="true">●</span><p>GF Unit 102 Ridgewood Towers 3, C5 (Northbound), Ususan, Taguig City 1639</p></div>
-          <div><span class="contact-icon" aria-hidden="true">⌕</span><p><a href="tel:+63282446562">(02) 8244 6562</a><a href="tel:+639497402779">0949 740 2779</a><a href="tel:+639174655234">0917 465 5234</a></p></div>
-          <div><span class="contact-icon" aria-hidden="true">✉</span><p><a href="mailto:sales@vtic.ph">sales@vtic.ph</a></p></div>
+          <div>
+            <span class="contact-icon" aria-hidden="true">●</span>
+            <p>
+              GF Unit 102 Ridgewood Towers 3, C5 (Northbound), Ususan, Taguig
+              City 1639
+            </p>
+          </div>
+          <div>
+            <span class="contact-icon" aria-hidden="true">⌕</span>
+            <p>
+              <a href="tel:+63282446562">(02) 8244 6562</a
+              ><a href="tel:+639497402779">0949 740 2779</a
+              ><a href="tel:+639174655234">0917 465 5234</a>
+            </p>
+          </div>
+          <div>
+            <span class="contact-icon" aria-hidden="true">✉</span>
+            <p><a href="mailto:sales@vtic.ph">sales@vtic.ph</a></p>
+          </div>
         </address>
       </div>
-      <div class="shell footer-bottom"><span>© 2026 Visible Technologies International Corporation</span><span>Power up your business. Be Visible.</span></div>
+      <div class="shell footer-bottom">
+        <span>© 2026 Visible Technologies International Corporation</span
+        ><span>Power up your business. Be Visible.</span>
+      </div>
     </footer>
   </body>
 </html>

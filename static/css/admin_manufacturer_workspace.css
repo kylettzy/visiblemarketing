@@ -163,6 +163,45 @@
   color: var(--muted);
   font: 9px "DM Mono";
 }
+.product-batch-toolbar {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
+  background: #fafbfb;
+}
+.product-batch-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font: 9px "DM Mono";
+  cursor: pointer;
+}
+.product-batch-toolbar button {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid #c54d58;
+  background: #fff;
+  color: #9f2f38;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.product-batch-toolbar button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+.product-batch-toolbar input,
+.workspace-product-select input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
 .workspace-product {
   border-bottom: 1px solid var(--line);
 }
@@ -172,11 +211,16 @@
 .workspace-product > summary {
   min-height: 72px;
   display: grid;
-  grid-template-columns: 1fr 150px 90px;
+  grid-template-columns: 24px 1fr 150px 90px;
   gap: 18px;
   align-items: center;
   padding: 10px 20px;
   list-style: none;
+  cursor: pointer;
+}
+.workspace-product-select {
+  display: grid;
+  place-items: center;
   cursor: pointer;
 }
 .workspace-product > summary::-webkit-details-marker {
@@ -250,6 +294,50 @@
 .quick-edit-grid .wide {
   grid-column: 1 / -1;
 }
+.quick-image-editor {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+}
+.quick-image-preview {
+  display: grid;
+  width: 150px;
+  height: 120px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font: 15px "DM Mono";
+}
+.quick-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.quick-image-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+.quick-image-fields small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 400;
+}
+.quick-image-fields .quick-remove-image {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 8px;
+}
+.quick-image-fields .quick-remove-image input {
+  width: auto;
+}
 .quick-edit-grid input,
 .quick-edit-grid select,
 .quick-edit-grid textarea {
@@ -321,6 +409,17 @@
     grid-column: 1 / -1;
   }
 }
+
+@media (max-width: 650px) {
+  .quick-image-editor,
+  .quick-image-fields {
+    grid-template-columns: 1fr;
+  }
+  .quick-image-preview {
+    width: 100%;
+    height: 180px;
+  }
+}
 @media (max-width: 650px) {
   .csv-import form,
   .workspace-card > header {
@@ -328,7 +427,11 @@
     flex-direction: column;
   }
   .workspace-product > summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: 24px 1fr;
+  }
+  .workspace-product > summary > span,
+  .workspace-product > summary > em {
+    grid-column: 2;
   }
   .workspace-product > summary > em {
     text-align: left;
@@ -338,5 +441,9 @@
   }
   .quick-edit-grid .wide {
     grid-column: auto;
+  }
+  .product-batch-toolbar {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

@@ -4,6 +4,14 @@ import csv
 import io
 import secrets
 import sqlite3
+import urllib.error
+import urllib.parse
+import urllib.request
+import calendar
+import smtplib
+import re
+from email.message import EmailMessage
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 
@@ -24,6 +32,11 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
+try:
+    from authlib.integrations.flask_client import OAuth
+except ImportError:
+    OAuth = None
+
 APP_ROOT = Path(__file__).resolve().parent
 load_dotenv(APP_ROOT / ".env")
 
@@ -43,10 +56,48 @@ DATABASE = Path(os.environ.get("VTIC_DATABASE_PATH", RUNTIME_ROOT / "vtic_store.
 UPLOAD_ROOT = RUNTIME_ROOT / "uploads"
 MANUFACTURER_UPLOADS = UPLOAD_ROOT / "manufacturers"
 PRODUCT_UPLOADS = UPLOAD_ROOT / "products"
+ACCOUNT_UPLOADS = UPLOAD_ROOT / "accounts"
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+app.permanent_session_lifetime = timedelta(days=30)
 MANUFACTURER_UPLOADS.mkdir(parents=True, exist_ok=True)
 PRODUCT_UPLOADS.mkdir(parents=True, exist_ok=True)
+ACCOUNT_UPLOADS.mkdir(parents=True, exist_ok=True)
+
+oauth = OAuth(app) if OAuth else None
+OAUTH_PROVIDERS = {
+    "google": {
+        "label": "Google",
+        "client_id": os.environ.get("GOOGLE_CLIENT_ID", "").strip(),
+        "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET", "").strip(),
+        "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration",
+        "client_kwargs": {"scope": "openid email profile"},
+    },
+    "facebook": {
+        "label": "Facebook",
+        "client_id": os.environ.get("FACEBOOK_CLIENT_ID", "").strip(),
+        "client_secret": os.environ.get("FACEBOOK_CLIENT_SECRET", "").strip(),
+        "access_token_url": "https://graph.facebook.com/oauth/access_token",
+        "authorize_url": "https://www.facebook.com/dialog/oauth",
+        "api_base_url": "https://graph.facebook.com/",
+        "client_kwargs": {"scope": "email,public_profile"},
+    },
+    "apple": {
+        "label": "Apple",
+        "client_id": os.environ.get("APPLE_CLIENT_ID", "").strip(),
+        "client_secret": os.environ.get("APPLE_CLIENT_SECRET", "").strip(),
+        "server_metadata_url": "https://appleid.apple.com/.well-known/openid-configuration",
+        "client_kwargs": {"scope": "openid email name"},
+    },
+}
+
+if oauth:
+    for provider_name, provider_config in OAUTH_PROVIDERS.items():
+        if provider_config["client_id"] and provider_config["client_secret"]:
+            oauth.register(
+                name=provider_name,
+                **{key: value for key, value in provider_config.items() if key != "label"},
+            )
 
 
 @app.route("/static/<path:filename>", endpoint="static")
@@ -59,6 +110,7 @@ def uploaded_file(kind, filename):
     upload_directories = {
         "manufacturers": MANUFACTURER_UPLOADS,
         "products": PRODUCT_UPLOADS,
+        "accounts": ACCOUNT_UPLOADS,
     }
     directory = upload_directories.get(kind)
     if directory is None:
@@ -76,6 +128,61 @@ def rows_to_dicts(rows):
     return [dict(row) for row in rows]
 
 
+def parse_optional_csv_price(value):
+    """Return a Philippine currency CSV price or None when blank/invalid."""
+    normalized = (
+        str(value or "")
+        .replace("\ufeff", "")
+        .replace("\u00a0", " ")
+        .replace("\u202f", " ")
+        .replace("₱", "")
+        .replace("PHP", "")
+        .replace("Php", "")
+        .replace("php", "")
+        .replace(",", "")
+        .strip()
+    )
+    # Some Windows/ANSI CSV exports cannot encode the peso sign and replace
+    # only that leading currency character with "?" (for example ?83,700.00).
+    if normalized.startswith("?"):
+        normalized = normalized[1:].strip()
+    blank_values = {
+        "",
+        "-",
+        "--",
+        "n/a",
+        "na",
+        "none",
+        "null",
+        "tbd",
+        "project pricing",
+        "for quotation",
+        "request quote",
+    }
+    if normalized.casefold() in blank_values:
+        return None
+    try:
+        price = float(normalized)
+    except ValueError:
+        return None
+    return price if price >= 0 else None
+
+
+def password_strength_error(password):
+    """Return a user-facing password rule error, or None when it is strong."""
+    if len(password) < 12:
+        return "Password must contain at least 12 characters."
+    if not re.search(r"[A-Z]", password):
+        return "Password must include at least one uppercase letter."
+    if not re.search(r"[a-z]", password):
+        return "Password must include at least one lowercase letter."
+    if not re.search(r"\d", password):
+        return "Password must include at least one number."
+    if not re.search(r"[^A-Za-z0-9]", password):
+        return "Password must include at least one symbol."
+    return None
+
+
 def hide_customer_pricing(products):
     """Return storefront-safe products without confidential commercial data."""
     safe_products = []
@@ -85,6 +192,11 @@ def hide_customer_pricing(products):
         safe_product["source"] = "Pricing available after VTIC review"
         safe_products.append(safe_product)
     return safe_products
+
+
+def storefront_products_for_viewer(products):
+    """Keep commercial data for staff previews and hide it from customers."""
+    return products if session.get("admin_id") else hide_customer_pricing(products)
 
 
 def add_manufacturer_logos(products):
@@ -105,6 +217,15 @@ def login_required(view):
     def wrapped_view(*args, **kwargs):
         if not session.get("admin_id"):
             return redirect(url_for("admin_login", next=request.path))
+        with get_db() as database:
+            refresh_expired_account_statuses(database)
+            account = database.execute(
+                "SELECT status FROM admins WHERE id = ?", (session["admin_id"],)
+            ).fetchone()
+        if not account or account["status"] != "active":
+            session.clear()
+            flash("Your administrator account is not active.", "error")
+            return redirect(url_for("admin_login"))
         return view(*args, **kwargs)
 
     return wrapped_view
@@ -115,9 +236,79 @@ def customer_required(view):
     def wrapped_view(*args, **kwargs):
         if not session.get("customer_id") and not session.get("admin_id"):
             return redirect(url_for("customer_login", next=request.full_path))
+        account_type = "admins" if session.get("admin_id") else "customers"
+        account_id = session.get("admin_id") or session.get("customer_id")
+        with get_db() as database:
+            refresh_expired_account_statuses(database)
+            account = database.execute(
+                f"SELECT status FROM {account_type} WHERE id = ?", (account_id,)
+            ).fetchone()
+        if not account or account["status"] != "active":
+            session.clear()
+            flash("Your account is not active. Contact VTIC for assistance.", "error")
+            endpoint = "admin_login" if account_type == "admins" else "customer_login"
+            return redirect(url_for(endpoint))
         return view(*args, **kwargs)
 
     return wrapped_view
+
+
+def ai_conversation_owner():
+    """Return the authenticated owner fields used by AI conversations."""
+    if session.get("admin_id"):
+        return {
+            "customer_id": 0,
+            "admin_id": session["admin_id"],
+            "actor_type": "admin",
+            "actor_id": session["admin_id"],
+            "actor_name": session.get("admin_username", "admin"),
+        }
+    return {
+        "customer_id": session["customer_id"],
+        "admin_id": None,
+        "actor_type": "customer",
+        "actor_id": session["customer_id"],
+        "actor_name": session.get("customer_email", "customer"),
+    }
+
+
+def ai_conversation_owner_clause(owner):
+    if owner["admin_id"] is not None:
+        return "admin_id = ?", owner["admin_id"]
+    return "customer_id = ? AND admin_id IS NULL", owner["customer_id"]
+
+
+def refresh_expired_account_statuses(database):
+    for table in ("admins", "customers"):
+        database.execute(
+            f"""UPDATE {table}
+                SET status = 'active', status_expires_at = NULL,
+                    status_updated_at = CURRENT_TIMESTAMP
+                WHERE status != 'active' AND status_expires_at IS NOT NULL
+                  AND status_expires_at <= CURRENT_TIMESTAMP"""
+        )
+
+
+def account_status_expiration(amount, unit):
+    try:
+        amount = int(amount)
+    except (TypeError, ValueError):
+        raise ValueError("Enter a valid restriction duration.")
+    if amount < 1 or amount > 1000 or unit not in {"hours", "days", "months", "years"}:
+        raise ValueError("Choose a duration between 1 and 1,000.")
+    now = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
+    if unit == "hours":
+        expires = now + timedelta(hours=amount)
+    elif unit == "days":
+        expires = now + timedelta(days=amount)
+    else:
+        months = amount if unit == "months" else amount * 12
+        month_index = now.month - 1 + months
+        year = now.year + month_index // 12
+        month = month_index % 12 + 1
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        expires = now.replace(year=year, month=month, day=day)
+    return expires.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def superadmin_required(view):
@@ -127,6 +318,15 @@ def superadmin_required(view):
             return redirect(url_for("admin_login", next=request.path))
         if session.get("admin_role") != "superadmin":
             abort(403)
+        with get_db() as database:
+            refresh_expired_account_statuses(database)
+            account = database.execute(
+                "SELECT status FROM admins WHERE id = ?", (session["admin_id"],)
+            ).fetchone()
+        if not account or account["status"] != "active":
+            session.clear()
+            flash("Your administrator account is not active.", "error")
+            return redirect(url_for("admin_login"))
         return view(*args, **kwargs)
 
     return wrapped_view
@@ -188,6 +388,18 @@ def save_product_image(upload):
     stored_name = f"{secrets.token_hex(12)}.{extension}"
     upload.save(PRODUCT_UPLOADS / stored_name)
     return url_for("uploaded_file", kind="products", filename=stored_name)
+
+
+def save_account_photo(upload):
+    if not upload or not upload.filename:
+        return None
+    filename = secure_filename(upload.filename)
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if extension not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError("Profile photo must be a PNG, JPG, JPEG, or WebP file.")
+    stored_name = f"{secrets.token_hex(12)}.{extension}"
+    upload.save(ACCOUNT_UPLOADS / stored_name)
+    return url_for("uploaded_file", kind="accounts", filename=stored_name)
 
 
 def p(
@@ -675,19 +887,98 @@ PRODUCTS = [
 CATEGORIES = [
     "All",
     "Wireless",
+    "Access Points",
+    "Wireless Controllers",
     "Routers",
     "Switches",
+    "Firewalls & Security Appliances",
     "Cybersecurity",
+    "Endpoint Security",
+    "Network Accessories",
     "Cabling",
+    "Patch Panels",
+    "Patch Cords",
+    "UTP & LAN Cables",
     "Fiber",
+    "Fiber Accessories",
+    "Racks & Cabinets",
     "CCTV",
+    "IP Cameras",
+    "NVR & DVR",
+    "CCTV Accessories",
+    "Access Control",
     "Communications",
+    "IP Phones",
+    "Video Conferencing",
     "Servers & Cloud",
     "Cloud Software",
     "Storage",
+    "Computers & Workstations",
+    "Monitors & Displays",
+    "Printers & Scanners",
+    "UPS & Power",
+    "Software & Licensing",
     "Network Management",
     "Tools",
+    "General IT Accessories",
 ]
+
+CATEGORY_ALIASES = {
+    "accessory": "General IT Accessories",
+    "accessories": "General IT Accessories",
+    "it accessory": "General IT Accessories",
+    "it accessories": "General IT Accessories",
+    "access point": "Access Points",
+    "ap": "Access Points",
+    "aps": "Access Points",
+    "wireless ap": "Access Points",
+    "router": "Routers",
+    "switch": "Switches",
+    "firewall": "Firewalls & Security Appliances",
+    "patch panel": "Patch Panels",
+    "patch cord": "Patch Cords",
+    "lan cable": "UTP & LAN Cables",
+    "utp cable": "UTP & LAN Cables",
+    "fiber accessory": "Fiber Accessories",
+    "rack": "Racks & Cabinets",
+    "cabinet": "Racks & Cabinets",
+    "camera": "IP Cameras",
+    "ip camera": "IP Cameras",
+    "nvr": "NVR & DVR",
+    "dvr": "NVR & DVR",
+    "cctv accessory": "CCTV Accessories",
+    "ip phone": "IP Phones",
+    "ups": "UPS & Power",
+    "license": "Software & Licensing",
+    "licensing": "Software & Licensing",
+}
+
+
+def normalize_product_category(value):
+    """Match common CSV category variants while preserving legitimate new ones."""
+    category = " ".join(str(value or "").strip().split())
+    if not category:
+        return ""
+    known_categories = {item.casefold(): item for item in CATEGORIES[1:]}
+    key = category.casefold()
+    return known_categories.get(key) or CATEGORY_ALIASES.get(key) or category
+
+
+def get_catalog_categories(include_all=True):
+    """Return configured categories plus any categories introduced by imports."""
+    categories = list(CATEGORIES[1:])
+    known = {item.casefold() for item in categories}
+    with get_db() as database:
+        imported = database.execute(
+            """SELECT DISTINCT trim(category) AS category
+               FROM products WHERE trim(category) != '' ORDER BY category COLLATE NOCASE"""
+        )
+        for row in imported:
+            category = row["category"]
+            if category.casefold() not in known:
+                categories.append(category)
+                known.add(category.casefold())
+    return (["All"] + categories) if include_all else categories
 
 
 def initialize_database():
@@ -697,17 +988,37 @@ def initialize_database():
             CREATE TABLE IF NOT EXISTS admins (
                 id INTEGER PRIMARY KEY,
                 username TEXT NOT NULL UNIQUE,
+                full_name TEXT NOT NULL DEFAULT '',
+                email TEXT,
+                avatar_url TEXT,
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'superadmin',
+                status TEXT NOT NULL DEFAULT 'active',
+                last_login_at TEXT,
+                status_updated_at TEXT,
+                status_expires_at TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS customers (
                 id INTEGER PRIMARY KEY,
                 full_name TEXT NOT NULL,
                 email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+                avatar_url TEXT,
                 password_hash TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'active',
+                status_updated_at TEXT,
+                status_expires_at TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_login_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS customer_identities (
+                id INTEGER PRIMARY KEY,
+                customer_id INTEGER NOT NULL,
+                provider TEXT NOT NULL,
+                provider_subject TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (provider, provider_subject),
+                FOREIGN KEY (customer_id) REFERENCES customers(id)
             );
             CREATE TABLE IF NOT EXISTS activity_logs (
                 id INTEGER PRIMARY KEY,
@@ -727,6 +1038,14 @@ def initialize_database():
                 ai_solution_option_id INTEGER,
                 notes TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'pending',
+                commercial_notes TEXT NOT NULL DEFAULT '',
+                bom_document TEXT,
+                proposal_document TEXT,
+                admin_reviewed_by INTEGER,
+                admin_reviewed_at TEXT,
+                superadmin_approved_by INTEGER,
+                superadmin_approved_at TEXT,
+                customer_notified_at TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id)
             );
@@ -738,6 +1057,47 @@ def initialize_database():
                 brand TEXT NOT NULL,
                 quantity INTEGER NOT NULL,
                 unit_price REAL,
+                FOREIGN KEY (request_id) REFERENCES review_requests(id)
+            );
+            CREATE TABLE IF NOT EXISTS review_request_solution_options (
+                request_id INTEGER NOT NULL,
+                option_id INTEGER NOT NULL,
+                PRIMARY KEY (request_id, option_id),
+                FOREIGN KEY (request_id) REFERENCES review_requests(id),
+                FOREIGN KEY (option_id) REFERENCES ai_solution_options(id)
+            );
+            CREATE TABLE IF NOT EXISTS review_request_messages (
+                id INTEGER PRIMARY KEY,
+                request_id INTEGER NOT NULL,
+                sender_type TEXT NOT NULL,
+                sender_id INTEGER,
+                sender_name TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (request_id) REFERENCES review_requests(id)
+            );
+            CREATE TABLE IF NOT EXISTS review_request_materials (
+                id INTEGER PRIMARY KEY,
+                request_id INTEGER NOT NULL,
+                material_name TEXT NOT NULL,
+                quantity REAL NOT NULL DEFAULT 1,
+                unit TEXT NOT NULL DEFAULT 'pc',
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (request_id) REFERENCES review_requests(id)
+            );
+            CREATE TABLE IF NOT EXISTS calendar_events (
+                id INTEGER PRIMARY KEY,
+                request_id INTEGER,
+                event_type TEXT NOT NULL DEFAULT 'meeting',
+                title TEXT NOT NULL,
+                customer_name TEXT NOT NULL DEFAULT '',
+                customer_email TEXT NOT NULL DEFAULT '',
+                starts_at TEXT NOT NULL,
+                location TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT '',
+                created_by INTEGER,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (request_id) REFERENCES review_requests(id)
             );
             CREATE TABLE IF NOT EXISTS ai_conversations (
@@ -810,13 +1170,86 @@ def initialize_database():
             database.execute(
                 "ALTER TABLE admins ADD COLUMN role TEXT NOT NULL DEFAULT 'superadmin'"
             )
+        if "status" not in admin_columns:
+            database.execute(
+                "ALTER TABLE admins ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"
+            )
+        if "last_login_at" not in admin_columns:
+            database.execute("ALTER TABLE admins ADD COLUMN last_login_at TEXT")
+        if "status_updated_at" not in admin_columns:
+            database.execute("ALTER TABLE admins ADD COLUMN status_updated_at TEXT")
+        if "status_expires_at" not in admin_columns:
+            database.execute("ALTER TABLE admins ADD COLUMN status_expires_at TEXT")
+        if "full_name" not in admin_columns:
+            database.execute("ALTER TABLE admins ADD COLUMN full_name TEXT NOT NULL DEFAULT ''")
+        if "email" not in admin_columns:
+            database.execute("ALTER TABLE admins ADD COLUMN email TEXT")
+        if "avatar_url" not in admin_columns:
+            database.execute("ALTER TABLE admins ADD COLUMN avatar_url TEXT")
         database.execute("UPDATE admins SET role = 'superadmin' WHERE role IS NULL")
+        customer_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(customers)")
+        }
+        if "status" not in customer_columns:
+            database.execute(
+                "ALTER TABLE customers ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"
+            )
+        if "status_updated_at" not in customer_columns:
+            database.execute("ALTER TABLE customers ADD COLUMN status_updated_at TEXT")
+        if "status_expires_at" not in customer_columns:
+            database.execute("ALTER TABLE customers ADD COLUMN status_expires_at TEXT")
+        if "avatar_url" not in customer_columns:
+            database.execute("ALTER TABLE customers ADD COLUMN avatar_url TEXT")
         review_columns = {
             row[1] for row in database.execute("PRAGMA table_info(review_requests)")
         }
         if "ai_solution_option_id" not in review_columns:
             database.execute(
                 "ALTER TABLE review_requests ADD COLUMN ai_solution_option_id INTEGER"
+            )
+        review_additions = {
+            "commercial_notes": "TEXT NOT NULL DEFAULT ''",
+            "bom_document": "TEXT",
+            "proposal_document": "TEXT",
+            "admin_reviewed_by": "INTEGER",
+            "admin_reviewed_at": "TEXT",
+            "superadmin_approved_by": "INTEGER",
+            "superadmin_approved_at": "TEXT",
+            "customer_notified_at": "TEXT",
+            "service_scope": "TEXT NOT NULL DEFAULT ''",
+            "customer_scope_decided_at": "TEXT",
+            "marketing_reviewed_by": "INTEGER",
+            "marketing_reviewed_at": "TEXT",
+            "technical_reviewed_by": "INTEGER",
+            "technical_reviewed_at": "TEXT",
+            "site_survey_at": "TEXT",
+            "site_survey_location": "TEXT NOT NULL DEFAULT ''",
+            "site_survey_notes": "TEXT NOT NULL DEFAULT ''",
+            "assigned_marketing_admin_id": "INTEGER",
+            "assigned_marketing_at": "TEXT",
+        }
+        for column, definition in review_additions.items():
+            if column not in review_columns:
+                database.execute(
+                    f"ALTER TABLE review_requests ADD COLUMN {column} {definition}"
+                )
+        database.execute(
+            "UPDATE review_requests SET status = 'submitted' WHERE status = 'pending'"
+        )
+        conversation_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(ai_conversations)")
+        }
+        if "admin_id" not in conversation_columns:
+            database.execute(
+                "ALTER TABLE ai_conversations ADD COLUMN admin_id INTEGER"
+            )
+        if "conversation_type" not in conversation_columns:
+            database.execute(
+                "ALTER TABLE ai_conversations ADD COLUMN conversation_type TEXT NOT NULL DEFAULT 'advisor'"
+            )
+            database.execute(
+                """UPDATE ai_conversations SET conversation_type = 'product'
+                   WHERE title LIKE 'Product chat:%'"""
             )
         if database.execute("SELECT COUNT(*) FROM products").fetchone()[0] == 0:
             database.executemany(
@@ -856,9 +1289,29 @@ initialize_database()
 
 @app.context_processor
 def inject_auth_context():
+    catered_customer_count = 0
+    if session.get("admin_id") and session.get("admin_role") in {"admin_marketing", "superadmin"}:
+        with get_db() as database:
+            if session.get("admin_role") == "admin_marketing":
+                catered_customer_count = database.execute(
+                    """SELECT COUNT(DISTINCT customer_id) FROM review_requests
+                       WHERE assigned_marketing_admin_id = ?""",
+                    (session["admin_id"],),
+                ).fetchone()[0]
+            else:
+                catered_customer_count = database.execute(
+                    """SELECT COUNT(*) FROM (
+                         SELECT assigned_marketing_admin_id, customer_id
+                         FROM review_requests
+                         WHERE assigned_marketing_admin_id IS NOT NULL
+                         GROUP BY assigned_marketing_admin_id, customer_id
+                       )"""
+                ).fetchone()[0]
     return {
         "csrf_token": ensure_csrf_token(),
-        "ai_configured": bool(os.environ.get("OPENAI_API_KEY")),
+        "ai_configured": bool(get_gemini_api_key()),
+        "can_view_prices": bool(session.get("admin_id")),
+        "catered_customer_count": catered_customer_count,
     }
 
 
@@ -872,11 +1325,19 @@ def customer_login():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         with get_db() as database:
+            refresh_expired_account_statuses(database)
             customer = database.execute(
                 "SELECT * FROM customers WHERE email = ? COLLATE NOCASE", (email,)
             ).fetchone()
         if customer and check_password_hash(customer["password_hash"], password):
+            if customer["status"] != "active":
+                flash(
+                    f"This account is {customer['status']}. Contact VTIC for assistance.",
+                    "error",
+                )
+                return render_template("customer_login.html")
             session.clear()
+            session.permanent = request.form.get("remember_me") == "1"
             session["customer_id"] = customer["id"]
             session["customer_name"] = customer["full_name"]
             session["customer_email"] = customer["email"]
@@ -910,8 +1371,8 @@ def customer_register():
             flash("Enter your full name.", "error")
         elif "@" not in email or len(email) > 254:
             flash("Enter a valid email address.", "error")
-        elif len(password) < 12:
-            flash("Password must contain at least 12 characters.", "error")
+        elif password_error := password_strength_error(password):
+            flash(password_error, "error")
         elif password != confirm_password:
             flash("Password confirmation does not match.", "error")
         else:
@@ -927,7 +1388,125 @@ def customer_register():
                 return redirect(url_for("customer_login"))
             except sqlite3.IntegrityError:
                 flash("An account already uses that email address.", "error")
-    return render_template("customer_register.html")
+    return render_template(
+        "customer_register.html",
+        oauth_status={
+            name: bool(
+                oauth and config["client_id"] and config["client_secret"]
+            )
+            for name, config in OAUTH_PROVIDERS.items()
+        },
+    )
+
+
+def complete_customer_login(customer, action="oauth_login"):
+    session.clear()
+    session["customer_id"] = customer["id"]
+    session["customer_name"] = customer["full_name"]
+    session["customer_email"] = customer["email"]
+    session["csrf_token"] = secrets.token_hex(24)
+    with get_db() as database:
+        database.execute(
+            "UPDATE customers SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (customer["id"],),
+        )
+    log_activity("customer", customer["id"], customer["email"], action)
+
+
+@app.route("/oauth/<provider>")
+def customer_oauth_start(provider):
+    config = OAUTH_PROVIDERS.get(provider)
+    if not config:
+        abort(404)
+    if not oauth or not config["client_id"] or not config["client_secret"]:
+        flash(
+            f"{config['label']} sign-in is not configured yet. Use email registration for now.",
+            "error",
+        )
+        return redirect(url_for("customer_register"))
+    client = oauth.create_client(provider)
+    redirect_uri = url_for(
+        "customer_oauth_callback", provider=provider, _external=True
+    )
+    parameters = {"redirect_uri": redirect_uri}
+    if provider == "apple":
+        parameters["response_mode"] = "form_post"
+    return client.authorize_redirect(**parameters)
+
+
+@app.route("/oauth/<provider>/callback", methods=["GET", "POST"])
+def customer_oauth_callback(provider):
+    config = OAUTH_PROVIDERS.get(provider)
+    if not config or not oauth:
+        abort(404)
+    client = oauth.create_client(provider)
+    if not client:
+        abort(404)
+    try:
+        token = client.authorize_access_token()
+        if provider == "facebook":
+            profile = client.get("me?fields=id,name,email").json()
+            subject = str(profile.get("id", ""))
+            email = str(profile.get("email", "")).strip().lower()
+            full_name = str(profile.get("name", "")).strip()
+        else:
+            profile = token.get("userinfo") or client.parse_id_token(
+                token, nonce=session.pop("_oauth_nonce", None)
+            )
+            subject = str(profile.get("sub", ""))
+            email = str(profile.get("email", "")).strip().lower()
+            full_name = str(profile.get("name", "")).strip()
+            verified = profile.get("email_verified", True)
+            if verified in (False, "false", "0"):
+                raise ValueError("The provider did not verify this email address.")
+        if not subject or "@" not in email:
+            raise ValueError(
+                f"{config['label']} did not provide a usable email address."
+            )
+        full_name = full_name or email.split("@", 1)[0].replace(".", " ").title()
+        with get_db() as database:
+            identity = database.execute(
+                """SELECT customer.* FROM customer_identities identity
+                   JOIN customers customer ON customer.id = identity.customer_id
+                   WHERE identity.provider = ? AND identity.provider_subject = ?""",
+                (provider, subject),
+            ).fetchone()
+            if identity:
+                customer = identity
+            else:
+                customer = database.execute(
+                    "SELECT * FROM customers WHERE email = ?", (email,)
+                ).fetchone()
+                if not customer:
+                    cursor = database.execute(
+                        """INSERT INTO customers (full_name, email, password_hash)
+                           VALUES (?, ?, ?)""",
+                        (
+                            full_name[:120],
+                            email,
+                            generate_password_hash(secrets.token_urlsafe(48)),
+                        ),
+                    )
+                    customer = database.execute(
+                        "SELECT * FROM customers WHERE id = ?", (cursor.lastrowid,)
+                    ).fetchone()
+                database.execute(
+                    """INSERT INTO customer_identities
+                       (customer_id, provider, provider_subject) VALUES (?, ?, ?)""",
+                    (customer["id"], provider, subject),
+                )
+        if customer["status"] != "active":
+            flash(f"This customer account is {customer['status']}.", "error")
+            return redirect(url_for("customer_login"))
+        complete_customer_login(customer, f"oauth_login_{provider}")
+        return redirect(url_for("storefront"))
+    except Exception as error:
+        app.logger.warning("%s OAuth sign-in failed: %s", provider, error)
+        flash(
+            f"{config['label']} sign-in could not be completed. Please try again or use email.",
+            "error",
+        )
+        return redirect(url_for("customer_register"))
 
 
 @app.route("/logout", methods=["POST"])
@@ -965,9 +1544,9 @@ def storefront():
             )
         )
     add_manufacturer_logos(catalog)
-    catalog = hide_customer_pricing(catalog)
+    catalog = storefront_products_for_viewer(catalog)
     return render_template(
-        "index.html", products=catalog, categories=CATEGORIES, partners=partners
+        "index.html", products=catalog, categories=get_catalog_categories(), partners=partners
     )
 
 
@@ -977,6 +1556,11 @@ def products():
     category = request.args.get("category", "All")
     query = request.args.get("q", "").lower()
     brand = request.args.get("brand", "")
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+    per_page = 24
     sql = "SELECT * FROM products WHERE 1 = 1"
     parameters = []
     if category != "All":
@@ -988,9 +1572,19 @@ def products():
     if query:
         sql += " AND lower(name || ' ' || brand || ' ' || category) LIKE ?"
         parameters.append(f"%{query}%")
-    sql += " ORDER BY id DESC"
     with get_db() as database:
-        results = rows_to_dicts(database.execute(sql, parameters))
+        total_results = database.execute(
+            f"SELECT COUNT(*) FROM ({sql})", parameters
+        ).fetchone()[0]
+        total_pages = max(1, (total_results + per_page - 1) // per_page)
+        page = min(page, total_pages)
+        paginated_sql = sql + " ORDER BY id DESC LIMIT ? OFFSET ?"
+        results = rows_to_dicts(
+            database.execute(
+                paginated_sql,
+                [*parameters, per_page, (page - 1) * per_page],
+            )
+        )
         brands = [
             row[0]
             for row in database.execute(
@@ -998,14 +1592,18 @@ def products():
             )
         ]
     add_manufacturer_logos(results)
-    results = hide_customer_pricing(results)
+    results = storefront_products_for_viewer(results)
     return render_template(
         "products.html",
         products=results,
         category=category,
         query=request.args.get("q", ""),
-        categories=CATEGORIES,
+        brand=brand,
+        categories=get_catalog_categories(),
         brands=brands,
+        page=page,
+        total_pages=total_pages,
+        total_results=total_results,
     )
 
 
@@ -1018,7 +1616,7 @@ def product(product_id):
         ).fetchone()
     item = add_manufacturer_logos([dict(row)])[0] if row else None
     if item:
-        item = hide_customer_pricing([item])[0]
+        item = storefront_products_for_viewer([item])[0]
     return (
         (render_template("product.html", product=item), 200)
         if item
@@ -1038,7 +1636,7 @@ def api_products():
     with get_db() as database:
         catalog = rows_to_dicts(database.execute("SELECT * FROM products ORDER BY id"))
     add_manufacturer_logos(catalog)
-    return jsonify(hide_customer_pricing(catalog))
+    return jsonify(storefront_products_for_viewer(catalog))
 
 
 AI_ADVISOR_SCHEMA = {
@@ -1097,19 +1695,162 @@ def get_ai_catalog():
         )
 
 
-def call_ai_solution_advisor(history, catalog):
-    api_key = os.environ.get("OPENAI_API_KEY")
+def raise_friendly_gemini_error(error):
+    """Convert provider failures into safe, actionable Advisor messages."""
+    error_code = getattr(error, "code", None) or getattr(error, "status_code", None)
+    error_name = type(error).__name__.lower()
+    error_text = str(error).lower()
+    quota_error = (
+        error_code == 429
+        or "resourceexhausted" in error_name
+        or "resource_exhausted" in error_text
+        or "quota" in error_text
+        or "rate limit" in error_text
+    )
+    authentication_error = (
+        error_code in {401, 403}
+        or "unauthenticated" in error_name
+        or "permissiondenied" in error_name
+        or "api key not valid" in error_text
+        or "invalid api key" in error_text
+    )
+    if quota_error:
+        if session.get("admin_id"):
+            raise RuntimeError(
+                "The Gemini API quota or rate limit has been reached. Check the "
+                "Google AI Studio project quota, then try again."
+            ) from error
+        raise RuntimeError(
+            "The AI Advisor is currently unavailable. Please submit your products "
+            "for VTIC review or try again later."
+        ) from error
+    if authentication_error:
+        if session.get("admin_id"):
+            raise RuntimeError(
+                "The configured Gemini API key was rejected. Update GEMINI_API_KEY "
+                "in the server environment."
+            ) from error
+        raise RuntimeError(
+            "The AI Advisor is currently unavailable. Please try again later."
+        ) from error
+    raise error
+
+
+def create_gemini_client():
+    """Create an SDK client, with a dependency-free REST fallback."""
+    api_key = get_gemini_api_key()
     if not api_key:
         raise RuntimeError(
-            "The AI advisor is not configured yet. Add OPENAI_API_KEY to the server environment."
+            "The AI assistant is not configured yet. Add GEMINI_API_KEY to the "
+            "server environment."
         )
     try:
-        from openai import OpenAI
-    except ImportError as error:
-        raise RuntimeError(
-            "The OpenAI Python package is not installed. Install the project requirements."
-        ) from error
+        from google import genai
+    except ImportError:
+        return GeminiRestClient(api_key)
+    else:
+        return genai.Client(api_key=api_key)
 
+
+class GeminiRestError(Exception):
+    """Provider error compatible with the shared friendly-error mapper."""
+
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+
+
+class GeminiRestResponse:
+    def __init__(self, text):
+        self.text = text
+
+
+class GeminiRestModels:
+    def __init__(self, api_key):
+        self.api_key = api_key
+
+    def generate_content(self, *, model, contents, config=None):
+        """Call Gemini generateContent using only Python's standard library."""
+        config = config or {}
+        generation_config = {}
+        config_fields = {
+            "temperature": "temperature",
+            "max_output_tokens": "maxOutputTokens",
+            "response_mime_type": "responseMimeType",
+            "response_json_schema": "responseJsonSchema",
+        }
+        for source_name, api_name in config_fields.items():
+            if config.get(source_name) is not None:
+                generation_config[api_name] = config[source_name]
+
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": contents}]}],
+            "generationConfig": generation_config,
+        }
+        if config.get("system_instruction"):
+            payload["systemInstruction"] = {
+                "parts": [{"text": config["system_instruction"]}]
+            }
+
+        safe_model = urllib.parse.quote(model, safe="-._")
+        api_url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{safe_model}:generateContent"
+        )
+        api_request = urllib.request.Request(
+            api_url,
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": self.api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(api_request, timeout=90) as api_response:
+                result = json.loads(api_response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            try:
+                error_payload = json.loads(error.read().decode("utf-8"))
+                message = error_payload.get("error", {}).get("message", str(error))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                message = str(error)
+            raise GeminiRestError(error.code, message) from error
+        except urllib.error.URLError as error:
+            raise GeminiRestError(None, f"Gemini connection failed: {error.reason}") from error
+
+        text_parts = [
+            part.get("text", "")
+            for candidate in result.get("candidates", [])
+            for part in candidate.get("content", {}).get("parts", [])
+            if part.get("text")
+        ]
+        return GeminiRestResponse("".join(text_parts))
+
+
+class GeminiRestClient:
+    def __init__(self, api_key):
+        self.models = GeminiRestModels(api_key)
+
+
+def get_gemini_api_key():
+    """Read the Gemini key, including the legacy field used by older installs."""
+    return (
+        os.environ.get("GEMINI_API_KEY", "").strip()
+        or os.environ.get("OPENAI_API_KEY", "").strip()
+    )
+
+
+def gemini_conversation_prompt(history, context):
+    """Convert stored provider-neutral messages into a bounded text transcript."""
+    transcript = []
+    for message in history[-12:]:
+        role = "Customer" if message.get("role") == "user" else "VTIC assistant"
+        transcript.append(f"{role}: {str(message.get('content', ''))[:4000]}")
+    return f"{context}\n\nConversation:\n" + "\n".join(transcript)
+
+
+def call_ai_solution_advisor(history, catalog):
     instructions = """You are VTIC's enterprise IT solution discovery assistant.
 Ask concise clarifying questions when requirements are incomplete. Once enough
 information exists, provide exactly three materially different options named
@@ -1119,46 +1860,30 @@ compatibility guarantees, or certifications. Never reveal or estimate prices.
 Explain that every design requires VTIC engineering and commercial review.
 Use realistic quantities based on stated sites, users, ports, cameras and scope.
 Mark enhancements that are not required as optional."""
-    model = os.environ.get("OPENAI_MODEL", "gpt-5.6-terra")
-    client = OpenAI(api_key=api_key)
-    response = client.responses.create(
-        model=model,
-        instructions=instructions,
-        input=[
-            {
-                "role": "developer",
-                "content": "Available VTIC catalog (prices intentionally omitted):\n"
-                + json.dumps(catalog, ensure_ascii=False),
-            },
-            *history,
-        ],
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "vtic_solution_advisor",
-                "strict": True,
-                "schema": AI_ADVISOR_SCHEMA,
-            }
-        },
-        store=False,
+    client = create_gemini_client()
+    context = "Available VTIC catalog (prices intentionally omitted):\n" + json.dumps(
+        catalog, ensure_ascii=False
     )
-    return json.loads(response.output_text)
+    try:
+        response = client.models.generate_content(
+            model=os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"),
+            contents=gemini_conversation_prompt(history, context),
+            config={
+                "system_instruction": instructions,
+                "response_mime_type": "application/json",
+                "response_json_schema": AI_ADVISOR_SCHEMA,
+                "temperature": 0.2,
+            },
+        )
+    except Exception as error:
+        raise_friendly_gemini_error(error)
+    if not response.text:
+        raise RuntimeError("Gemini returned an empty response. Please try again.")
+    return json.loads(response.text)
 
 
 def call_storefront_product_chat(history, catalog, product=None):
     """Answer catalog questions without sending confidential pricing to the model."""
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "The AI assistant is not configured yet. Add OPENAI_API_KEY to the server environment."
-        )
-    try:
-        from openai import OpenAI
-    except ImportError as error:
-        raise RuntimeError(
-            "The OpenAI Python package is not installed. Install the project requirements."
-        ) from error
-
     focus = (
         f"The customer is currently viewing this product:\n{json.dumps(product, ensure_ascii=False)}"
         if product
@@ -1173,22 +1898,27 @@ or specifications. If catalog information is insufficient, say so clearly. For a
 multi-product design, suggest opening the Solution Advisor. Keep answers under 180 words
 unless the customer explicitly asks for detail. Every recommendation is subject to VTIC
 engineering and commercial review."""
-    client = OpenAI(api_key=api_key)
-    response = client.responses.create(
-        model=os.environ.get("OPENAI_MODEL", "gpt-5.6-terra"),
-        instructions=instructions,
-        input=[
-            {
-                "role": "developer",
-                "content": focus
-                + "\nAvailable VTIC catalog (confidential fields omitted):\n"
-                + json.dumps(catalog, ensure_ascii=False),
-            },
-            *history,
-        ],
-        store=False,
+    client = create_gemini_client()
+    context = (
+        focus
+        + "\nAvailable VTIC catalog (confidential fields omitted):\n"
+        + json.dumps(catalog, ensure_ascii=False)
     )
-    return response.output_text.strip()
+    try:
+        response = client.models.generate_content(
+            model=os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"),
+            contents=gemini_conversation_prompt(history, context),
+            config={
+                "system_instruction": instructions,
+                "temperature": 0.25,
+                "max_output_tokens": 700,
+            },
+        )
+    except Exception as error:
+        raise_friendly_gemini_error(error)
+    if not response.text:
+        raise RuntimeError("Gemini returned an empty response. Please try again.")
+    return response.text.strip()
 
 
 def validate_ai_advice(advice, catalog):
@@ -1242,18 +1972,94 @@ def validate_ai_advice(advice, catalog):
 def solution_advisor():
     return render_template(
         "solution_advisor.html",
-        ai_configured=bool(os.environ.get("OPENAI_API_KEY")),
+        ai_configured=bool(get_gemini_api_key()),
         anam_agent_id=os.environ.get(
             "ANAM_AGENT_ID", "854eaac4-bd3b-40f6-9f0c-26970e0a7c19"
         ).strip(),
     )
 
 
+@app.route("/api/ai/advisor/conversations")
+@customer_required
+def ai_advisor_conversations():
+    owner = ai_conversation_owner()
+    owner_clause, owner_id = ai_conversation_owner_clause(owner)
+    with get_db() as database:
+        conversations = rows_to_dicts(
+            database.execute(
+                f"""SELECT id, title, requirements_summary, created_at, updated_at,
+                           (SELECT COUNT(*) FROM ai_messages message
+                            WHERE message.conversation_id = ai_conversations.id) AS message_count
+                    FROM ai_conversations
+                    WHERE {owner_clause} AND conversation_type = 'advisor'
+                    ORDER BY updated_at DESC, id DESC
+                    LIMIT 100""",
+                (owner_id,),
+            )
+        )
+    return jsonify(conversations=conversations)
+
+
+@app.route("/api/ai/advisor/conversations/<int:conversation_id>")
+@customer_required
+def ai_advisor_conversation(conversation_id):
+    owner = ai_conversation_owner()
+    owner_clause, owner_id = ai_conversation_owner_clause(owner)
+    with get_db() as database:
+        conversation = database.execute(
+            f"""SELECT id, title, requirements_summary, created_at, updated_at
+                FROM ai_conversations
+                WHERE id = ? AND {owner_clause} AND conversation_type = 'advisor'""",
+            (conversation_id, owner_id),
+        ).fetchone()
+        if not conversation:
+            return jsonify(error="Conversation not found."), 404
+        stored_messages = rows_to_dicts(
+            database.execute(
+                """SELECT role, content, created_at FROM ai_messages
+                   WHERE conversation_id = ? ORDER BY id""",
+                (conversation_id,),
+            )
+        )
+        option_rows = rows_to_dicts(
+            database.execute(
+                """SELECT id, option_key AS key, name, summary, rationale
+                   FROM ai_solution_options
+                   WHERE conversation_id = ? ORDER BY id""",
+                (conversation_id,),
+            )
+        )
+        item_rows = rows_to_dicts(
+            database.execute(
+                """SELECT item.option_id, item.product_id, item.quantity,
+                          item.reason, item.optional, product.name,
+                          product.brand, product.category
+                   FROM ai_solution_items item
+                   JOIN products product ON product.id = item.product_id
+                   WHERE item.option_id IN (
+                       SELECT id FROM ai_solution_options WHERE conversation_id = ?
+                   ) ORDER BY item.id""",
+                (conversation_id,),
+            )
+        )
+    items_by_option = {}
+    for item in item_rows:
+        item["optional"] = bool(item["optional"])
+        items_by_option.setdefault(item.pop("option_id"), []).append(item)
+    for option in option_rows:
+        option["products"] = items_by_option.get(option["id"], [])
+    return jsonify(
+        conversation=dict(conversation),
+        messages=stored_messages,
+        options=option_rows,
+    )
+
+
 @app.route("/api/ai/advisor", methods=["POST"])
 @customer_required
 def ai_advisor_message():
-    if not session.get("customer_id"):
-        return jsonify(error="A customer account is required to use the advisor."), 403
+    owner = ai_conversation_owner()
+    owner_clause, owner_id = ai_conversation_owner_clause(owner)
     payload = request.get_json(silent=True) or {}
     if not secrets.compare_digest(
         session.get("csrf_token", ""), request.headers.get("X-CSRF-Token", "")
@@ -1268,15 +2074,17 @@ def ai_advisor_message():
         conversation = None
         if conversation_id:
             conversation = database.execute(
-                "SELECT * FROM ai_conversations WHERE id = ? AND customer_id = ?",
-                (conversation_id, session["customer_id"]),
+                f"SELECT * FROM ai_conversations WHERE id = ? AND {owner_clause}",
+                (conversation_id, owner_id),
             ).fetchone()
             if not conversation:
                 return jsonify(error="Conversation not found."), 404
         else:
             cursor = database.execute(
-                "INSERT INTO ai_conversations (customer_id, title) VALUES (?, ?)",
-                (session["customer_id"], message[:100]),
+                """INSERT INTO ai_conversations
+                   (customer_id, admin_id, title, conversation_type)
+                   VALUES (?, ?, ?, 'advisor')""",
+                (owner["customer_id"], owner["admin_id"], message[:100]),
             )
             conversation_id = cursor.lastrowid
         database.execute(
@@ -1349,7 +2157,7 @@ def ai_advisor_message():
                 ],
             )
     log_activity(
-        "customer", session["customer_id"], session.get("customer_email", "customer"),
+        owner["actor_type"], owner["actor_id"], owner["actor_name"],
         "ai_advisor_message", f"Conversation #{conversation_id}"
     )
     return jsonify(conversation_id=conversation_id, **advice)
@@ -1358,8 +2166,8 @@ def ai_advisor_message():
 @app.route("/api/ai/product-chat", methods=["POST"])
 @customer_required
 def storefront_product_chat():
-    if not session.get("customer_id"):
-        return jsonify(error="A customer account is required to use the assistant."), 403
+    owner = ai_conversation_owner()
+    owner_clause, owner_id = ai_conversation_owner_clause(owner)
 
     payload = request.get_json(silent=True) or {}
     if not secrets.compare_digest(
@@ -1392,16 +2200,18 @@ def storefront_product_chat():
     with get_db() as database:
         if conversation_id:
             conversation = database.execute(
-                "SELECT id FROM ai_conversations WHERE id = ? AND customer_id = ?",
-                (conversation_id, session["customer_id"]),
+                f"SELECT id FROM ai_conversations WHERE id = ? AND {owner_clause}",
+                (conversation_id, owner_id),
             ).fetchone()
             if not conversation:
                 return jsonify(error="Conversation not found."), 404
         else:
             title = f"Product chat: {product['name']}" if product else message[:100]
             cursor = database.execute(
-                "INSERT INTO ai_conversations (customer_id, title) VALUES (?, ?)",
-                (session["customer_id"], title),
+                """INSERT INTO ai_conversations
+                   (customer_id, admin_id, title, conversation_type)
+                   VALUES (?, ?, ?, 'product')""",
+                (owner["customer_id"], owner["admin_id"], title),
             )
             conversation_id = cursor.lastrowid
 
@@ -1442,9 +2252,9 @@ def storefront_product_chat():
             (conversation_id,),
         )
     log_activity(
-        "customer",
-        session["customer_id"],
-        session.get("customer_email", "customer"),
+        owner["actor_type"],
+        owner["actor_id"],
+        owner["actor_name"],
         "storefront_ai_chat",
         f"Conversation #{conversation_id}"
         + (f", product #{product_id}" if product else ""),
@@ -1456,7 +2266,9 @@ def storefront_product_chat():
 @customer_required
 def create_review_request():
     if not session.get("customer_id"):
-        abort(403)
+        return jsonify(
+            error="Review requests must be submitted from a customer account."
+        ), 403
     payload = request.get_json(silent=True) or {}
     if not secrets.compare_digest(
         session.get("csrf_token", ""), request.headers.get("X-CSRF-Token", "")
@@ -1464,7 +2276,15 @@ def create_review_request():
         abort(400, "Invalid security token")
     submitted_items = payload.get("items")
     notes = str(payload.get("notes", "")).strip()[:2000]
-    ai_solution_option_id = payload.get("ai_solution_option_id")
+    submitted_option_ids = payload.get("ai_solution_option_ids", [])
+    if not isinstance(submitted_option_ids, list):
+        return jsonify(error="Invalid AI solution selections."), 400
+    try:
+        ai_solution_option_ids = list(
+            dict.fromkeys(int(value) for value in submitted_option_ids)
+        )
+    except (TypeError, ValueError):
+        return jsonify(error="Invalid AI solution selections."), 400
     if not isinstance(submitted_items, list) or not submitted_items:
         return jsonify(error="Your review cart is empty."), 400
 
@@ -1481,19 +2301,20 @@ def create_review_request():
 
     placeholders = ",".join("?" for _ in quantities)
     with get_db() as database:
-        if ai_solution_option_id is not None:
-            try:
-                ai_solution_option_id = int(ai_solution_option_id)
-            except (TypeError, ValueError):
-                return jsonify(error="Invalid AI solution selection."), 400
-            owned_option = database.execute(
-                """SELECT o.id FROM ai_solution_options o
-                   JOIN ai_conversations c ON c.id = o.conversation_id
-                   WHERE o.id = ? AND c.customer_id = ?""",
-                (ai_solution_option_id, session["customer_id"]),
-            ).fetchone()
-            if not owned_option:
-                return jsonify(error="AI solution selection not found."), 400
+        if ai_solution_option_ids:
+            option_placeholders = ",".join("?" for _ in ai_solution_option_ids)
+            owned_option_ids = {
+                row["id"]
+                for row in database.execute(
+                    f"""SELECT o.id FROM ai_solution_options o
+                        JOIN ai_conversations c ON c.id = o.conversation_id
+                        WHERE o.id IN ({option_placeholders})
+                          AND c.customer_id = ?""",
+                    (*ai_solution_option_ids, session["customer_id"]),
+                )
+            }
+            if owned_option_ids != set(ai_solution_option_ids):
+                return jsonify(error="One or more AI solution selections were not found."), 400
         products_by_id = {
             row["id"]: row
             for row in database.execute(
@@ -1505,17 +2326,22 @@ def create_review_request():
             return jsonify(error="One or more products are no longer available."), 400
         cursor = database.execute(
             """INSERT INTO review_requests
-               (customer_id, customer_name, customer_email, ai_solution_option_id, notes)
-               VALUES (?, ?, ?, ?, ?)""",
+               (customer_id, customer_name, customer_email, ai_solution_option_id, notes, status)
+               VALUES (?, ?, ?, ?, ?, 'submitted')""",
             (
                 session["customer_id"],
                 session.get("customer_name", "Customer"),
                 session.get("customer_email", ""),
-                ai_solution_option_id,
+                ai_solution_option_ids[0] if ai_solution_option_ids else None,
                 notes,
             ),
         )
         request_id = cursor.lastrowid
+        database.executemany(
+            """INSERT INTO review_request_solution_options (request_id, option_id)
+               VALUES (?, ?)""",
+            [(request_id, option_id) for option_id in ai_solution_option_ids],
+        )
         database.executemany(
             """INSERT INTO review_request_items
                (request_id, product_id, product_name, brand, quantity, unit_price)
@@ -1552,15 +2378,27 @@ def admin_login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         with get_db() as database:
+            refresh_expired_account_statuses(database)
             admin = database.execute(
                 "SELECT * FROM admins WHERE username = ?", (username,)
             ).fetchone()
         if admin and check_password_hash(admin["password_hash"], password):
+            if admin["status"] != "active":
+                flash(
+                    f"This administrator account is {admin['status']}.", "error"
+                )
+                return render_template("admin_login.html")
             session.clear()
+            session.permanent = request.form.get("remember_me") == "1"
             session["admin_id"] = admin["id"]
             session["admin_username"] = admin["username"]
             session["admin_role"] = admin["role"]
             session["csrf_token"] = secrets.token_hex(24)
+            with get_db() as database:
+                database.execute(
+                    "UPDATE admins SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (admin["id"],),
+                )
             log_activity("admin", admin["id"], admin["username"], "admin_login")
             return redirect(url_for("admin_dashboard"))
         flash("Invalid username or password.", "error")
@@ -1603,8 +2441,8 @@ def admin_account():
             flash("The current password is incorrect.", "error")
         elif len(username) < 3:
             flash("Username must contain at least 3 characters.", "error")
-        elif new_password and len(new_password) < 12:
-            flash("The new password must contain at least 12 characters.", "error")
+        elif new_password and (password_error := password_strength_error(new_password)):
+            flash(password_error, "error")
         elif new_password != confirm_password:
             flash("The new password and confirmation do not match.", "error")
         else:
@@ -1638,13 +2476,18 @@ def admin_accounts():
     with get_db() as database:
         administrators = rows_to_dicts(
             database.execute(
-                """SELECT id, username, role, created_at
-                   FROM admins ORDER BY username COLLATE NOCASE"""
+                """SELECT id, username, full_name, email, avatar_url,
+                          role, status, status_expires_at,
+                          created_at, last_login_at
+                   FROM admins
+                   ORDER BY CASE role WHEN 'superadmin' THEN 0 ELSE 1 END,
+                            COALESCE(NULLIF(full_name, ''), username) COLLATE NOCASE"""
             )
         )
         customers = rows_to_dicts(
             database.execute(
-                """SELECT id, full_name, email, created_at, last_login_at
+                """SELECT id, full_name, email, avatar_url, status, status_expires_at,
+                          created_at, last_login_at
                    FROM customers ORDER BY full_name COLLATE NOCASE"""
             )
         )
@@ -1653,6 +2496,75 @@ def admin_accounts():
         administrators=administrators,
         customers=customers,
     )
+
+
+@app.route(
+    "/admin/accounts/<account_type>/<int:account_id>/status", methods=["POST"]
+)
+@superadmin_required
+def admin_account_status(account_type, account_id):
+    validate_csrf()
+    if account_type not in {"admin", "customer"}:
+        abort(404)
+    status = request.form.get("status", "").strip().lower()
+    if status not in {"active", "suspended", "banned"}:
+        abort(400)
+    duration_mode = request.form.get("duration_mode", "temporary").strip()
+    status_expires_at = None
+    if status != "active" and duration_mode != "permanent":
+        try:
+            status_expires_at = account_status_expiration(
+                request.form.get("duration_amount"),
+                request.form.get("duration_unit", "days"),
+            )
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("admin_accounts"))
+
+    table = "admins" if account_type == "admin" else "customers"
+    label_column = "username" if account_type == "admin" else "email"
+    with get_db() as database:
+        role_sql = ", role" if account_type == "admin" else ""
+        account = database.execute(
+            f"SELECT id, {label_column} AS label, status, status_expires_at{role_sql} "
+            f"FROM {table} WHERE id = ?",
+            (account_id,),
+        ).fetchone()
+        if not account:
+            abort(404)
+        if account_type == "admin" and account_id == session["admin_id"]:
+            flash("You cannot change the status of your active account.", "error")
+            return redirect(url_for("admin_accounts"))
+        if (
+            account_type == "admin"
+            and account["role"] == "superadmin"
+            and status != "active"
+        ):
+            active_superadmins = database.execute(
+                "SELECT COUNT(*) FROM admins WHERE role = 'superadmin' AND status = 'active'"
+            ).fetchone()[0]
+            if active_superadmins <= 1:
+                flash("At least one active superadmin must remain.", "error")
+                return redirect(url_for("admin_accounts"))
+        database.execute(
+            f"""UPDATE {table} SET status = ?, status_expires_at = ?,
+                status_updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+            (status, status_expires_at, account_id),
+        )
+
+    log_activity(
+        "admin",
+        session["admin_id"],
+        session["admin_username"],
+        f"{account_type}_status_update",
+        f"{account['label']} (ID #{account_id}): {account['status']} to {status}"
+        + (f" until {status_expires_at} UTC" if status_expires_at else " permanently" if status != "active" else ""),
+    )
+    duration_text = (
+        f" until {status_expires_at} UTC" if status_expires_at else ""
+    )
+    flash(f"{account['label']} is now {status}{duration_text}.", "success")
+    return redirect(url_for("admin_accounts"))
 
 
 @app.route("/admin/accounts/new/<account_type>", methods=["GET", "POST"])
@@ -1665,8 +2577,8 @@ def admin_account_create(account_type):
         validate_csrf()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
-        if len(password) < 12:
-            flash("Password must contain at least 12 characters.", "error")
+        if password_error := password_strength_error(password):
+            flash(password_error, "error")
         elif password != confirm_password:
             flash("Password confirmation does not match.", "error")
         else:
@@ -1674,15 +2586,22 @@ def admin_account_create(account_type):
                 with get_db() as database:
                     if account_type == "admin":
                         username = request.form.get("username", "").strip()
+                        full_name = request.form.get("full_name", "").strip()
+                        email = request.form.get("email", "").strip().lower() or None
                         role = request.form.get("role", "admin")
                         if len(username) < 3:
                             raise ValueError("Username must contain at least 3 characters.")
-                        if role not in {"admin", "superadmin"}:
+                        if role not in {"admin", "admin_marketing", "admin_technical", "superadmin"}:
                             raise ValueError("Select a valid administrator role.")
+                        if email and ("@" not in email or len(email) > 254):
+                            raise ValueError("Enter a valid administrator email address.")
+                        avatar_url = save_account_photo(request.files.get("avatar"))
                         cursor = database.execute(
-                            """INSERT INTO admins (username, password_hash, role)
-                               VALUES (?, ?, ?)""",
-                            (username, generate_password_hash(password), role),
+                            """INSERT INTO admins
+                               (username, full_name, email, avatar_url, password_hash, role)
+                               VALUES (?, ?, ?, ?, ?, ?)""",
+                            (username, full_name, email, avatar_url,
+                             generate_password_hash(password), role),
                         )
                         account_label = username
                     else:
@@ -1692,10 +2611,13 @@ def admin_account_create(account_type):
                             raise ValueError("Enter the customer's full name.")
                         if "@" not in email or len(email) > 254:
                             raise ValueError("Enter a valid customer email address.")
+                        avatar_url = save_account_photo(request.files.get("avatar"))
                         cursor = database.execute(
-                            """INSERT INTO customers (full_name, email, password_hash)
-                               VALUES (?, ?, ?)""",
-                            (full_name, email, generate_password_hash(password)),
+                            """INSERT INTO customers
+                               (full_name, email, avatar_url, password_hash)
+                               VALUES (?, ?, ?, ?)""",
+                            (full_name, email, avatar_url,
+                             generate_password_hash(password)),
                         )
                         account_label = email
                 log_activity(
@@ -1743,8 +2665,8 @@ def admin_account_edit(account_type, account_id):
         validate_csrf()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
-        if password and len(password) < 12:
-            flash("A replacement password must contain at least 12 characters.", "error")
+        if password and (password_error := password_strength_error(password)):
+            flash(password_error, "error")
         elif password != confirm_password:
             flash("Password confirmation does not match.", "error")
         else:
@@ -1752,17 +2674,21 @@ def admin_account_edit(account_type, account_id):
                 with get_db() as database:
                     if account_type == "admin":
                         username = request.form.get("username", "").strip()
+                        full_name = request.form.get("full_name", "").strip()
+                        email = request.form.get("email", "").strip().lower() or None
                         role = request.form.get("role", "admin")
                         if len(username) < 3:
                             raise ValueError("Username must contain at least 3 characters.")
-                        if role not in {"admin", "superadmin"}:
+                        if role not in {"admin", "admin_marketing", "admin_technical", "superadmin"}:
                             raise ValueError("Select a valid administrator role.")
+                        if email and ("@" not in email or len(email) > 254):
+                            raise ValueError("Enter a valid administrator email address.")
                         if account_id == session["admin_id"] and role != "superadmin":
                             raise ValueError(
                                 "You cannot remove superadmin access from your active account."
                             )
-                        fields = ["username = ?", "role = ?"]
-                        values = [username, role]
+                        fields = ["username = ?", "full_name = ?", "email = ?", "role = ?"]
+                        values = [username, full_name, email, role]
                         account_label = username
                     else:
                         full_name = request.form.get("full_name", "").strip()
@@ -1774,6 +2700,13 @@ def admin_account_edit(account_type, account_id):
                         fields = ["full_name = ?", "email = ?"]
                         values = [full_name, email]
                         account_label = email
+                    if request.form.get("remove_avatar") == "1":
+                        fields.append("avatar_url = NULL")
+                    else:
+                        avatar_url = save_account_photo(request.files.get("avatar"))
+                        if avatar_url:
+                            fields.append("avatar_url = ?")
+                            values.append(avatar_url)
                     if password:
                         fields.append("password_hash = ?")
                         values.append(generate_password_hash(password))
@@ -1835,20 +2768,45 @@ def admin_activity():
     with get_db() as database:
         logs = rows_to_dicts(
             database.execute(
-                "SELECT * FROM activity_logs ORDER BY id DESC LIMIT 500"
+                """SELECT log.*, admin.role AS actor_role
+                   FROM activity_logs log
+                   LEFT JOIN admins admin
+                     ON log.actor_type = 'admin' AND admin.id = log.actor_id
+                   ORDER BY log.id DESC LIMIT 500"""
             )
         )
-    return render_template("admin_activity.html", logs=logs)
+    log_groups = {"superadmin": [], "admin": [], "customer": []}
+    for log in logs:
+        if log["actor_type"] == "customer":
+            group = "customer"
+        elif log["actor_type"] == "admin" and log.get("actor_role") == "superadmin":
+            group = "superadmin"
+        else:
+            group = "admin"
+        log_groups[group].append(log)
+    return render_template("admin_activity.html", log_groups=log_groups)
 
 
 @app.route("/admin/review-requests")
 @login_required
 def admin_review_requests():
     with get_db() as database:
+        if session.get("admin_role") == "admin_marketing":
+            database.execute(
+                """UPDATE review_requests
+                   SET assigned_marketing_admin_id = ?,
+                       assigned_marketing_at = CURRENT_TIMESTAMP,
+                       status = 'marketing_review'
+                   WHERE assigned_marketing_admin_id IS NULL
+                     AND status IN ('submitted', 'pending')""",
+                (session["admin_id"],),
+            )
         requests_list = rows_to_dicts(
             database.execute(
                 """SELECT r.*, o.name AS ai_option_name,
                           c.requirements_summary AS ai_requirements_summary,
+                          owner.username AS marketing_owner_username,
+                          COALESCE(NULLIF(owner.full_name, ''), owner.username) AS marketing_owner_name,
                           COUNT(i.id) AS line_count,
                           COALESCE(SUM(i.quantity), 0) AS item_count,
                           SUM(CASE WHEN i.unit_price IS NOT NULL
@@ -1858,6 +2816,7 @@ def admin_review_requests():
                    LEFT JOIN review_request_items i ON i.request_id = r.id
                    LEFT JOIN ai_solution_options o ON o.id = r.ai_solution_option_id
                    LEFT JOIN ai_conversations c ON c.id = o.conversation_id
+                   LEFT JOIN admins owner ON owner.id = r.assigned_marketing_admin_id
                    GROUP BY r.id
                    ORDER BY r.id DESC"""
             )
@@ -1867,13 +2826,625 @@ def admin_review_requests():
                 "SELECT * FROM review_request_items ORDER BY request_id DESC, id"
             )
         )
+        selected_options = rows_to_dicts(
+            database.execute(
+                """SELECT link.request_id, option.id, option.option_key, option.name
+                   FROM review_request_solution_options link
+                   JOIN ai_solution_options option ON option.id = link.option_id
+                   ORDER BY link.request_id DESC, option.id"""
+            )
+        )
+        messages = rows_to_dicts(
+            database.execute(
+                "SELECT * FROM review_request_messages ORDER BY request_id DESC, id"
+            )
+        )
+        materials = rows_to_dicts(
+            database.execute(
+                "SELECT * FROM review_request_materials ORDER BY request_id DESC, id"
+            )
+        )
+    if session.get("admin_role") == "admin_technical":
+        requests_list = [
+            review for review in requests_list
+            if review["status"] in {"technical_review", "site_survey_scheduled", "marketing_bom_review"}
+        ]
+    elif session.get("admin_role") in {"admin", "admin_marketing"}:
+        requests_list = [
+            review for review in requests_list
+            if review["status"] not in {"technical_review", "site_survey_scheduled"}
+            and (
+                session.get("admin_role") == "admin"
+                or review.get("assigned_marketing_admin_id") == session.get("admin_id")
+            )
+        ]
     items_by_request = {}
     for item in items:
         items_by_request.setdefault(item["request_id"], []).append(item)
+    options_by_request = {}
+    for option in selected_options:
+        options_by_request.setdefault(option["request_id"], []).append(option)
+    messages_by_request = {}
+    for message in messages:
+        messages_by_request.setdefault(message["request_id"], []).append(message)
+    materials_by_request = {}
+    for material in materials:
+        materials_by_request.setdefault(material["request_id"], []).append(material)
     return render_template(
         "admin_review_requests.html",
         requests=requests_list,
         items_by_request=items_by_request,
+        options_by_request=options_by_request,
+        messages_by_request=messages_by_request,
+        materials_by_request=materials_by_request,
+    )
+
+
+def build_review_documents(review, items, materials=None):
+    materials = materials or []
+    bom_stream = io.StringIO()
+    writer = csv.writer(bom_stream)
+    writer.writerow(["VTIC BOM", f"Request #{review['id']:05d}"])
+    writer.writerow(["Manufacturer", "Product", "SKU", "Quantity", "Unit Price", "Line Total"])
+    total = 0.0
+    for item in items:
+        unit_price = item["unit_price"] or 0
+        line_total = unit_price * item["quantity"]
+        total += line_total
+        writer.writerow(
+            [item["brand"], item["product_name"], f"VT-{item['product_id']:04d}", item["quantity"], f"{unit_price:.2f}", f"{line_total:.2f}"]
+        )
+    writer.writerow([])
+    if materials:
+        writer.writerow(["INSTALLATION MATERIALS"])
+        writer.writerow(["Material", "Quantity", "Unit", "Notes"])
+        for material in materials:
+            writer.writerow(
+                [material["material_name"], material["quantity"], material["unit"], material["notes"]]
+            )
+        writer.writerow([])
+    writer.writerow(["TOTAL", "", "", "", "", f"{total:.2f}"])
+    proposal = (
+        f"VTIC COMMERCIAL PROPOSAL\nRequest #{review['id']:05d}\n\n"
+        f"Prepared for: {review['customer_name']} <{review['customer_email']}>\n"
+        f"Project notes: {review['notes'] or 'None provided'}\n\n"
+        f"Scope: Supply of {sum(item['quantity'] for item in items)} item(s) across "
+        f"{len(items)} product line(s).\n"
+        f"Service scope: {review.get('service_scope') or 'Product supply'}\n"
+        f"Installation materials: {len(materials)} line(s).\n"
+        f"Commercial total: PHP {total:,.2f}\n\n"
+        "All specifications, availability, delivery schedules and final commercial terms "
+        "remain subject to VTIC confirmation."
+    )
+    return bom_stream.getvalue(), proposal
+
+
+def send_review_approved_email(review):
+    host = os.environ.get("SMTP_HOST", "").strip()
+    username = os.environ.get("SMTP_USERNAME", "").strip()
+    password = os.environ.get("SMTP_PASSWORD", "")
+    sender = os.environ.get("SMTP_FROM", username).strip()
+    if not host or not sender:
+        return False
+    message = EmailMessage()
+    message["Subject"] = f"VTIC products reviewed — Request #{review['id']:05d}"
+    message["From"] = sender
+    message["To"] = review["customer_email"]
+    message.set_content(
+        f"Hello {review['customer_name']},\n\n"
+        "Your selected products have been reviewed and approved by VTIC. "
+        "Our team is preparing the approved BOM, pricing and proposal for release. "
+        "We will send the complete documents shortly.\n\n"
+        f"Reference: VTIC request #{review['id']:05d}\n\nVTIC Solutions Team"
+    )
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    use_ssl = os.environ.get("SMTP_USE_SSL", "false").lower() == "true"
+    server_class = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
+    with server_class(host, port, timeout=20) as server:
+        if not use_ssl:
+            server.starttls()
+        if username:
+            server.login(username, password)
+        server.send_message(message)
+    return True
+
+
+def send_customer_workflow_email(review, subject, body):
+    host = os.environ.get("SMTP_HOST", "").strip()
+    username = os.environ.get("SMTP_USERNAME", "").strip()
+    password = os.environ.get("SMTP_PASSWORD", "")
+    sender = os.environ.get("SMTP_FROM", username).strip()
+    if not host or not sender:
+        return False
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = sender
+    message["To"] = review["customer_email"]
+    message.set_content(
+        f"Hello {review['customer_name']},\n\n{body}\n\n"
+        f"Reference: VTIC request #{review['id']:05d}\n\nVTIC Solutions Team"
+    )
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    use_ssl = os.environ.get("SMTP_USE_SSL", "false").lower() == "true"
+    server_class = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
+    with server_class(host, port, timeout=20) as server:
+        if not use_ssl:
+            server.starttls()
+        if username:
+            server.login(username, password)
+        server.send_message(message)
+    return True
+
+
+def add_review_message(database, request_id, sender_type, sender_id, sender_name, message):
+    database.execute(
+        """INSERT INTO review_request_messages
+           (request_id, sender_type, sender_id, sender_name, message)
+           VALUES (?, ?, ?, ?, ?)""",
+        (request_id, sender_type, sender_id, sender_name, message[:3000]),
+    )
+
+
+@app.route("/admin/review-requests/<int:request_id>/message", methods=["POST"])
+@login_required
+def admin_review_message(request_id):
+    validate_csrf()
+    message = request.form.get("message", "").strip()
+    if not message:
+        flash("Write a message before sending it.", "error")
+        return redirect(f"{url_for('admin_review_requests')}#request-{request_id}")
+    if len(message) > 3000:
+        flash("Messages must be 3,000 characters or fewer.", "error")
+        return redirect(f"{url_for('admin_review_requests')}#request-{request_id}")
+    with get_db() as database:
+        review = database.execute(
+            "SELECT * FROM review_requests WHERE id = ?", (request_id,)
+        ).fetchone()
+        if not review:
+            abort(404)
+        if (
+            session.get("admin_role") == "admin_marketing"
+            and review["assigned_marketing_admin_id"] != session["admin_id"]
+        ):
+            abort(403)
+        add_review_message(
+            database,
+            request_id,
+            "admin",
+            session["admin_id"],
+            session["admin_username"],
+            message,
+        )
+    emailed = False
+    if request.form.get("notify_email") == "1":
+        try:
+            emailed = send_customer_workflow_email(
+                dict(review),
+                f"New VTIC message — Request #{request_id:05d}",
+                message,
+            )
+        except Exception:
+            app.logger.exception("Request chat email failed")
+    log_activity(
+        "admin",
+        session["admin_id"],
+        session["admin_username"],
+        "review_chat_message",
+        f"Request #{request_id}",
+    )
+    flash("Message sent in customer web chat." + (" Email sent." if emailed else ""), "success")
+    return redirect(f"{url_for('admin_review_requests')}#request-{request_id}")
+
+
+@app.route("/account/reviews/<int:request_id>/message", methods=["POST"])
+@customer_required
+def customer_review_message(request_id):
+    validate_csrf()
+    message = request.form.get("message", "").strip()
+    if not message:
+        flash("Write a message before sending it.", "error")
+        return redirect(f"{url_for('customer_reviews')}#request-{request_id}")
+    if len(message) > 3000:
+        flash("Messages must be 3,000 characters or fewer.", "error")
+        return redirect(f"{url_for('customer_reviews')}#request-{request_id}")
+    with get_db() as database:
+        review = database.execute(
+            "SELECT id FROM review_requests WHERE id = ? AND customer_id = ?",
+            (request_id, session["customer_id"]),
+        ).fetchone()
+        if not review:
+            abort(404)
+        add_review_message(
+            database,
+            request_id,
+            "customer",
+            session["customer_id"],
+            session.get("customer_name", "Customer"),
+            message,
+        )
+    log_activity(
+        "customer",
+        session["customer_id"],
+        session.get("customer_email", "customer"),
+        "review_chat_message",
+        f"Request #{request_id}",
+    )
+    flash("Your message was sent to the VTIC team.", "success")
+    return redirect(f"{url_for('customer_reviews')}#request-{request_id}")
+
+
+def require_review_role(*roles):
+    if session.get("admin_role") not in {*roles, "superadmin"}:
+        abort(403)
+
+
+@app.route("/admin/review-requests/<int:request_id>/prepare", methods=["POST"])
+@login_required
+def admin_review_prepare(request_id):
+    validate_csrf()
+    require_review_role("admin", "admin_marketing")
+    with get_db() as database:
+        review = database.execute("SELECT * FROM review_requests WHERE id = ?", (request_id,)).fetchone()
+        if not review:
+            abort(404)
+        if session.get("admin_role") == "admin_marketing" and review["assigned_marketing_admin_id"] not in {None, session["admin_id"]}:
+            abort(403)
+        if review["status"] not in {"submitted", "pending", "marketing_review"}:
+            flash("This request has already completed its initial Marketing review.", "error")
+            return redirect(url_for("admin_review_requests"))
+        items = rows_to_dicts(database.execute("SELECT * FROM review_request_items WHERE request_id = ? ORDER BY id", (request_id,)))
+        for item in items:
+            value = request.form.get(f"price_{item['id']}", "").replace(",", "").replace("₱", "").strip()
+            try:
+                price = float(value)
+            except ValueError:
+                flash(f"Enter a valid price for {item['product_name']}.", "error")
+                return redirect(url_for("admin_review_requests"))
+            if price < 0:
+                flash("Prices cannot be negative.", "error")
+                return redirect(url_for("admin_review_requests"))
+            item["unit_price"] = price
+            database.execute("UPDATE review_request_items SET unit_price = ? WHERE id = ?", (price, item["id"]))
+        message = (
+            "VTIC Marketing has reviewed the initial product pricing. "
+            "Would you like a product-only quotation, or a complete setup quotation "
+            "including structured cabling and installation workers?"
+        )
+        database.execute(
+            """UPDATE review_requests SET status = 'awaiting_customer_scope',
+               commercial_notes = ?, marketing_reviewed_by = ?,
+               assigned_marketing_admin_id = COALESCE(assigned_marketing_admin_id, ?),
+               assigned_marketing_at = COALESCE(assigned_marketing_at, CURRENT_TIMESTAMP),
+               marketing_reviewed_at = CURRENT_TIMESTAMP WHERE id = ?""",
+            (request.form.get("commercial_notes", "").strip()[:4000], session["admin_id"], session["admin_id"], request_id),
+        )
+        add_review_message(database, request_id, "admin", session["admin_id"], session["admin_username"], message)
+    emailed = False
+    if request.form.get("notify_email") == "1":
+        try:
+            emailed = send_customer_workflow_email(dict(review), f"Choose your VTIC quotation scope — Request #{request_id:05d}", message)
+        except Exception:
+            app.logger.exception("Customer scope email failed")
+    log_activity("admin", session["admin_id"], session["admin_username"], "marketing_initial_review", f"Request #{request_id}")
+    flash("Pricing saved and the scope question was sent in customer web chat." + (" Email sent." if emailed else ""), "success")
+    return redirect(url_for("admin_review_requests"))
+
+
+@app.route("/account/reviews/<int:request_id>/scope", methods=["POST"])
+@customer_required
+def customer_review_scope(request_id):
+    validate_csrf()
+    if not session.get("customer_id"):
+        abort(403)
+    service_scope = request.form.get("service_scope", "")
+    if service_scope not in {"product_only", "full_setup"}:
+        abort(400)
+    with get_db() as database:
+        review = database.execute(
+            "SELECT * FROM review_requests WHERE id = ? AND customer_id = ?",
+            (request_id, session["customer_id"]),
+        ).fetchone()
+        if not review or review["status"] != "awaiting_customer_scope":
+            flash("This request is not waiting for a scope decision.", "error")
+            return redirect(url_for("customer_reviews"))
+        label = "product supply only" if service_scope == "product_only" else "complete setup with structured cabling and installation"
+        database.execute(
+            """UPDATE review_requests SET service_scope = ?,
+               status = 'marketing_final_pricing', customer_scope_decided_at = CURRENT_TIMESTAMP
+               WHERE id = ?""",
+            (service_scope, request_id),
+        )
+        add_review_message(database, request_id, "customer", session["customer_id"], session.get("customer_name", "Customer"), f"I confirm that I want {label}.")
+    log_activity("customer", session["customer_id"], session.get("customer_email", "customer"), "review_scope_selected", f"Request #{request_id}: {service_scope}")
+    flash("Your project scope was sent to VTIC Marketing.", "success")
+    return redirect(url_for("customer_reviews"))
+
+
+@app.route("/admin/review-requests/<int:request_id>/marketing-final", methods=["POST"])
+@login_required
+def marketing_final_pricing(request_id):
+    validate_csrf()
+    require_review_role("admin", "admin_marketing")
+    with get_db() as database:
+        review = database.execute("SELECT * FROM review_requests WHERE id = ?", (request_id,)).fetchone()
+        if review and session.get("admin_role") == "admin_marketing" and review["assigned_marketing_admin_id"] != session["admin_id"]:
+            abort(403)
+        if not review or review["status"] != "marketing_final_pricing":
+            flash("This request is not ready for final pricing.", "error")
+            return redirect(url_for("admin_review_requests"))
+        items = rows_to_dicts(database.execute("SELECT * FROM review_request_items WHERE request_id = ? ORDER BY id", (request_id,)))
+        for item in items:
+            value = request.form.get(f"price_{item['id']}", "").replace(",", "").replace("₱", "").strip()
+            try:
+                price = float(value)
+            except ValueError:
+                flash(f"Enter a valid price for {item['product_name']}.", "error")
+                return redirect(url_for("admin_review_requests"))
+            if price < 0:
+                flash("Prices cannot be negative.", "error")
+                return redirect(url_for("admin_review_requests"))
+            database.execute("UPDATE review_request_items SET unit_price = ? WHERE id = ?", (price, item["id"]))
+            item["unit_price"] = price
+        if review["service_scope"] == "product_only":
+            bom, proposal = build_review_documents(dict(review), items)
+            next_status = "superadmin_review"
+            database.execute("UPDATE review_requests SET status = ?, bom_document = ?, proposal_document = ?, marketing_reviewed_by = ?, marketing_reviewed_at = CURRENT_TIMESTAMP WHERE id = ?", (next_status, bom, proposal, session["admin_id"], request_id))
+        else:
+            next_status = "technical_review"
+            database.execute("UPDATE review_requests SET status = ?, marketing_reviewed_by = ?, marketing_reviewed_at = CURRENT_TIMESTAMP WHERE id = ?", (next_status, session["admin_id"], request_id))
+        add_review_message(database, request_id, "admin", session["admin_id"], session["admin_username"], "Final product pricing is complete." + (" The request is now with Technical for survey and BOM validation." if next_status == "technical_review" else " The product-only proposal is now awaiting final approval."))
+    flash("Final pricing completed and the request was routed to " + ("Technical." if next_status == "technical_review" else "Superadmin."), "success")
+    return redirect(url_for("admin_review_requests"))
+
+
+@app.route("/admin/review-requests/<int:request_id>/schedule-survey", methods=["POST"])
+@login_required
+def technical_schedule_survey(request_id):
+    validate_csrf()
+    require_review_role("admin_technical")
+    starts_at = request.form.get("starts_at", "").strip()
+    location = request.form.get("location", "").strip()
+    notes = request.form.get("survey_notes", "").strip()
+    try:
+        datetime.fromisoformat(starts_at)
+    except ValueError:
+        flash("Choose a valid site-survey date and time.", "error")
+        return redirect(url_for("admin_review_requests"))
+    with get_db() as database:
+        review = database.execute("SELECT * FROM review_requests WHERE id = ?", (request_id,)).fetchone()
+        if not review or review["status"] not in {"technical_review", "site_survey_scheduled"}:
+            flash("This request is not ready for site-survey scheduling.", "error")
+            return redirect(url_for("admin_review_requests"))
+        database.execute("UPDATE review_requests SET status = 'site_survey_scheduled', site_survey_at = ?, site_survey_location = ?, site_survey_notes = ? WHERE id = ?", (starts_at, location, notes, request_id))
+        database.execute("DELETE FROM calendar_events WHERE request_id = ? AND event_type = 'site_survey'", (request_id,))
+        database.execute("""INSERT INTO calendar_events (request_id, event_type, title, customer_name, customer_email, starts_at, location, notes, created_by) VALUES (?, 'site_survey', ?, ?, ?, ?, ?, ?, ?)""", (request_id, f"Site survey — Request #{request_id:05d}", review["customer_name"], review["customer_email"], starts_at, location, notes, session["admin_id"]))
+        message = f"Your VTIC site survey is scheduled for {starts_at.replace('T', ' ')} at {location or 'the agreed project site'}."
+        add_review_message(database, request_id, "admin", session["admin_id"], session["admin_username"], message)
+    emailed = False
+    if request.form.get("notify_email") == "1":
+        try:
+            emailed = send_customer_workflow_email(dict(review), f"VTIC site survey scheduled — Request #{request_id:05d}", message)
+        except Exception:
+            app.logger.exception("Site survey email failed")
+    flash("Site survey added to the calendar and customer web chat." + (" Email sent." if emailed else ""), "success")
+    return redirect(url_for("admin_calendar"))
+
+
+@app.route("/admin/review-requests/<int:request_id>/technical-complete", methods=["POST"])
+@login_required
+def technical_review_complete(request_id):
+    validate_csrf()
+    require_review_role("admin_technical")
+    material_lines = request.form.get("materials", "").splitlines()
+    parsed_materials = []
+    for line in material_lines:
+        if not line.strip():
+            continue
+        parts = [part.strip() for part in line.split("|")]
+        name = parts[0]
+        try:
+            quantity = float(parts[1]) if len(parts) > 1 and parts[1] else 1
+        except ValueError:
+            flash(f"Invalid material quantity in: {line}", "error")
+            return redirect(url_for("admin_review_requests"))
+        if quantity <= 0:
+            flash(f"Material quantities must be positive: {line}", "error")
+            return redirect(url_for("admin_review_requests"))
+        parsed_materials.append((name, quantity, parts[2] if len(parts) > 2 else "pc", parts[3] if len(parts) > 3 else ""))
+    if not parsed_materials:
+        flash("Add at least one installation material before completing the technical BOM.", "error")
+        return redirect(url_for("admin_review_requests"))
+    with get_db() as database:
+        review = database.execute("SELECT * FROM review_requests WHERE id = ?", (request_id,)).fetchone()
+        if not review or review["status"] not in {"technical_review", "site_survey_scheduled"}:
+            flash("This request is not in technical review.", "error")
+            return redirect(url_for("admin_review_requests"))
+        database.execute("DELETE FROM review_request_materials WHERE request_id = ?", (request_id,))
+        database.executemany("INSERT INTO review_request_materials (request_id, material_name, quantity, unit, notes) VALUES (?, ?, ?, ?, ?)", [(request_id, *material) for material in parsed_materials])
+        database.execute("UPDATE review_requests SET status = 'marketing_bom_review', technical_reviewed_by = ?, technical_reviewed_at = CURRENT_TIMESTAMP WHERE id = ?", (session["admin_id"], request_id))
+        add_review_message(database, request_id, "admin", session["admin_id"], session["admin_username"], "Technical review, quantity validation and installation materials are complete. The BOM was returned to Marketing.")
+    flash("Technical BOM completed and returned to Marketing.", "success")
+    return redirect(url_for("admin_review_requests"))
+
+
+@app.route("/admin/review-requests/<int:request_id>/marketing-proposal", methods=["POST"])
+@login_required
+def marketing_proposal_complete(request_id):
+    validate_csrf()
+    require_review_role("admin", "admin_marketing")
+    with get_db() as database:
+        review = database.execute("SELECT * FROM review_requests WHERE id = ?", (request_id,)).fetchone()
+        if review and session.get("admin_role") == "admin_marketing" and review["assigned_marketing_admin_id"] != session["admin_id"]:
+            abort(403)
+        if not review or review["status"] != "marketing_bom_review":
+            flash("This BOM is not ready for Marketing approval.", "error")
+            return redirect(url_for("admin_review_requests"))
+        items = rows_to_dicts(database.execute("SELECT * FROM review_request_items WHERE request_id = ? ORDER BY id", (request_id,)))
+        materials = rows_to_dicts(database.execute("SELECT * FROM review_request_materials WHERE request_id = ? ORDER BY id", (request_id,)))
+        bom, proposal = build_review_documents(dict(review), items, materials)
+        database.execute("UPDATE review_requests SET status = 'superadmin_review', bom_document = ?, proposal_document = ?, commercial_notes = ?, marketing_reviewed_by = ?, marketing_reviewed_at = CURRENT_TIMESTAMP WHERE id = ?", (bom, proposal, request.form.get("commercial_notes", "").strip()[:4000], session["admin_id"], request_id))
+        add_review_message(database, request_id, "admin", session["admin_id"], session["admin_username"], "Marketing completed the final BOM and proposal review. The request is awaiting Superadmin approval.")
+    flash("BOM and proposal sent to Superadmin for final approval.", "success")
+    return redirect(url_for("admin_review_requests"))
+
+
+@app.route("/admin/review-requests/<int:request_id>/approve", methods=["POST"])
+@superadmin_required
+def superadmin_review_approve(request_id):
+    validate_csrf()
+    with get_db() as database:
+        review = database.execute("SELECT * FROM review_requests WHERE id = ?", (request_id,)).fetchone()
+        if not review:
+            abort(404)
+        if review["status"] != "superadmin_review":
+            flash("This request is not ready for final approval.", "error")
+            return redirect(url_for("admin_review_requests"))
+        database.execute(
+            """UPDATE review_requests SET status = 'approved', superadmin_approved_by = ?,
+               superadmin_approved_at = CURRENT_TIMESTAMP WHERE id = ?""",
+            (session["admin_id"], request_id),
+        )
+    notified = False
+    try:
+        notified = send_review_approved_email(dict(review))
+    except Exception:
+        app.logger.exception("Review approval email failed")
+    if notified:
+        with get_db() as database:
+            database.execute("UPDATE review_requests SET customer_notified_at = CURRENT_TIMESTAMP WHERE id = ?", (request_id,))
+    log_activity("admin", session["admin_id"], session["admin_username"], "review_final_approval", f"Request #{request_id}; email={'sent' if notified else 'not configured'}")
+    flash("Request approved." + (" The customer email was sent." if notified else " Configure SMTP to send the customer email."), "success")
+    return redirect(url_for("admin_review_requests"))
+
+
+@app.route("/admin/review-requests/<int:request_id>/<document_type>")
+@login_required
+def review_document_download(request_id, document_type):
+    column = {"bom": "bom_document", "proposal": "proposal_document"}.get(document_type)
+    if not column:
+        abort(404)
+    with get_db() as database:
+        review = database.execute(f"SELECT {column} AS document FROM review_requests WHERE id = ?", (request_id,)).fetchone()
+    if not review or not review["document"]:
+        abort(404)
+    mimetype = "text/csv" if document_type == "bom" else "text/plain"
+    return Response(review["document"], mimetype=mimetype, headers={"Content-Disposition": f"attachment; filename=VTIC-{document_type}-{request_id:05d}.{'csv' if document_type == 'bom' else 'txt'}"})
+
+
+@app.route("/account/reviews")
+@customer_required
+def customer_reviews():
+    if not session.get("customer_id"):
+        return redirect(url_for("admin_review_requests"))
+    with get_db() as database:
+        reviews = rows_to_dicts(database.execute(
+            """SELECT request.*, COUNT(item.id) AS line_count,
+                      COALESCE(SUM(item.quantity), 0) AS item_count
+               FROM review_requests request LEFT JOIN review_request_items item ON item.request_id = request.id
+               WHERE request.customer_id = ? GROUP BY request.id ORDER BY request.id DESC""",
+            (session["customer_id"],),
+        ))
+        request_ids = [review["id"] for review in reviews]
+        messages = []
+        if request_ids:
+            placeholders = ",".join("?" for _ in request_ids)
+            messages = rows_to_dicts(database.execute(
+                f"SELECT * FROM review_request_messages WHERE request_id IN ({placeholders}) ORDER BY id",
+                request_ids,
+            ))
+    messages_by_request = {}
+    for message in messages:
+        messages_by_request.setdefault(message["request_id"], []).append(message)
+    for review in reviews:
+        if review["status"] in {"submitted", "pending"}:
+            review["public_stage"] = "submitted"
+        elif review["status"] in {"marketing_review", "awaiting_customer_scope"}:
+            review["public_stage"] = "under_review"
+        elif review["status"] == "approved":
+            review["public_stage"] = "approved"
+        else:
+            review["public_stage"] = "for_approval"
+    stage_counts = {
+        stage: sum(review["public_stage"] == stage for review in reviews)
+        for stage in ("submitted", "under_review", "for_approval", "approved")
+    }
+    return render_template("customer_reviews.html", reviews=reviews, messages_by_request=messages_by_request, stage_counts=stage_counts)
+
+
+@app.route("/admin/catered-customers")
+@login_required
+def admin_catered_customers():
+    if session.get("admin_role") not in {"admin_marketing", "superadmin"}:
+        abort(403)
+    parameters = ()
+    owner_filter = ""
+    if session.get("admin_role") == "admin_marketing":
+        owner_filter = "WHERE r.assigned_marketing_admin_id = ?"
+        parameters = (session["admin_id"],)
+    with get_db() as database:
+        assignments = rows_to_dicts(
+            database.execute(
+                f"""SELECT r.assigned_marketing_admin_id, a.username,
+                           COALESCE(NULLIF(a.full_name, ''), a.username) AS admin_name,
+                           a.avatar_url AS admin_avatar_url,
+                           r.customer_id, r.customer_name, r.customer_email,
+                           c.avatar_url AS customer_avatar_url,
+                           COUNT(r.id) AS request_count,
+                           MAX(r.created_at) AS latest_request_at,
+                           MAX(CASE WHEN r.status = 'approved' THEN 1 ELSE 0 END) AS has_approved,
+                           GROUP_CONCAT(DISTINCT r.status) AS request_statuses
+                    FROM review_requests r
+                    JOIN admins a ON a.id = r.assigned_marketing_admin_id
+                    LEFT JOIN customers c ON c.id = r.customer_id
+                    {owner_filter}
+                    GROUP BY r.assigned_marketing_admin_id, r.customer_id
+                    ORDER BY admin_name, latest_request_at DESC""",
+                parameters,
+            )
+        )
+    admin_groups = {}
+    for assignment in assignments:
+        admin_groups.setdefault(
+            assignment["assigned_marketing_admin_id"],
+            {"admin_name": assignment["admin_name"], "username": assignment["username"], "avatar_url": assignment["admin_avatar_url"], "customers": []},
+        )["customers"].append(assignment)
+    return render_template("admin_catered_customers.html", admin_groups=admin_groups, total_customers=len(assignments))
+
+
+@app.route("/admin/calendar")
+@login_required
+def admin_calendar():
+    month_value = request.args.get("month", datetime.now().strftime("%Y-%m"))
+    try:
+        month_date = datetime.strptime(month_value, "%Y-%m").date().replace(day=1)
+    except ValueError:
+        month_date = datetime.now().date().replace(day=1)
+    month_weeks = calendar.Calendar(firstweekday=6).monthdatescalendar(
+        month_date.year, month_date.month
+    )
+    visible_start = month_weeks[0][0]
+    visible_end = month_weeks[-1][-1] + timedelta(days=1)
+    with get_db() as database:
+        events = rows_to_dicts(
+            database.execute(
+                """SELECT * FROM calendar_events
+                   WHERE starts_at >= ? AND starts_at < ? ORDER BY starts_at""",
+                (visible_start.isoformat(), visible_end.isoformat()),
+            )
+        )
+    events_by_date = {}
+    for event in events:
+        events_by_date.setdefault(event["starts_at"][:10], []).append(event)
+    previous_month = (month_date - timedelta(days=1)).replace(day=1)
+    next_month = (month_date.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return render_template(
+        "admin_calendar.html",
+        month_date=month_date,
+        month_weeks=month_weeks,
+        events_by_date=events_by_date,
+        previous_month=previous_month.strftime("%Y-%m"),
+        next_month=next_month.strftime("%Y-%m"),
+        today=datetime.now().date().isoformat(),
     )
 
 
@@ -1929,7 +3500,7 @@ def render_manufacturer_workspace(manufacturer):
         "admin_manufacturer_form.html",
         manufacturer=dict(manufacturer),
         products=manufacturer_products(manufacturer["name"]),
-        categories=CATEGORIES[1:],
+        categories=get_catalog_categories(include_all=False),
     )
 
 
@@ -1945,7 +3516,7 @@ def admin_product_new():
             return render_template(
                 "admin_product_form.html",
                 product=None,
-                categories=CATEGORIES[1:],
+                categories=get_catalog_categories(include_all=False),
                 manufacturers=get_manufacturers(),
             )
         if not all((values[0], values[1], values[2], values[4])):
@@ -1970,7 +3541,7 @@ def admin_product_new():
     return render_template(
         "admin_product_form.html",
         product=None,
-        categories=CATEGORIES[1:],
+        categories=get_catalog_categories(include_all=False),
         manufacturers=get_manufacturers(),
     )
 
@@ -1993,7 +3564,7 @@ def admin_product_edit(product_id):
             return render_template(
                 "admin_product_form.html",
                 product=dict(row),
-                categories=CATEGORIES[1:],
+                categories=get_catalog_categories(include_all=False),
                 manufacturers=get_manufacturers(),
             )
         if not manufacturer_exists(values[0]):
@@ -2001,7 +3572,7 @@ def admin_product_edit(product_id):
             return render_template(
                 "admin_product_form.html",
                 product=dict(row),
-                categories=CATEGORIES[1:],
+                categories=get_catalog_categories(include_all=False),
                 manufacturers=get_manufacturers(),
             )
         with get_db() as database:
@@ -2019,7 +3590,7 @@ def admin_product_edit(product_id):
     return render_template(
         "admin_product_form.html",
         product=dict(row),
-        categories=CATEGORIES[1:],
+        categories=get_catalog_categories(include_all=False),
         manufacturers=get_manufacturers(),
     )
 
@@ -2138,14 +3709,11 @@ def admin_manufacturer_edit(manufacturer_id):
 def admin_manufacturer_csv_template():
     output = io.StringIO()
     writer = csv.writer(output, lineterminator="\n")
-    writer.writerow(
-        ["name", "category", "price", "description", "source", "color", "image_url"]
-    )
+    writer.writerow(["name", "category", "price", "description", "source"])
     writer.writerow(
         [
             "Example Managed Switch", "Switches", "24990.00",
             "24-port managed enterprise switch.", "Partner quotation",
-            "#e8f0ff", "https://example.com/product-image.jpg",
         ]
     )
     return Response(
@@ -2174,17 +3742,35 @@ def admin_manufacturer_product_import(manufacturer_id):
         ).fetchone()
         if not manufacturer:
             abort(404)
-        existing_names = {
-            row[0].casefold()
+        existing_products = {
+            row["name"].casefold(): dict(row)
             for row in database.execute(
-                "SELECT name FROM products WHERE brand = ? COLLATE NOCASE",
+                """SELECT id, name, price FROM products
+                   WHERE brand = ? COLLATE NOCASE""",
                 (manufacturer["name"],),
             )
         }
+    raw_content = upload.stream.read()
     try:
-        content = upload.stream.read().decode("utf-8-sig")
+        if raw_content.startswith((b"\xff\xfe", b"\xfe\xff")):
+            content = raw_content.decode("utf-16")
+        else:
+            try:
+                content = raw_content.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                content = raw_content.decode("cp1252")
     except UnicodeDecodeError:
-        flash("The CSV must be UTF-8 encoded.", "error")
+        flash(
+            "The CSV text encoding could not be read. Export it as CSV UTF-8 or Windows CSV.",
+            "error",
+        )
+        return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
+
+    if "\x00" in content:
+        flash(
+            "The uploaded file is not a readable CSV. Export the worksheet as CSV and try again.",
+            "error",
+        )
         return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
     reader = csv.DictReader(io.StringIO(content))
     required_headers = {"name", "category", "description"}
@@ -2194,67 +3780,104 @@ def admin_manufacturer_product_import(manufacturer_id):
         return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
 
     records = []
+    price_updates = []
     errors = []
     imported_names = set()
+    skipped_duplicates = 0
+    skipped_invalid = 0
     for row_number, raw_row in enumerate(reader, start=2):
-        if row_number > 1001:
-            errors.append("The file exceeds the 1,000-product import limit.")
+        if row_number > 5001:
+            errors.append("Rows after the 5,000-product import limit were not processed.")
             break
         row = {(key or "").strip().lower(): (value or "").strip() for key, value in raw_row.items()}
         if not any(row.values()):
             continue
         name = row.get("name", "")
-        category = row.get("category", "")
+        category = normalize_product_category(row.get("category", ""))
         description = row.get("description", "")
         price_text = row.get("price", "")
+        price = parse_optional_csv_price(price_text)
+        name_key = name.casefold()
+        row_errors = []
         if not name:
-            errors.append(f"Row {row_number}: product name is required.")
-        elif name.casefold() in existing_names or name.casefold() in imported_names:
-            errors.append(f"Row {row_number}: {name} already exists for this manufacturer.")
-        if category not in CATEGORIES[1:]:
-            errors.append(f"Row {row_number}: category '{category}' is not recognized.")
+            row_errors.append(f"Row {row_number}: product name is required.")
+        elif name_key in imported_names:
+            skipped_duplicates += 1
+            continue
+        if not category:
+            row_errors.append(f"Row {row_number}: category is required.")
         if not description:
-            errors.append(f"Row {row_number}: description is required.")
-        price = None
-        if price_text:
-            try:
-                price = float(price_text.replace(",", ""))
-                if price < 0:
-                    raise ValueError
-            except ValueError:
-                errors.append(f"Row {row_number}: price must be a positive number or blank.")
-        color = row.get("color") or "#e8f0ff"
-        if len(color) != 7 or not color.startswith("#"):
-            errors.append(f"Row {row_number}: color must use a value such as #e8f0ff.")
-        imported_names.add(name.casefold())
+            row_errors.append(f"Row {row_number}: description is required.")
+        if row_errors:
+            skipped_invalid += 1
+            errors.extend(row_errors)
+            continue
+        imported_names.add(name_key)
+        existing_product = existing_products.get(name_key)
+        if existing_product:
+            if price is not None and existing_product["price"] != price:
+                price_updates.append(
+                    (
+                        price,
+                        row.get("source") or "Partner quotation",
+                        existing_product["id"],
+                    )
+                )
+            else:
+                skipped_duplicates += 1
+            continue
         records.append(
             (
                 manufacturer["name"], name, category, price, description,
-                row.get("source") or "Partner quotation", color,
-                row.get("image_url") or None,
+                row.get("source") or "Partner quotation", "#e8f0ff", None,
             )
         )
-    if errors:
-        preview = " ".join(errors[:8])
-        if len(errors) > 8:
-            preview += f" Plus {len(errors) - 8} more error(s)."
-        flash(f"Nothing was imported. {preview}", "error")
-        return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
-    if not records:
-        flash("The CSV does not contain any product rows.", "error")
+    if not records and not price_updates:
+        if skipped_duplicates:
+            message = f"No new products were imported. Skipped {skipped_duplicates} duplicate product(s)."
+            if skipped_invalid:
+                message += f" Skipped {skipped_invalid} invalid row(s)."
+            flash(message, "success")
+        elif errors:
+            preview = " ".join(errors[:8])
+            if len(errors) > 8:
+                preview += f" Plus {len(errors) - 8} more error(s)."
+            flash(f"No valid products were found. {preview}", "error")
+        else:
+            flash("The CSV does not contain any product rows.", "error")
         return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
     with get_db() as database:
-        database.executemany(
-            """INSERT INTO products
-               (brand, name, category, price, description, source, color, image_url)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            records,
-        )
+        if records:
+            database.executemany(
+                """INSERT INTO products
+                   (brand, name, category, price, description, source, color, image_url)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                records,
+            )
+        if price_updates:
+            database.executemany(
+                """UPDATE products SET price = ?, source = ?,
+                   updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+                price_updates,
+            )
     log_activity(
         "admin", session["admin_id"], session["admin_username"],
-        "product_csv_import", f"{manufacturer['name']}: {len(records)} products"
+        "product_csv_import",
+        f"{manufacturer['name']}: {len(records)} added, {len(price_updates)} prices updated",
     )
-    flash(f"Imported {len(records)} product(s) for {manufacturer['name']}.", "success")
+    message = f"Imported {len(records)} new product(s) for {manufacturer['name']}."
+    if price_updates:
+        message += f" Updated prices for {len(price_updates)} existing product(s)."
+    if skipped_duplicates:
+        message += f" Skipped {skipped_duplicates} duplicate product(s)."
+    if skipped_invalid:
+        message += f" Skipped {skipped_invalid} invalid row(s)."
+    flash(message, "success")
+    if errors:
+        preview = " ".join(errors[:5])
+        if len(errors) > 5:
+            preview += f" Plus {len(errors) - 5} more issue(s)."
+        flash(f"Some rows need attention: {preview}", "error")
     return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
 
 
@@ -2282,7 +3905,7 @@ def admin_manufacturer_product_quick_edit(manufacturer_id, product_id):
     description = request.form.get("description", "").strip()
     source = request.form.get("source", "").strip() or "Partner quotation"
     price_text = request.form.get("price", "").strip()
-    if not name or not description or category not in CATEGORIES[1:]:
+    if not name or not description or not category:
         flash("Product name, valid category, and description are required.", "error")
         return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
     try:
@@ -2292,17 +3915,88 @@ def admin_manufacturer_product_quick_edit(manufacturer_id, product_id):
     except ValueError:
         flash("Price must be a positive number or left blank.", "error")
         return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
+    image_url = request.form.get("image_url", "").strip() or product["image_url"]
+    if request.form.get("remove_image") == "1":
+        image_url = None
+    try:
+        uploaded_image = save_product_image(request.files.get("image_file"))
+        image_url = uploaded_image or image_url
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
     with get_db() as database:
         database.execute(
             """UPDATE products SET name = ?, category = ?, price = ?,
-               description = ?, source = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
-            (name, category, price, description, source, product_id),
+               description = ?, source = ?, image_url = ?,
+               updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+            (name, category, price, description, source, image_url, product_id),
         )
     log_activity(
         "admin", session["admin_id"], session["admin_username"],
         "product_quick_update", f"Product #{product_id}: {name}"
     )
     flash(f"{name} was updated.", "success")
+    return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
+
+
+@app.route(
+    "/admin/manufacturers/<int:manufacturer_id>/products/batch-delete",
+    methods=["POST"],
+)
+@login_required
+def admin_manufacturer_products_batch_delete(manufacturer_id):
+    validate_csrf()
+    product_ids = []
+    for value in request.form.getlist("product_ids"):
+        try:
+            product_id = int(value)
+        except (TypeError, ValueError):
+            continue
+        if product_id > 0 and product_id not in product_ids:
+            product_ids.append(product_id)
+
+    if not product_ids:
+        flash("Select at least one product to delete.", "error")
+        return redirect(
+            url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id)
+        )
+
+    placeholders = ",".join("?" for _ in product_ids)
+    with get_db() as database:
+        manufacturer = database.execute(
+            "SELECT name FROM manufacturers WHERE id = ?", (manufacturer_id,)
+        ).fetchone()
+        if not manufacturer:
+            abort(404)
+        products = rows_to_dicts(
+            database.execute(
+                f"""SELECT id, name FROM products
+                    WHERE id IN ({placeholders}) AND brand = ? COLLATE NOCASE""",
+                (*product_ids, manufacturer["name"]),
+            )
+        )
+        authorized_ids = [product["id"] for product in products]
+        if authorized_ids:
+            authorized_placeholders = ",".join("?" for _ in authorized_ids)
+            database.execute(
+                f"DELETE FROM products WHERE id IN ({authorized_placeholders})",
+                authorized_ids,
+            )
+
+    if not products:
+        flash("None of the selected products belong to this manufacturer.", "error")
+    else:
+        deleted_names = ", ".join(product["name"] for product in products[:5])
+        if len(products) > 5:
+            deleted_names += f" and {len(products) - 5} more"
+        log_activity(
+            "admin",
+            session["admin_id"],
+            session["admin_username"],
+            "product_batch_delete",
+            f"{manufacturer['name']}: {len(products)} product(s) — {deleted_names}",
+        )
+        flash(f"Deleted {len(products)} selected product(s).", "success")
     return redirect(url_for("admin_manufacturer_edit", manufacturer_id=manufacturer_id))
 
 

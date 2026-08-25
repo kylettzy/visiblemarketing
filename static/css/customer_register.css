@@ -1,20 +1,172 @@
-@import url("admin_login.css");
+@import url("customer_login.css");
 
-.login-panel {
-  padding-top: 25px;
-  padding-bottom: 25px;
+.register-shell {
+  min-height: 100svh;
 }
-.login-box form {
-  margin-top: 24px;
+
+.register-panel {
+  overflow-y: auto;
+  align-items: start;
+  padding-block: 34px;
+}
+
+.register-panel::before {
+  inset-block: 24px;
+}
+
+.register-box {
+  width: min(620px, 100%);
+  padding: clamp(30px, 3.2vw, 48px);
+}
+
+.register-box header {
+  padding-bottom: 22px;
+}
+
+.register-box h2 {
+  font-size: clamp(34px, 2.7vw, 46px);
+}
+
+.password-requirements {
+  margin: -10px 0 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.password-requirements span {
+  padding: 6px 8px;
+  border: 1px solid rgba(52, 171, 216, 0.24);
+  border-radius: 999px;
+  color: #8fb4c9;
+  background: rgba(11, 45, 69, 0.55);
+  font: 500 8px "DM Mono", monospace;
+}
+
+.social-auth {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.social-button {
+  min-height: 52px;
+  padding: 9px 11px;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(140, 190, 225, 0.25);
+  border-radius: 9px;
+  background: rgba(242, 248, 253, 0.97);
+  color: #132c41;
+  text-decoration: none;
+  transition: 160ms ease;
+}
+
+.social-button:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 8px 22px rgba(14, 136, 211, 0.14);
+  transform: translateY(-1px);
+}
+
+.social-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.social-button > span {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.social-button small {
+  grid-column: 2;
+  margin-top: -5px;
+  color: #758997;
+  font:
+    6px "DM Mono",
+    monospace;
+  text-transform: uppercase;
+}
+
+.social-button.facebook svg {
+  color: #1877f2;
+}
+
+.social-button.apple svg {
+  color: #05080b;
+}
+
+.social-button.setup-required {
+  opacity: 0.72;
+}
+
+.auth-divider {
+  margin: 22px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #7890a1;
+  font:
+    7px "DM Mono",
+    monospace;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: rgba(145, 189, 220, 0.18);
+}
+
+.register-box form {
+  margin-top: 20px;
   gap: 14px;
 }
-.account-link {
-  margin: 20px 0 0;
-  color: var(--muted) !important;
-  font: 11px Inter, Arial, sans-serif !important;
-  letter-spacing: 0 !important;
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
-.account-link a {
-  color: var(--blue);
-  font-weight: 700;
+
+.register-box .login-footer {
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+@media (max-width: 1180px) {
+  .register-shell {
+    grid-template-columns: minmax(0, 0.9fr) minmax(520px, 1.1fr);
+  }
+
+  .register-shell .brand-panel {
+    padding-inline: 48px;
+  }
+}
+
+@media (max-width: 820px) {
+  .register-panel {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 560px) {
+  .social-auth,
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .social-button {
+    grid-template-columns: 24px 1fr auto;
+  }
+
+  .social-button small {
+    grid-column: 3;
+    margin: 0;
+  }
 }

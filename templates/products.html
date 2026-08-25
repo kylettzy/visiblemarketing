@@ -13,33 +13,19 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/products.css') }}"
     />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
+    />
+    {% include '_theme.html' %}
   </head>
   <body>
-    <header>
-      <div class="shell header-inner">
-        <a class="wordmark" href="/storefront">
-          <img
-            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-            alt="Visilile Technologies Intl Corp"
-          />
-        </a>
-        <nav>
-          <a class="active" href="/products">Products</a
-          ><a href="/solution-advisor">AI Advisor</a><a href="/#solutions">Solutions</a><a href="/#partners">Partners</a>
-        </nav>
-        <form action="/products">
-          <input
-            name="q"
-            value="{{ query }}"
-            placeholder="Search by product, brand or category"
-          /><button>Search</button>
-        </form>
-        <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
-        {% include '_admin_storefront_menu.html' %}
-      </div>
-    </header>
+    {% set storefront_section = 'products' %} {% include
+    '_storefront_header.html' %}
 
     <main class="shell">
       <div class="breadcrumb">
@@ -54,16 +40,6 @@
             global manufacturers.</span
           >
         </div>
-        <dl>
-          <div>
-            <dt>{{ products|length }}</dt>
-            <dd>RESULTS</dd>
-          </div>
-          <div>
-            <dt>{{ brands|length }}</dt>
-            <dd>BRANDS</dd>
-          </div>
-        </dl>
       </section>
 
       <div class="catalog-layout">
@@ -95,25 +71,39 @@
 
         <section class="results">
           <div class="result-bar">
-            <span>Showing <b>{{ products|length }}</b> products</span
-            ><select aria-label="Sort catalog">
-              <option>Recommended</option>
-              <option>Price: low to high</option>
-              <option>Brand: A to Z</option>
-            </select>
+            <span
+              >Showing <b>{{ products|length }}</b> of {{ total_results }}
+              products</span
+            >
           </div>
           <div class="grid">
             {% for product in products %}
             <article class="product-card">
               <a class="product-media" href="/product/{{ product.id }}">
                 {% if product.image_url %}
-                <img class="product-image" src="{{ product.image_url }}" alt="{{ product.name }}" />
+                <img
+                  class="product-image"
+                  src="{{ product.image_url }}"
+                  alt="{{ product.name }}"
+                />
+                {% elif product.manufacturer_logo %}
+                <img
+                  class="product-image product-image--brand-fallback"
+                  src="{{ product.manufacturer_logo }}"
+                  alt="{{ product.brand }} logo — product image not available"
+                />
                 {% else %}
-                <span class="product-initials">{{ product.brand[:2]|upper }}</span>
+                <span class="product-initials"
+                  >{{ product.brand[:2]|upper }}</span
+                >
                 {% endif %}
                 <small>{{ product.brand }}</small>
-                {% if product.manufacturer_logo %}
-                <span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>
+                {% if product.manufacturer_logo and product.image_url %}
+                <span class="manufacturer-mark"
+                  ><img
+                    src="{{ product.manufacturer_logo }}"
+                    alt="{{ product.brand }} logo"
+                /></span>
                 {% endif %}
                 <i>{{ product.category }}</i>
               </a>
@@ -124,12 +114,22 @@
                 >
                 <span class="availability"><i></i> Available through VTIC</span>
                 <div class="price">
-                  <b>Pricing upon review</b
+                  {% if can_view_prices %} {% if product.price is not none %}<b
+                    >₱{{ "{:,.2f}".format(product.price) }}</b
+                  ><small>{{ product.source }}</small>{% else %}<b
+                    >No internal price set</b
+                  ><small
+                    ><a
+                      href="{{ url_for('admin_product_edit', product_id=product.id) }}"
+                      >Add internal price →</a
+                    ></small
+                  >{% endif %} {% else %} <b>Pricing upon review</b
                   ><small>Add products to your review cart</small>
+                  {% endif %}
                 </div>
                 <button class="add" data-add="{{ product|tojson|forceescape }}">
-                  Add to cart</button
-                >
+                  Add to cart
+                </button>
               </div>
             </article>
             {% else %}
@@ -141,9 +141,50 @@
             </div>
             {% endfor %}
           </div>
+          {% if total_pages > 1 %}
+          <nav class="pagination" aria-label="Product catalog pages">
+            {% set page_start = [1, page - 2]|max %} {% set page_end =
+            [total_pages, page + 2]|min %} {% if page > 1 %}
+            <a
+              class="pagination__direction"
+              href="{{ url_for('products', page=page-1, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
+              >← Previous</a
+            >
+            {% else %}<span class="pagination__direction disabled"
+              >← Previous</span
+            >{% endif %}
+            <div class="pagination__pages">
+              {% if page_start > 1 %}<a
+                href="{{ url_for('products', page=1, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
+                >1</a
+              >{% if page_start > 2 %}<span>…</span>{% endif %}{% endif %} {%
+              for number in range(page_start, page_end + 1) %}
+              <a
+                class="{{ 'active' if number == page }}"
+                href="{{ url_for('products', page=number, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
+                {% if number == page %}aria-current="page"{% endif %}
+                >{{ number }}</a
+              >
+              {% endfor %} {% if page_end < total_pages %}{% if page_end <
+              total_pages - 1 %}<span>…</span>{% endif %}<a
+                href="{{ url_for('products', page=total_pages, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
+                >{{ total_pages }}</a
+              >{% endif %}
+            </div>
+            {% if page < total_pages %}
+            <a
+              class="pagination__direction"
+              href="{{ url_for('products', page=page+1, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
+              >Next →</a
+            >
+            {% else %}<span class="pagination__direction disabled">Next →</span
+            >{% endif %}
+          </nav>
+          {% endif %}
         </section>
       </div>
     </main>
+    {% include '_storefront_footer.html' %}
     <div id="toast" role="status">Added to cart</div>
     {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>

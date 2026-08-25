@@ -4,25 +4,96 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Manufacturers | VTIC Systems</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin.css') }}"
+    />
+    {% include '_theme.html' %}
   </head>
   <body>
-    <aside>
-      <a class="logo" href="/"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a>
-      <nav><a href="/admin"><span>01</span>Products</a><a class="active" href="/admin/manufacturers"><span>02</span>Manufacturers</a><a href="/admin/review-requests"><span>03</span>Review requests</a><a href="/admin/account"><span>04</span>My account</a>{% if session.admin_role == 'superadmin' %}<a href="/admin/accounts"><span>05</span>Manage accounts</a><a href="/admin/activity"><span>06</span>Activity logs</a>{% endif %}<a href="/storefront" target="_blank"><span>07</span>View storefront</a></nav>
-      <div class="admin-user"><p>Signed in as</p><b>{{ session.admin_username }}</b><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><button>Sign out</button></form></div>
-    </aside>
+    {% include '_admin_sidebar.html' %}
     <main>
-      <header><div><p>CATALOG MANAGEMENT</p><h1>Manufacturers</h1></div></header>
-      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+      <header>
+        <div>
+          <p>CATALOG MANAGEMENT</p>
+          <h1>Manufacturers</h1>
+        </div>
+      </header>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for
+      category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}{% endwith %}
       <section class="manufacturer-create">
-        <div><h2>Add manufacturer</h2><p>New manufacturers and logos become available immediately.</p></div>
-        <form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><label>Manufacturer name<input name="name" placeholder="e.g. Juniper Networks" required /></label><label>Logo image<input type="file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" /></label><button>Add manufacturer</button></form>
+        <div>
+          <h2>Add manufacturer</h2>
+          <p>New manufacturers and logos become available immediately.</p>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+          <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ session.csrf_token }}"
+          /><label
+            >Manufacturer name<input
+              name="name"
+              placeholder="e.g. Juniper Networks"
+              required /></label
+          ><label
+            >Logo image<input
+              type="file"
+              name="logo_file"
+              accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" /></label
+          ><button>Add manufacturer</button>
+        </form>
       </section>
       <section class="manufacturer-list">
-        <div class="manufacturer-head"><span>Manufacturer</span><span>Products</span><span>Added</span><span></span></div>
-        {% for manufacturer in manufacturers %}<article><div><i>{% if manufacturer.logo_url %}<img src="{{ manufacturer.logo_url }}" alt="{{ manufacturer.name }} logo" />{% else %}{{ manufacturer.name[:2]|upper }}{% endif %}</i><b>{{ manufacturer.name }}</b></div><span>{{ manufacturer.product_count }}</span><span>{{ manufacturer.created_at[:10] }}</span><div class="manufacturer-actions"><a href="/admin/manufacturers/{{ manufacturer.id }}/edit">Edit</a><form action="/admin/manufacturers/{{ manufacturer.id }}/delete" method="post" onsubmit="return confirm('Delete this manufacturer?')"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" /><button {% if manufacturer.product_count %}disabled title="Used by existing products"{% endif %}>Delete</button></form></div></article>{% endfor %}
+        <div class="manufacturer-head">
+          <span>Manufacturer</span><span>Products</span><span>Added</span
+          ><span></span>
+        </div>
+        {% for manufacturer in manufacturers %}
+        <article>
+          <div>
+            <i
+              >{% if manufacturer.logo_url %}<img
+                src="{{ manufacturer.logo_url }}"
+                alt="{{ manufacturer.name }} logo"
+              />{% else %}{{ manufacturer.name[:2]|upper }}{% endif %}</i
+            ><b>{{ manufacturer.name }}</b>
+          </div>
+          <span>{{ manufacturer.product_count }}</span
+          ><span>{{ manufacturer.created_at[:10] }}</span>
+          <div class="manufacturer-actions">
+            <a href="/admin/manufacturers/{{ manufacturer.id }}/edit">Edit</a>
+            <form
+              action="/admin/manufacturers/{{ manufacturer.id }}/delete"
+              method="post"
+              onsubmit="return confirm('Delete this manufacturer?')"
+            >
+              <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ session.csrf_token }}"
+              /><button
+                {%
+                if
+                manufacturer.product_count
+                %}disabled
+                title="Used by existing products"
+                {%
+                endif
+                %}
+              >
+                Delete
+              </button>
+            </form>
+          </div>
+        </article>
+        {% endfor %}
       </section>
     </main>
   </body>

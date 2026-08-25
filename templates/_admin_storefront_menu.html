@@ -1,15 +1,39 @@
 {% if session.admin_id %}
 <details class="admin-storefront-menu">
-  <summary><span>{{ session.admin_username[:1]|upper }}</span>Admin</summary>
+  <summary>
+    <span>{{ session.admin_username[:1]|upper }}</span>{{ 'Superadmin' if
+    session.admin_role == 'superadmin' else 'Admin' }}
+  </summary>
   <div class="admin-menu-panel">
-    <header><small>ADMINISTRATOR</small><b>{{ session.admin_username }}</b></header>
+    <header>
+      <small>ADMINISTRATOR</small><b>{{ session.admin_username }}</b>
+    </header>
     <a href="/admin">Product management</a>
     <a href="/admin/products/new">Add product</a>
     <a href="/admin/manufacturers">Manufacturers</a>
     <a href="/admin/review-requests">Review requests</a>
     <a href="/admin/account">Admin settings</a>
-    {% if session.admin_role == 'superadmin' %}<a href="/admin/accounts">Manage accounts</a><a href="/admin/activity">Activity logs</a>{% endif %}
-    <form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form>
+    {% if session.admin_role == 'superadmin' %}<a href="/admin/accounts"
+      >Manage accounts</a
+    ><a href="/admin/activity">Activity logs</a>{% endif %}
+    <form action="/admin/logout" method="post" data-confirm-signout>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>
+        Sign out
+      </button>
+    </form>
   </div>
 </details>
 {% endif %}
+{% if session.customer_id %}
+<details class="admin-storefront-menu customer-storefront-menu">
+  <summary><span>{{ session.customer_name[:1]|upper }}</span>My account</summary>
+  <div class="admin-menu-panel">
+    <header><small>CUSTOMER ACCOUNT</small><b>{{ session.customer_name }}</b></header>
+    <a href="/account/reviews">My review requests</a>
+    <a href="/solution-advisor">Saved advisor consultations</a>
+    <a href="/cart">Procurement cart</a>
+    <form action="/logout" method="post" data-confirm-signout><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form>
+  </div>
+</details>
+{% endif %}
+<script src="{{ url_for('static', filename='js/signout-confirm.js') }}" defer></script>

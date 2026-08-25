@@ -4,20 +4,48 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token }}" />
-    <title>AI Solution Advisor | VTIC Systems</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/solution_advisor.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
+    <title>VTIC Advisor | VTIC Systems</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/solution_advisor.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}"
+    />
+    {% include '_theme.html' %}
   </head>
   <body data-ai-configured="{{ 'true' if ai_configured else 'false' }}">
-    <header class="site-header"><div class="shell header-inner"><a class="wordmark" href="/storefront"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies Intl Corp" /></a><nav><a href="/products">Products</a><a class="active" href="/solution-advisor">AI Solution Advisor</a><a href="/storefront#partners">Partners</a></nav><a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>{% include '_admin_storefront_menu.html' %}</div></header>
+    {% set storefront_section = 'advisor' %} {% include
+    '_storefront_header.html' %}
     <main class="shell">
-      <section class="advisor-heading"><div><p>VTIC SOLUTION DISCOVERY</p><h1>Describe the challenge.<br />Build the right solution.</h1></div><div class="advisor-note"><b>Engineering review included</b><span>The advisor recommends products from the current VTIC catalog. Every solution remains subject to technical and commercial validation.</span></div></section>
+      <section class="advisor-heading">
+        <div>
+          <p>VTIC SOLUTION DISCOVERY</p>
+          <h1>Describe the challenge.<br />Build the right solution.</h1>
+        </div>
+        <div class="advisor-note">
+          <b>Engineering review included</b
+          ><span
+            >The advisor recommends products from the current VTIC catalog.
+            Every solution remains subject to technical and commercial
+            validation.</span
+          >
+        </div>
+      </section>
       <section class="representative" aria-labelledby="representative-title">
         <div class="representative-copy">
-          <p>LIVE AI REPRESENTATIVE</p>
+          <p>LIVE VTIC REPRESENTATIVE</p>
           <h2 id="representative-title">Meet your VTIC<br />solution guide.</h2>
-          <span>Talk naturally about your IT challenge through video and voice, or use text input when a microphone is unavailable. Continue below when you are ready to build a product-backed solution.</span>
+          <span
+            >Talk naturally about your IT challenge through video and voice, or
+            use text input when a microphone is unavailable. Continue below when
+            you are ready to build a product-backed solution.</span
+          >
           <ul>
             <li>Interactive voice and video conversation</li>
             <li>Available during solution discovery</li>
@@ -31,33 +59,133 @@
             layout="inline"
             ui-mute-button="true"
             ui-text-input="true"
-            call-to-action="Talk to a VTIC AI representative"
-            agent-name="VTIC AI Representative"
+            call-to-action="Talk to a VTIC representative"
+            agent-name="VTIC Advisor"
           ></anam-agent>
           {% else %}
           <div class="representative-placeholder">
-            <span>ANAM REPRESENTATIVE / OFFLINE</span>
+            <span>VTIC ADVISOR / OFFLINE</span>
             <div aria-hidden="true"><b>VT</b><i></i></div>
-            <h3>Representative setup required</h3>
-            <p>Add <code>ANAM_AGENT_ID</code> to the server after publishing the VTIC persona in Anam Lab.</p>
+            <h3>Representative temporarily unavailable</h3>
+            <p>Please continue with the guided consultation below.</p>
           </div>
           {% endif %}
         </div>
       </section>
-      {% if not ai_configured %}<div class="configuration-alert"><b>AI setup required</b><span>The interface is ready, but the server administrator must configure <code>OPENAI_API_KEY</code> before live recommendations can be generated.</span></div>{% endif %}
-      <div class="advisor-layout">
-        <section class="conversation-panel">
-          <header><div><span class="status-dot"></span><div><b>VTIC AI Advisor</b><small>Product discovery assistant</small></div></div><button id="new-conversation" type="button">New consultation</button></header>
-          <div class="messages" id="advisor-messages"><article class="message assistant"><span>AI</span><div><p>Tell me what you need to improve or deploy. Include anything you already know, such as the number of users, sites, cameras, network ports, floor area, preferred brands or security requirements.</p><small>Recommendations do not include customer-visible pricing.</small></div></article></div>
-          <form id="advisor-form"><label for="advisor-input">Describe your requirements</label><textarea id="advisor-input" maxlength="4000" placeholder="Example: We need reliable Wi-Fi, switching and CCTV for a three-floor office with 120 employees…" required></textarea><div><span><b id="character-count">0</b>/4000</span><button type="submit" {% if not ai_configured %}disabled{% endif %}>Analyze requirements →</button></div></form>
-        </section>
-        <aside class="requirements-panel"><header><span>LIVE BRIEF</span><h2>Requirements captured</h2></header><p id="requirements-summary">Your project brief will appear here as the advisor learns about your requirements.</p><div id="advisor-questions"></div></aside>
+      {% if not ai_configured %}
+      <div class="configuration-alert">
+        <b>Advisor temporarily unavailable</b
+        ><span
+          >Live recommendations are not available right now. Please try again
+          later or contact the VTIC project desk.</span
+        >
       </div>
-      <section class="solution-results" id="solution-results" hidden><div class="section-heading"><div><p>RECOMMENDED APPROACHES</p><h2>Compare solution options</h2></div><span>Selecting an option adds its complete product list to your review cart.</span></div><div class="solution-grid" id="solution-grid"></div></section>
+      {% endif %}
+      <div class="advisor-layout">
+        <aside class="conversation-history" aria-label="Past advisor consultations">
+          <header>
+            <div>
+              <span>YOUR WORKSPACE</span>
+              <h2>Past consultations</h2>
+            </div>
+            <button
+              id="history-new-conversation"
+              type="button"
+              aria-label="Start a new consultation"
+            >
+              +
+            </button>
+          </header>
+          <div id="conversation-history-list" aria-live="polite">
+            <p class="history-loading">Loading your conversations…</p>
+          </div>
+        </aside>
+        <section class="conversation-panel">
+          <header>
+            <div>
+              <span class="status-dot"></span>
+              <div>
+                <b>VTIC Advisor</b><small>Product discovery assistant</small>
+              </div>
+            </div>
+            <button id="new-conversation" type="button">
+              New consultation
+            </button>
+          </header>
+          <div
+            class="messages"
+            id="advisor-messages"
+            aria-live="polite"
+            aria-busy="false"
+          >
+            <article class="message assistant">
+              <span>VT</span>
+              <div>
+                <p>
+                  Tell me what you need to improve or deploy. Include anything
+                  you already know, such as the number of users, sites, cameras,
+                  network ports, floor area, preferred brands or security
+                  requirements.
+                </p>
+                <small
+                  >Recommendations do not include customer-visible
+                  pricing.</small
+                >
+              </div>
+            </article>
+          </div>
+          <form id="advisor-form">
+            <label for="advisor-input">Describe your requirements</label
+            ><textarea
+              id="advisor-input"
+              maxlength="4000"
+              placeholder="Example: We need reliable Wi-Fi, switching and CCTV for a three-floor office with 120 employees…"
+              required
+            ></textarea>
+            <div>
+              <span><b id="character-count">0</b>/4000</span
+              ><button
+                type="submit"
+                {%
+                if
+                not
+                ai_configured
+                %}disabled{%
+                endif
+                %}
+              >
+                Analyze requirements →
+              </button>
+            </div>
+          </form>
+        </section>
+        <aside class="requirements-panel">
+          <header>
+            <span>LIVE BRIEF</span>
+            <h2>Requirements captured</h2>
+          </header>
+          <p id="requirements-summary">
+            Your project brief will appear here as the advisor learns about your
+            requirements.
+          </p>
+          <div id="advisor-questions"></div>
+          <section class="solution-results" id="solution-results" hidden>
+            <div class="brief-options-heading">
+              <span>PROPOSED PACKAGES</span>
+              <h3>Choose a solution option</h3>
+              <p>Each package stays separate when added to your review cart.</p>
+            </div>
+            <div class="solution-grid" id="solution-grid"></div>
+          </section>
+        </aside>
+      </div>
     </main>
+    {% include '_storefront_footer.html' %}
     <div id="advisor-toast" role="status"></div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/solution-advisor.js') }}"></script>
-    {% if anam_agent_id %}<script src="https://unpkg.com/@anam-ai/agent-widget" async></script>{% endif %}
+    {% if anam_agent_id %}
+    <script src="https://unpkg.com/@anam-ai/agent-widget" async></script>
+    {% endif %}
   </body>
 </html>

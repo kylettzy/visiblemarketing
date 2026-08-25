@@ -155,7 +155,11 @@ header form button {
   background: #fff;
   border: 1px solid var(--line);
 }
-.product-visual .manufacturer-mark img { width: 100%; height: 100%; object-fit: contain; }
+.product-visual .manufacturer-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 .grid-lines {
   position: absolute;
   inset: 0;

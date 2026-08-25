@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catered Customers | VTIC Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_catered_customers.css') }}" />
+    {% include '_theme.html' %}
+  </head>
+  <body>
+    {% include '_admin_sidebar.html' %}
+    <main>
+      <header>
+        <div><p>SALES / CUSTOMER OWNERSHIP</p><h1>Catered customers</h1></div>
+        <span>{{ total_customers }} customer assignments</span>
+      </header>
+      <section class="customer-summary">
+        <div><span>MARKETING OWNERS</span><b>{{ admin_groups|length }}</b><small>Administrators with assigned customers</small></div>
+        <div><span>CATERED CUSTOMERS</span><b>{{ total_customers }}</b><small>Unique customer-to-admin assignments</small></div>
+        <a href="/admin/review-requests">Open review queue →</a>
+      </section>
+      {% for admin_id, group in admin_groups.items() %}
+      <section class="owner-group">
+        <header>
+          <div class="owner-avatar">{{ group.admin_name[:2]|upper }}</div>
+          <div><span>MARKETING ADMIN</span><h2>{{ group.admin_name }}</h2><small>@{{ group.username }} · {{ group.customers|length }} catered customer(s)</small></div>
+        </header>
+        <div class="customer-table">
+          <div class="customer-table-head"><span>Customer</span><span>Contact</span><span>Requests</span><span>Latest request</span><span>Progress</span></div>
+          {% for customer in group.customers %}
+          <article>
+            <div class="customer-identity">
+              {% if customer.customer_avatar_url %}<img src="{{ customer.customer_avatar_url }}" alt="" />{% else %}<i>{{ customer.customer_name[:2]|upper }}</i>{% endif %}
+              <div><b>{{ customer.customer_name }}</b><small>Customer #{{ customer.customer_id }}</small></div>
+            </div>
+            <a href="mailto:{{ customer.customer_email }}">{{ customer.customer_email }}</a>
+            <b>{{ customer.request_count }}</b>
+            <time>{{ customer.latest_request_at[:16] }}</time>
+            <span class="progress-state {{ 'approved' if customer.has_approved else '' }}">{{ 'Approved request' if customer.has_approved else 'In progress' }}</span>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% else %}
+      <section class="empty-state"><h2>No catered customers yet.</h2><p>A customer is assigned when a Marketing administrator opens the submitted-review queue.</p><a href="/admin/review-requests">Open review requests →</a></section>
+      {% endfor %}
+    </main>
+  </body>
+</html>

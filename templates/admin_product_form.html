@@ -15,20 +15,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/admin.css') }}"
     />
+    {% include '_theme.html' %}
   </head>
   <body class="form-page">
-    <aside>
-      <a class="logo" href="/"
-        ><img
-          src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-          alt="VTIC"
-      /></a>
-      <nav>
-        <a class="active" href="/admin"><span>←</span>Back to products</a>
-        <a href="/admin/manufacturers"><span>02</span>Manufacturers</a>
-        <a href="/admin/account"><span>03</span>Account</a>
-      </nav>
-    </aside>
+    {% include '_admin_sidebar.html' %}
     <main>
       <header>
         <div>
@@ -78,19 +68,7 @@
             ><label
               >Category *<select name="category" required>
                 {% for category in categories %}
-                <option
-                  value="{{ category }}"
-                  {%
-                  if
-                  product
-                  and
-                  product.category=""
-                  ="category"
-                  %}
-                  selected{%
-                  endif
-                  %}
-                >
+                <option value="{{ category }}"{% if product and product.category == category %} selected{% endif %}>
                   {{ category }}
                 </option>
                 {% endfor %}

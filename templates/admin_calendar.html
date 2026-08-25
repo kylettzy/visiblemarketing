@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Project Calendar | VTIC Systems</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_calendar.css') }}" />
+    {% include '_theme.html' %}
+  </head>
+  <body>
+    {% include '_admin_sidebar.html' %}
+    <main>
+      <header>
+        <div><p>OPERATIONS / SCHEDULE</p><h1>Project calendar</h1></div>
+        <span>{{ month_date.strftime('%B %Y') }}</span>
+      </header>
+      <section class="calendar-toolbar">
+        <div><b>Site surveys & meetings</b><small>Schedules created by Technical appear here for every administrator.</small></div>
+        <nav><a href="?month={{ previous_month }}" aria-label="Previous month">←</a><a href="?month={{ next_month }}" aria-label="Next month">→</a></nav>
+      </section>
+      <section class="calendar-grid" aria-label="{{ month_date.strftime('%B %Y') }} calendar">
+        {% for weekday in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="calendar-weekday">{{ weekday }}</div>{% endfor %}
+        {% for week in month_weeks %}{% for day in week %}
+        <article class="calendar-day {{ 'outside' if day.month != month_date.month else '' }} {{ 'today' if day.isoformat() == today else '' }}">
+          <time>{{ day.day }}</time>
+          <div>
+            {% for event in events_by_date.get(day.isoformat(), []) %}
+            <a class="calendar-event calendar-event--{{ event.event_type }}" href="/admin/review-requests#request-{{ event.request_id }}">
+              <b>{{ event.starts_at[11:16] }} · {{ event.title }}</b>
+              <span>{{ event.customer_name }}{% if event.location %} · {{ event.location }}{% endif %}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}{% endfor %}
+      </section>
+    </main>
+  </body>
+</html>

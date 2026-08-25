@@ -127,9 +127,6 @@ header form button {
   margin: 0 9px;
 }
 .page-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
   padding: 28px 0 45px;
   border-bottom: 1px solid var(--line);
 }
@@ -147,23 +144,6 @@ header form button {
 .page-heading > div > span {
   color: var(--muted);
   font-size: 13px;
-}
-.page-heading dl {
-  display: flex;
-  gap: 40px;
-  margin: 0;
-}
-.page-heading dl div {
-  display: grid;
-  gap: 4px;
-}
-.page-heading dt {
-  font: 500 23px "DM Mono";
-}
-.page-heading dd {
-  margin: 0;
-  color: var(--muted);
-  font: 9px "DM Mono";
 }
 .catalog-layout {
   display: grid;
@@ -229,19 +209,10 @@ aside section > a {
   font-size: 10px;
 }
 .result-bar {
-  height: 42px;
+  min-height: 32px;
   display: flex;
   align-items: start;
-  justify-content: space-between;
   color: var(--muted);
-  font-size: 10px;
-}
-.result-bar select {
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: #fff;
-  padding: 0 25px 7px 0;
-  color: var(--ink);
   font-size: 10px;
 }
 .grid {
@@ -285,6 +256,15 @@ aside section > a {
   height: 100%;
   object-fit: cover;
 }
+.product-media > .product-image--brand-fallback {
+  inset: 34px 52px 42px;
+  width: calc(100% - 104px);
+  height: calc(100% - 76px);
+  padding: 18px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.96);
+}
 .product-media .manufacturer-mark {
   position: absolute;
   left: 12px;
@@ -297,7 +277,11 @@ aside section > a {
   background: #fff;
   border: 1px solid var(--line);
 }
-.product-media .manufacturer-mark img { width: 100%; height: 100%; object-fit: contain; }
+.product-media .manufacturer-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 .product-media small {
   position: absolute;
   left: 15px;
@@ -305,6 +289,7 @@ aside section > a {
   font: 500 9px "DM Mono";
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--ink);
 }
 .product-media > i {
   position: absolute;
@@ -314,6 +299,7 @@ aside section > a {
   background: #fff;
   border: 1px solid var(--line);
   font: normal 8px "DM Mono";
+  color: var(--ink);
 }
 .product-copy {
   padding: 17px;
@@ -360,6 +346,100 @@ aside section > a {
   color: var(--muted);
   font-size: 8px;
   line-height: 1.35;
+}
+
+:root[data-theme="dark"] .product-media > span,
+:root[data-theme="dark"] .product-media small {
+  color: #d8e8f0;
+}
+
+:root[data-theme="dark"] .product-media > i {
+  border-color: #31546a;
+  color: #d8e8f0;
+  background: rgba(7, 26, 43, 0.92);
+}
+
+:root[data-theme="dark"] .availability,
+:root[data-theme="dark"] .price small {
+  color: #9fb5c2;
+}
+
+.pagination {
+  display: grid;
+  margin-top: 42px;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 0 4px;
+  border-top: 1px solid var(--line);
+}
+.pagination__pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.pagination__pages a,
+.pagination__pages span {
+  display: grid;
+  min-width: 35px;
+  height: 35px;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font:
+    9px "DM Mono",
+    monospace;
+}
+.pagination__pages span {
+  border-color: transparent;
+  background: transparent;
+}
+.pagination__pages a:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.pagination__pages a.active {
+  border-color: var(--navy);
+  color: #fff;
+  background: var(--navy);
+}
+.pagination__direction {
+  color: var(--blue);
+  font-size: 9px;
+  font-weight: 700;
+}
+.pagination__direction:last-child {
+  text-align: right;
+}
+.pagination__direction.disabled {
+  color: var(--muted);
+  opacity: 0.45;
+}
+:root[data-theme="dark"] .pagination__pages a {
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+  background: var(--theme-surface-raised);
+}
+:root[data-theme="dark"] .pagination__pages a.active {
+  border-color: var(--green);
+  color: var(--navy);
+  background: var(--green);
+}
+
+@media (max-width: 650px) {
+  .pagination {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pagination__pages {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    flex-wrap: wrap;
+  }
+  .pagination__direction:last-child {
+    text-align: right;
+  }
 }
 .add,
 .quote {
@@ -446,15 +526,8 @@ aside section > a {
   .cart {
     margin-left: auto;
   }
-  .page-heading {
-    align-items: flex-start;
-    gap: 30px;
-  }
   .page-heading h1 {
     font-size: 36px;
-  }
-  .page-heading dl {
-    display: none;
   }
   .catalog-layout {
     grid-template-columns: 1fr;

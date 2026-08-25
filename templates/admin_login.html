@@ -3,60 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin Sign In | VTIC Systems</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/admin_login.css') }}"
-    />
+    <title>Administrator Access | VTIC</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    {% include '_theme.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_login.css') }}" />
   </head>
   <body>
-    <main>
-      <section class="brand-panel">
-        <a href="/"
-          ><img
-            src="{{ url_for('static', filename='images/vtic-logo-t.png') }}"
-            alt="Visible Technologies Intl Corp"
-        /></a>
-        <div>
-          <p>SECURE ADMINISTRATION</p>
-          <h1>Catalog operations.</h1>
-          <span
-            >Manage products, commercial references and catalog content from one
-            protected workspace.</span
-          >
+    <main class="access-shell">
+      <section class="brand-panel" aria-labelledby="access-title">
+        <a class="brand-mark" href="/" aria-label="Return to VTIC home">
+          <img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" />
+        </a>
+        <div class="brand-message">
+          <p class="eyebrow"><span></span> VTIC OPERATIONS NETWORK</p>
+          <h1 id="access-title">Control your<br />technology operations.</h1>
+          <p class="brand-copy">A secure workspace for managing enterprise products, partner records, customer requests and commercial intelligence.</p>
+          <dl class="system-metrics" aria-label="Portal capabilities">
+            <div><dt>40+</dt><dd>Technology partners</dd></div>
+            <div><dt>Role</dt><dd>Controlled access</dd></div>
+            <div><dt>Live</dt><dd>Activity audit trail</dd></div>
+          </dl>
         </div>
-        <small>Authorized personnel only</small>
+        <div class="system-status"><span class="status-dot"></span><span>SECURE GATEWAY</span><strong>ONLINE</strong></div>
       </section>
-      <section class="login-panel">
+      <section class="login-panel" aria-label="Administrator sign in">
         <div class="login-box">
-          <p>ADMIN PORTAL / SIGN IN</p>
-          <h2>Welcome back.</h2>
-          <span>Use your administrator credentials to continue.</span>{% with
-          messages = get_flashed_messages(with_categories=true) %}{% for
-          category, message in messages %}
-          <div class="alert {{ category }}">{{ message }}</div>
-          {% endfor %}{% endwith %}
+          <header>
+            <p class="portal-label">AUTHORIZED PERSONNEL / 01</p>
+            <h2>Administrator access.</h2>
+            <span>Verify your credentials to enter the operations console.</span>
+          </header>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="alert {{ category }}" role="alert">{{ message }}</div>{% endfor %}
+          {% endwith %}
           <form method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <label
-              >Username<input
-                name="username"
-                autocomplete="username"
-                required
-                autofocus /></label
-            ><label
-              >Password<div class="password-control"><input
-                  type="password"
-                  name="password"
-                  autocomplete="current-password"
-                  required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label
-            ><button>Sign in securely →</button>
+            <label><span>Username</span><input name="username" autocomplete="username" placeholder="Enter administrator ID" required autofocus /></label>
+            <label><span>Password</span><div class="password-control"><input type="password" name="password" autocomplete="current-password" placeholder="Enter secure password" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
+            <label class="remember-session"><input type="checkbox" name="remember_me" value="1" /><span><b>Keep me signed in</b><small>Stay signed in on this device for 30 days.</small></span></label>
+            <button class="submit-button" type="submit">Enter operations portal <span>→</span></button>
           </form>
-          <a href="/">← Return to storefront</a>
+          <footer class="login-footer"><a href="/">← Return to storefront</a><span>Protected by role-based authentication</span></footer>
         </div>
       </section>
     </main>

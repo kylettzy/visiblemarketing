@@ -12,29 +12,19 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/product.css') }}"
     />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_chatbot.css') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
+    />
+    {% include '_theme.html' %}
   </head>
   <body>
-    <header>
-      <div class="shell header-inner">
-        <a class="wordmark" href="/storefront">
-          <img
-            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-            alt="Visilile Technologies Intl Corp"
-          />
-        </a>
-        <nav>
-          <a href="/products">Products</a><a href="/solution-advisor">AI Advisor</a><a href="/#solutions">Solutions</a
-          ><a href="mailto:sales@vtic.com.ph">Contact</a>
-        </nav>
-        <form action="/products">
-          <input name="q" placeholder="Search catalog" /><button>Search</button>
-        </form>
-        <a class="cart" href="/cart">Cart <span data-cart-count>0</span></a>
-        {% include '_admin_storefront_menu.html' %}
-      </div>
-    </header>
+    {% set storefront_section = 'products' %} {% include
+    '_storefront_header.html' %}
     <main class="shell">
       <div class="breadcrumb">
         <a href="/storefront">Storefront</a><span>/</span
@@ -50,8 +40,12 @@
             alt="{{ product.name }}"
           />{% else %}
           <div class="brand-code">{{ product.brand[:2]|upper }}</div>
-          {% endif %}
-          {% if product.manufacturer_logo %}<span class="manufacturer-mark"><img src="{{ product.manufacturer_logo }}" alt="{{ product.brand }} logo" /></span>{% endif %}
+          {% endif %} {% if product.manufacturer_logo %}<span
+            class="manufacturer-mark"
+            ><img
+              src="{{ product.manufacturer_logo }}"
+              alt="{{ product.brand }} logo" /></span
+          >{% endif %}
           <div class="visual-label">
             <span>{{ product.brand }}</span
             ><small>{{ product.category }}</small>
@@ -67,12 +61,23 @@
           </div>
           <p class="description">{{ product.description }}</p>
           <div class="commercial">
-            <span>Commercial review</span
+            {% if can_view_prices %}
+            <span>Internal commercial pricing</span>{% if product.price is not
+            none %}<b>₱{{ "{:,.2f}".format(product.price) }}</b
+            ><small>{{ product.source }}</small>{% else %}<b
+              >No internal price set</b
+            ><small
+              ><a
+                href="{{ url_for('admin_product_edit', product_id=product.id) }}"
+                >Add internal price →</a
+              ></small
+            >{% endif %} {% else %} <span>Commercial review</span
             ><b>Pricing available after review</b
             ><small
               >Add this product to your cart. VTIC will confirm configuration,
               availability and commercial terms.</small
             >
+            {% endif %}
           </div>
           <div class="order-row">
             <div class="qty">
@@ -108,12 +113,7 @@
           <div><span>Manufacturer</span><b>{{ product.brand }}</b></div>
           <div><span>Solution category</span><b>{{ product.category }}</b></div>
           <div><span>Deployment class</span><b>Business / Enterprise</b></div>
-          <div>
-            <span>Procurement model</span
-            ><b
-              >Review and quotation</b
-            >
-          </div>
+          <div><span>Procurement model</span><b>Review and quotation</b></div>
         </div>
       </section>
       <section class="project-note">
@@ -126,9 +126,9 @@
         <a href="mailto:sales@vtic.com.ph">Talk to a solutions engineer →</a>
       </section>
     </main>
+    {% include '_storefront_footer.html' %}
     <div id="toast" role="status">Added to cart</div>
-    {% set chat_product = product %}
-    {% include '_storefront_chatbot.html' %}
+    {% set chat_product = product %} {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>
   </body>

@@ -1,5 +1,5 @@
-{% if session.get('customer_id') %}
-{% set active_product = chat_product if chat_product is defined else none %}
+{% if session.get('customer_id') or session.get('admin_id') %} {% set
+active_product = chat_product if chat_product is defined else none %}
 <aside
   class="storefront-chat"
   data-storefront-chat
@@ -7,7 +7,13 @@
   data-product-name="{{ active_product.name if active_product else '' }}"
   data-ai-configured="{{ 'true' if ai_configured else 'false' }}"
   data-csrf-token="{{ csrf_token }}"
-  {% if active_product %}data-product="{{ active_product|tojson|forceescape }}"{% endif %}
+  {%
+  if
+  active_product
+  %}data-product="{{ active_product|tojson|forceescape }}"
+  {%
+  endif
+  %}
 >
   <button
     class="storefront-chat__launcher"
@@ -16,8 +22,26 @@
     aria-controls="storefront-chat-panel"
     data-chat-toggle
   >
-    <span class="storefront-chat__launcher-icon" aria-hidden="true">AI</span>
+    <span class="storefront-chat__launcher-icon" aria-hidden="true">VT</span>
     <span><b>Ask VTIC</b><small>Product assistant</small></span>
+  </button>
+  <button
+    class="storefront-chat__hide"
+    type="button"
+    aria-label="Hide VTIC assistant"
+    title="Hide assistant"
+    data-chat-hide
+  >
+    ×
+  </button>
+  <button
+    class="storefront-chat__restore"
+    type="button"
+    aria-label="Show VTIC assistant"
+    title="Show assistant"
+    data-chat-show
+    hidden
+  >
   </button>
 
   <section
@@ -28,10 +52,12 @@
   >
     <header class="storefront-chat__header">
       <div>
-        <span class="storefront-chat__status"><i></i> VTIC AI ASSISTANT</span>
+        <span class="storefront-chat__status"><i></i> VTIC ADVISOR</span>
         <strong>How can we help?</strong>
       </div>
-      <button type="button" aria-label="Close assistant" data-chat-close>×</button>
+      <button type="button" aria-label="Close assistant" data-chat-close>
+        ×
+      </button>
     </header>
 
     {% if active_product %}
@@ -41,17 +67,20 @@
     </div>
     {% endif %}
 
-    <div class="storefront-chat__messages" data-chat-messages aria-live="polite">
+    <div
+      class="storefront-chat__messages"
+      data-chat-messages
+      aria-live="polite"
+    >
       <div class="storefront-chat__message storefront-chat__message--assistant">
-        {% if active_product %}
-        Ask me about this product, its use cases, or what to confirm before requesting a quotation.
-        {% else %}
-        Ask about any product in our catalog, or tell me what technology you are looking for.
+        {% if active_product %} Ask me about this product, its use cases, or
+        what to confirm before requesting a quotation. {% else %} Ask about any
+        product in our catalog, or tell me what technology you are looking for.
         {% endif %}
       </div>
       {% if not ai_configured %}
       <div class="storefront-chat__notice">
-        The assistant needs an <code>OPENAI_API_KEY</code> on the server before it can answer.
+        The VTIC Advisor is temporarily unavailable. Please try again later.
       </div>
       {% endif %}
     </div>
@@ -71,13 +100,31 @@
           rows="1"
           placeholder="Ask about this product…"
           data-chat-input
-          {% if not ai_configured %}disabled{% endif %}
+          {%
+          if
+          not
+          ai_configured
+          %}disabled{%
+          endif
+          %}
         ></textarea>
-        <button type="submit" aria-label="Send message" {% if not ai_configured %}disabled{% endif %}>↑</button>
+        <button
+          type="submit"
+          aria-label="Send message"
+          {%
+          if
+          not
+          ai_configured
+          %}disabled{%
+          endif
+          %}
+        >
+          ↑
+        </button>
       </div>
     </form>
     <footer>
-      <span>AI answers require engineering review.</span>
+      <span>Advisor responses require engineering review.</span>
       <a href="{{ url_for('solution_advisor') }}">Plan a full solution →</a>
     </footer>
   </section>

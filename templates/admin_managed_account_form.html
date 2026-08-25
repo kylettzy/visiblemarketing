@@ -7,29 +7,46 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_account.css') }}" />
+    {% include '_theme.html' %}
   </head>
   <body class="form-page">
-    <aside>
-      <a class="logo" href="/"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a>
-      <nav><a href="/admin"><span>01</span>Products</a><a href="/admin/manufacturers"><span>02</span>Manufacturers</a><a href="/admin/review-requests"><span>03</span>Review requests</a><a href="/admin/account"><span>04</span>My account</a><a class="active" href="/admin/accounts"><span>05</span>Manage accounts</a><a href="/admin/activity"><span>06</span>Activity logs</a><a href="/storefront" target="_blank"><span>07</span>View storefront</a></nav>
-      <div class="admin-user"><p>Signed in as</p><b>{{ session.admin_username }}</b><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form></div>
-    </aside>
+    {% include '_admin_sidebar.html' %}
     <main>
       <header><div><p>SUPERADMIN / ACCOUNT MANAGEMENT</p><h1>{{ 'Create' if mode == 'create' else 'Edit' }} {{ account_type }} account</h1></div></header>
       {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
-      <form class="product-form account-form" method="post">
+      <form class="product-form account-form" method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <section>
           <div class="account-intro"><span>{{ ('AD' if account_type == 'admin' else 'CU') }}</span><div><h2>{{ account_type|title }} identity and access</h2><p>{% if mode == 'create' %}Create credentials for a new {{ account_type }}.{% else %}Update identity information or issue a replacement password.{% endif %}</p></div></div>
           <div class="account-fields">
+            <div class="profile-photo-field"><b>Profile photo</b><div class="profile-photo-preview">
+              <img src="{{ account.avatar_url if account and account.avatar_url else url_for('static', filename='images/default-avatar.svg') }}" alt="{{ 'Current profile photo' if account and account.avatar_url else 'Default profile avatar' }}" />
+              <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp" />
+            </div><small class="field-help">PNG, JPG or WebP. A square photo works best.</small>
+            {% if account and account.avatar_url %}<label class="remove-photo"><input type="checkbox" name="remove_avatar" value="1" /> Remove current photo</label>{% endif %}</div>
             {% if account_type == 'admin' %}
+            <label>Full name<input name="full_name" value="{{ request.form.get('full_name', account.full_name if account else '') }}" autocomplete="name" /></label>
+            <label>Email address<input type="email" name="email" value="{{ request.form.get('email', account.email if account and account.email else '') }}" autocomplete="email" /></label>
             <label>Username *<input name="username" value="{{ request.form.get('username', account.username if account else '') }}" minlength="3" required autocomplete="off" /></label>
-            <label>Role *<select name="role" required><option value="admin" {% if request.form.get('role', account.role if account else 'admin') == 'admin' %}selected{% endif %}>Administrator</option><option value="superadmin" {% if request.form.get('role', account.role if account else 'admin') == 'superadmin' %}selected{% endif %}>Superadministrator</option></select><small class="field-help">Superadmins can manage accounts and activity logs.</small></label>
+            <label
+              >Role *
+              <select name="role" required>
+                {% set selected_role = request.form.get('role', account.role if
+                account else 'admin') %}
+                <option value="admin"{{ ' selected' if selected_role == 'admin' else '' }}>Administrator</option>
+                <option value="admin_marketing"{{ ' selected' if selected_role == 'admin_marketing' else '' }}>Marketing administrator</option>
+                <option value="admin_technical"{{ ' selected' if selected_role == 'admin_technical' else '' }}>Technical administrator</option>
+                <option value="superadmin"{{ ' selected' if selected_role == 'superadmin' else '' }}>Superadministrator</option>
+              </select>
+              <small class="field-help"
+                >Marketing handles pricing and proposals. Technical handles surveys, quantities, materials and BOMs.</small
+              ></label
+            >
             {% else %}
             <label>Full name *<input name="full_name" value="{{ request.form.get('full_name', account.full_name if account else '') }}" required autocomplete="off" /></label>
             <label>Email address *<input type="email" name="email" value="{{ request.form.get('email', account.email if account else '') }}" required autocomplete="off" /></label>
             {% endif %}
-            <label>{{ 'Password *' if mode == 'create' else 'Replacement password' }}<div class="password-control"><input type="password" name="password" minlength="12" {% if mode == 'create' %}required{% endif %} autocomplete="new-password" placeholder="{{ 'At least 12 characters' if mode == 'create' else 'Leave blank to keep current password' }}" /><button type="button" data-toggle-password aria-pressed="false">Show</button></div><small class="field-help">Passwords are securely hashed and cannot be viewed later.</small></label>
+            <label>{{ 'Password *' if mode == 'create' else 'Replacement password' }}<div class="password-control"><input type="password" name="password" minlength="12" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}" title="Use at least 12 characters with uppercase, lowercase, number and symbol." {% if mode == 'create' %}required{% endif %} autocomplete="new-password" placeholder="{{ '12+ characters with Aa, 1 and symbol' if mode == 'create' else 'Leave blank to keep current password' }}" /><button type="button" data-toggle-password aria-pressed="false">Show</button></div><small class="field-help">Requires uppercase, lowercase, number and symbol. Passwords are securely hashed.</small></label>
             <label>Confirm password{% if mode == 'create' %} *{% endif %}<div class="password-control"><input type="password" name="confirm_password" minlength="12" {% if mode == 'create' %}required{% endif %} autocomplete="new-password" /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
           </div>
         </section>

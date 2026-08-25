@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title description">
+  <title id="title">Default VTIC account avatar</title>
+  <desc id="description">A neutral person silhouette on a blue technology background.</desc>
+  <defs>
+    <linearGradient id="background" x1="18" y1="10" x2="145" y2="154" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102d48" />
+      <stop offset="1" stop-color="#071727" />
+    </linearGradient>
+    <linearGradient id="accent" x1="42" y1="38" x2="119" y2="130" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2b6cff" />
+      <stop offset="1" stop-color="#18c4e8" />
+    </linearGradient>
+  </defs>
+  <rect width="160" height="160" rx="80" fill="url(#background)" />
+  <circle cx="80" cy="80" r="68" fill="none" stroke="#1abce2" stroke-opacity=".22" />
+  <path d="M25 80h18m74 0h18M80 25v18m0 74v18" stroke="#50dfff" stroke-opacity=".28" stroke-width="2" />
+  <circle cx="80" cy="65" r="25" fill="url(#accent)" />
+  <path d="M37 133c5-26 21-40 43-40s38 14 43 40" fill="url(#accent)" />
+  <circle cx="80" cy="80" r="75" fill="none" stroke="#59e2ff" stroke-opacity=".3" stroke-width="2" />
+</svg>

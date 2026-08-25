@@ -4,56 +4,318 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Account Management | VTIC Systems</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_accounts.css') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin.css') }}"
+    />
+    {% include '_theme.html' %}
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_accounts.css') }}"
+    />
+    <script
+      src="{{ url_for('static', filename='js/admin_accounts.js') }}"
+      defer
+    ></script>
   </head>
   <body>
-    <aside>
-      <a class="logo" href="/"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="VTIC" /></a>
-      <nav>
-        <a href="/admin"><span>01</span>Products</a>
-        <a href="/admin/manufacturers"><span>02</span>Manufacturers</a>
-        <a href="/admin/review-requests"><span>03</span>Review requests</a>
-        <a href="/admin/account"><span>04</span>My account</a>
-        <a class="active" href="/admin/accounts"><span>05</span>Manage accounts</a>
-        <a href="/admin/activity"><span>06</span>Activity logs</a>
-        <a href="/storefront" target="_blank"><span>07</span>View storefront</a>
-      </nav>
-      <div class="admin-user"><p>Signed in as</p><b>{{ session.admin_username }}</b><form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form></div>
-    </aside>
-    <main>
-      <header class="accounts-heading">
-        <div><p>SUPERADMIN / ACCESS CONTROL</p><h1>Account management</h1></div>
-        <div class="create-actions"><a href="/admin/accounts/new/customer">Create customer</a><a class="primary" href="/admin/accounts/new/admin">Create administrator</a></div>
-      </header>
-      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
-      <section class="account-section">
-        <div class="section-title"><div><span>01</span><h2>Administrators</h2></div><p>{{ administrators|length }} account(s) with catalog access</p></div>
-        <div class="account-table">
-          <div class="account-row account-row--head"><span>Administrator</span><span>Role</span><span>Created</span><span></span></div>
-          {% for item in administrators %}
-          <div class="account-row">
-            <div class="identity"><i>{{ item.username[:2]|upper }}</i><div><b>{{ item.username }}</b><small>Administrator ID #{{ item.id }}</small></div></div>
-            <span><em class="role role--{{ item.role }}">{{ item.role }}</em>{% if item.id == session.admin_id %}<small class="current-user">Current account</small>{% endif %}</span>
-            <time>{{ item.created_at[:10] }}</time>
-            <a href="/admin/accounts/admin/{{ item.id }}/edit">Edit account →</a>
+    {% macro status_control(item, account_type, label, locked=false) %} {% if
+    locked %}
+    <div class="status-display">
+      <span class="status status--{{ item.status }}"
+        ><i></i>{{ item.status }}</span
+      >
+      <small class="current-user">Current account</small>
+    </div>
+    {% else %}
+    <details class="status-control">
+      <summary
+        class="status status--{{ item.status }}"
+        title="Change account status"
+      >
+        <i></i><span>{{ item.status }}</span><b aria-hidden="true">⌄</b>
+      </summary>
+      <form
+        method="post"
+        action="/admin/accounts/{{ account_type }}/{{ item.id }}/status"
+        data-status-form
+        data-account-label="{{ label }}"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <header>
+          <div>
+            <span>ACCESS CONTROL</span>
+            <h3>{{ label }}</h3>
           </div>
+          <button type="button" data-close-status aria-label="Close">×</button>
+        </header>
+        <fieldset>
+          <legend>Account status</legend>
+          {% for next_status in ['active', 'suspended', 'banned'] %}
+          <label
+            ><input
+              type="radio"
+              name="status"
+              value="{{ next_status }}"
+              {{ 'checked' if next_status == item.status else '' }}
+            /><span class="status-choice status-choice--{{ next_status }}"
+              ><i></i>{{ next_status|title }}</span
+            ></label
+          >
           {% endfor %}
-        </div>
-      </section>
-      <section class="account-section">
-        <div class="section-title"><div><span>02</span><h2>Customers</h2></div><p>{{ customers|length }} registered storefront account(s)</p></div>
-        <div class="account-table">
-          <div class="account-row account-row--customer account-row--head"><span>Customer</span><span>Email</span><span>Last sign in</span><span></span></div>
-          {% for item in customers %}
-          <div class="account-row account-row--customer">
-            <div class="identity"><i>{{ item.full_name[:2]|upper }}</i><div><b>{{ item.full_name }}</b><small>Customer ID #{{ item.id }}</small></div></div>
-            <span class="email">{{ item.email }}</span>
-            <time>{{ item.last_login_at[:16] if item.last_login_at else 'Never' }}</time>
-            <a href="/admin/accounts/customer/{{ item.id }}/edit">Edit account →</a>
+        </fieldset>
+        <div class="restriction-duration" data-restriction-duration>
+          <span>Restriction duration</span>
+          <div>
+            <input
+              type="number"
+              name="duration_amount"
+              min="1"
+              max="1000"
+              value="1"
+              aria-label="Duration amount"
+            /><select name="duration_unit" aria-label="Duration unit">
+              <option value="hours">Hours</option>
+              <option value="days" selected>Days</option>
+              <option value="months">Months</option>
+              <option value="years">Years</option>
+            </select>
           </div>
-          {% else %}<div class="empty-row">No customer accounts have been created.</div>{% endfor %}
+          <label class="permanent-option"
+            ><input type="checkbox" name="duration_mode" value="permanent" />
+            Permanent restriction</label
+          >
+        </div>
+        {% if item.status_expires_at %}
+        <p class="current-expiry">
+          Current restriction ends {{ item.status_expires_at }} UTC
+        </p>
+        {% endif %}
+        <button class="save-status" type="submit">Apply status change</button>
+      </form>
+    </details>
+    {% if item.status_expires_at %}<small class="status-expiry">Until {{ item.status_expires_at[:16] }} UTC</small>{% endif %}
+    {% endif %} {% endmacro %} {% include '_admin_sidebar.html' %}
+
+    <main class="accounts-page">
+      <header class="accounts-heading">
+        <div>
+          <p>SUPERADMIN / ACCESS CONTROL</p>
+          <h1>Account directory</h1>
+          <span
+            >Manage identities, access levels and storefront eligibility.</span
+          >
+        </div>
+        <div class="heading-metrics">
+          <div>
+            <b>{{ administrators|length + customers|length }}</b
+            ><span>Total accounts</span>
+          </div>
+          <div>
+            <b
+              >{{ customers|selectattr('status', 'equalto',
+              'active')|list|length }}</b
+            ><span>Active customers</span>
+          </div>
+        </div>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% for
+      category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %} {% endwith %}
+
+      <section class="directory-card" aria-labelledby="directory-title">
+        <div class="directory-toolbar">
+          <div class="toolbar-title">
+            <p>IDENTITY DIRECTORY</p>
+            <h2 id="directory-title">Users and administrators</h2>
+          </div>
+          <div class="toolbar-actions">
+            <a href="/admin/accounts/new/customer">+ Customer</a>
+            <a class="primary" href="/admin/accounts/new/admin"
+              >+ Administrator</a
+            >
+          </div>
+        </div>
+
+        <div class="directory-filters">
+          <label class="search-field">
+            <span>Search</span>
+            <input
+              type="search"
+              data-account-search
+              placeholder="Name, email or username"
+              autocomplete="off"
+            />
+          </label>
+          <label>
+            Account type
+            <select data-account-type>
+              <option value="all">All accounts</option>
+              <option value="superadmin">Superadmins</option>
+              <option value="admin">Administrators</option>
+              <option value="customer">Customers</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select data-account-status>
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="banned">Banned</option>
+            </select>
+          </label>
+          <label>
+            Sort by
+            <select data-account-sort>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name">Name A–Z</option>
+              <option value="activity">Recent activity</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="directory-summary">
+          <span
+            ><b data-visible-count
+              >{{ administrators|length + customers|length }}</b
+            >
+            visible account(s)</span
+          >
+          <button type="button" data-reset-filters>Reset filters</button>
+        </div>
+
+        <div class="account-table-wrap">
+          <div
+            class="account-table"
+            role="table"
+            aria-label="VTIC account directory"
+          >
+            <div class="account-row account-row--head" role="row">
+              <span>Full name</span><span>Email</span><span>Username</span
+              ><span>Status</span><span>Role</span><span>Joined date</span
+              ><span>Last active</span><span>Actions</span>
+            </div>
+
+            <div class="account-group" data-account-group="superadmin">
+              <span>01</span><b>Super administrators</b><small>Full system access</small>
+            </div>
+            {% for item in administrators %}
+            {% if item.role == 'superadmin' %}
+            <article
+              class="account-row"
+              role="row"
+              data-account-row
+              data-type="superadmin"
+              data-group="superadmin"
+              data-status="{{ item.status }}"
+              data-name="{{ ((item.full_name or item.username) ~ ' ' ~ (item.email or '') ~ ' ' ~ item.username)|lower }}"
+              data-joined="{{ item.created_at }}"
+              data-active="{{ item.last_login_at or '' }}"
+            >
+              <div class="identity">
+                <img src="{{ item.avatar_url or url_for('static', filename='images/default-avatar.svg') }}" alt="{{ item.full_name or item.username }} profile photo" />
+                <div>
+                  <b>{{ item.full_name or item.username }}</b
+                  ><small>Administrator #{{ item.id }}</small>
+                </div>
+              </div>
+              <span class="identifier">{{ item.email or '—' }}</span>
+              <span class="identifier">@{{ item.username }}</span>
+              <span
+                >{{ status_control(item, 'admin', item.username, item.id ==
+                session.admin_id) }}</span
+              >
+              <span><em class="role role--{{ item.role }}">Superadmin</em></span>
+              <time>{{ item.created_at[:10] }}</time>
+              <time
+                >{{ item.last_login_at[:16] if item.last_login_at else 'Never'
+                }}</time
+              >
+              <div class="row-actions">
+                <a href="/admin/accounts/admin/{{ item.id }}/edit">Edit</a>
+              </div>
+            </article>
+            {% endif %}
+            {% endfor %}
+
+            <div class="account-group" data-account-group="admin">
+              <span>02</span><b>Administrators</b><small>Catalog and request operations</small>
+            </div>
+            {% for item in administrators %}
+            {% if item.role != 'superadmin' %}
+            <article
+              class="account-row"
+              role="row"
+              data-account-row
+              data-type="admin"
+              data-group="admin"
+              data-status="{{ item.status }}"
+              data-name="{{ ((item.full_name or item.username) ~ ' ' ~ (item.email or '') ~ ' ' ~ item.username)|lower }}"
+              data-joined="{{ item.created_at }}"
+              data-active="{{ item.last_login_at or '' }}"
+            >
+              <div class="identity">
+                <img src="{{ item.avatar_url or url_for('static', filename='images/default-avatar.svg') }}" alt="{{ item.full_name or item.username }} profile photo" />
+                <div><b>{{ item.full_name or item.username }}</b><small>Administrator #{{ item.id }}</small></div>
+              </div>
+              <span class="identifier">{{ item.email or '—' }}</span>
+              <span class="identifier">@{{ item.username }}</span>
+              <span>{{ status_control(item, 'admin', item.username, item.id == session.admin_id) }}</span>
+              <span><em class="role role--{{ item.role }}">{{ 'Marketing admin' if item.role == 'admin_marketing' else 'Technical admin' if item.role == 'admin_technical' else 'Admin' }}</em></span>
+              <time>{{ item.created_at[:10] }}</time>
+              <time>{{ item.last_login_at[:16] if item.last_login_at else 'Never' }}</time>
+              <div class="row-actions"><a href="/admin/accounts/admin/{{ item.id }}/edit">Edit</a></div>
+            </article>
+            {% endif %}
+            {% endfor %}
+
+            <div class="account-group" data-account-group="customer">
+              <span>03</span><b>Customers</b><small>Storefront accounts</small>
+            </div>
+            {% for item in customers %}
+            <article
+              class="account-row"
+              role="row"
+              data-account-row
+              data-type="customer"
+              data-group="customer"
+              data-status="{{ item.status }}"
+              data-name="{{ (item.full_name ~ ' ' ~ item.email)|lower }}"
+              data-joined="{{ item.created_at }}"
+              data-active="{{ item.last_login_at or '' }}"
+            >
+              <div class="identity">
+                <img src="{{ item.avatar_url or url_for('static', filename='images/default-avatar.svg') }}" alt="{{ item.full_name }} profile photo" />
+                <div>
+                  <b>{{ item.full_name }}</b
+                  ><small>Customer #{{ item.id }}</small>
+                </div>
+              </div>
+              <span class="identifier">{{ item.email }}</span>
+              <span class="identifier">—</span>
+              <span
+                >{{ status_control(item, 'customer', item.full_name) }}</span
+              >
+              <span><em class="role role--customer">Customer</em></span>
+              <time>{{ item.created_at[:10] }}</time>
+              <time
+                >{{ item.last_login_at[:16] if item.last_login_at else 'Never'
+                }}</time
+              >
+              <div class="row-actions">
+                <a href="/admin/accounts/customer/{{ item.id }}/edit">Edit</a>
+              </div>
+            </article>
+            {% endfor %}
+
+            <div class="empty-row" data-empty-state hidden>
+              No accounts match these filters.
+            </div>
+          </div>
         </div>
       </section>
     </main>

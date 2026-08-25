@@ -12,34 +12,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/admin.css') }}"
     />
+    {% include '_theme.html' %}
   </head>
   <body>
-    <aside>
-      <a class="logo" href="/"
-        ><img
-          src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-          alt="VTIC"
-      /></a>
-      <nav>
-        <a class="active" href="/admin"><span>01</span>Products</a
-        ><a href="/admin/manufacturers"><span>02</span>Manufacturers</a
-        ><a href="/admin/review-requests"><span>03</span>Review requests</a
-        ><a href="/admin/account"><span>04</span>Account</a
-        >{% if session.admin_role == 'superadmin' %}<a href="/admin/accounts"><span>05</span>Manage accounts</a><a href="/admin/activity"><span>06</span>Activity logs</a>{% endif
-        %}<a href="/storefront" target="_blank"><span>07</span>View storefront</a>
-      </nav>
-      <div class="admin-user">
-        <p>Signed in as</p>
-        <b>{{ session.admin_username }}</b>
-        <form action="/admin/logout" method="post">
-          <input
-            type="hidden"
-            name="csrf_token"
-            value="{{ session.csrf_token }}"
-          /><button>Sign out</button>
-        </form>
-      </div>
-    </aside>
+    {% include '_admin_sidebar.html' %}
     <main>
       <header>
         <div>

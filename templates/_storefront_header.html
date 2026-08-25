@@ -1,0 +1,56 @@
+<header class="vtic-nav">
+  <div class="vtic-nav__rail shell">
+    <a class="vtic-nav__brand" href="/storefront" aria-label="VTIC storefront">
+      <img
+        src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+        alt="Visible Technologies International Corporation"
+      />
+    </a>
+    <nav class="vtic-nav__links" aria-label="Storefront navigation">
+      <a
+        class="{{ 'active' if storefront_section == 'products' else '' }}"
+        href="/products"
+        >Products</a
+      >
+      <a
+        class="{{ 'active' if storefront_section == 'advisor' else '' }}"
+        href="/solution-advisor"
+        >VTIC Advisor</a
+      >
+      <a href="/storefront#solutions">Solutions</a>
+      <a href="/storefront#partners">Partners</a>
+    </nav>
+    <form class="vtic-nav__search" action="/products">
+      <label class="sr-only" for="global-catalog-search">Search catalog</label>
+      <span class="vtic-nav__search-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <circle cx="11" cy="11" r="6.5"></circle>
+          <path d="m16 16 4 4"></path>
+        </svg>
+      </span>
+      <input
+        id="global-catalog-search"
+        name="q"
+        value="{{ query|default('') }}"
+        placeholder="Search products"
+      />
+      <button type="submit">Search</button>
+    </form>
+    <div class="vtic-nav__actions">
+      <a class="vtic-nav__cart" href="/cart"
+        ><span>Cart</span><b data-cart-count>0</b></a
+      >
+      {% include '_admin_storefront_menu.html' %}
+    </div>
+  </div>
+  <div class="vtic-nav__status">
+    <div class="shell">
+      <span>Enterprise technology procurement</span>
+      <span
+        >{{ session.customer_name if session.customer_id else
+        session.admin_username if session.admin_id else 'VTIC storefront'
+        }}</span
+      >
+    </div>
+  </div>
+</header>

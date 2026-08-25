@@ -1,0 +1,216 @@
+:root {
+  color-scheme: light;
+  --theme-canvas: #ffffff;
+  --theme-surface: #f3f6f7;
+  --theme-surface-raised: #ffffff;
+  --theme-text: #102434;
+  --theme-muted: #647581;
+  --theme-border: #dce3e8;
+  --theme-header: rgba(255, 255, 255, 0.96);
+  --theme-shadow: 0 14px 40px rgba(7, 26, 43, 0.09);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --theme-canvas: #071521;
+  --theme-surface: #0b1d2b;
+  --theme-surface-raised: #102635;
+  --theme-text: #e8f0f4;
+  --theme-muted: #9cb0bc;
+  --theme-border: #294252;
+  --theme-header: rgba(7, 21, 33, 0.96);
+  --theme-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
+}
+
+html {
+  background: var(--theme-canvas);
+}
+
+body {
+  background-color: var(--theme-canvas);
+  color: var(--theme-text);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+:root:not([data-theme="dark"]) body {
+  background-image:
+    radial-gradient(
+      circle at 88% 3%,
+      rgba(17, 186, 227, 0.055),
+      transparent 25%
+    ),
+    linear-gradient(rgba(255, 255, 255, 0.18), rgba(248, 252, 254, 0.3)),
+    url("../images/vtic-light-technology-bg-v3.png") !important;
+  background-position:
+    88% 3%,
+    center,
+    center;
+  background-size:
+    auto,
+    auto,
+    cover;
+  background-repeat:
+    no-repeat,
+    no-repeat,
+    no-repeat;
+  background-attachment:
+    fixed,
+    fixed,
+    fixed;
+}
+
+:root:not([data-theme="dark"]) :where(
+  .product-card,
+  .workspace-card,
+  .panel,
+  .auth-card,
+  .login-card,
+  .register-card,
+  .form-card,
+  .review-card,
+  .solution-card
+) {
+  background-color: #fff !important;
+}
+
+.theme-toggle {
+  position: relative;
+  display: inline-grid;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--theme-border);
+  border-radius: 50%;
+  color: var(--theme-text);
+  background: var(--theme-surface-raised);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: #18a7c6;
+  transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid rgba(24, 182, 212, 0.3);
+  outline-offset: 3px;
+}
+
+.theme-toggle--floating {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 1000;
+  box-shadow: var(--theme-shadow);
+}
+
+.theme-toggle__icon {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+:root[data-theme="dark"] .theme-toggle__sun,
+:root:not([data-theme="dark"]) .theme-toggle__moon {
+  display: none;
+}
+
+:root[data-theme="dark"] body > header,
+:root[data-theme="dark"] .site-header,
+:root[data-theme="dark"] header:not(.hero):not(.admin-header) {
+  border-color: var(--theme-border);
+  background-color: var(--theme-header);
+}
+
+:root[data-theme="dark"] main,
+:root[data-theme="dark"] .company,
+:root[data-theme="dark"] .approach,
+:root[data-theme="dark"] .catalog-layout,
+:root[data-theme="dark"] .page-heading {
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+  background: var(--theme-surface-raised);
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: var(--theme-muted);
+}
+
+:root[data-theme="dark"] .company-copy p,
+:root[data-theme="dark"] .vision-mission article > p:last-child,
+:root[data-theme="dark"] .breadcrumb,
+:root[data-theme="dark"] .page-heading span {
+  color: var(--theme-muted);
+}
+
+:root[data-theme="dark"] .vision-mission,
+:root[data-theme="dark"] .vision-mission article,
+:root[data-theme="dark"] .section-index div,
+:root[data-theme="dark"] .table,
+:root[data-theme="dark"] .toolbar,
+:root[data-theme="dark"] article {
+  border-color: var(--theme-border);
+}
+
+:root[data-theme="dark"] .leadership,
+:root[data-theme="dark"] .approach-grid > div,
+:root[data-theme="dark"] .toolbar,
+:root[data-theme="dark"] .table,
+:root[data-theme="dark"] .table-row,
+:root[data-theme="dark"] .product-card,
+:root[data-theme="dark"] .cart-layout > *,
+:root[data-theme="dark"] .auth-card {
+  color: var(--theme-text);
+  background-color: var(--theme-surface);
+}
+
+:root[data-theme="dark"] form,
+:root[data-theme="dark"] .login-card,
+:root[data-theme="dark"] .register-card,
+:root[data-theme="dark"] .form-card,
+:root[data-theme="dark"] .panel {
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+:root[data-theme="dark"] .statement-icon--mission::before {
+  box-shadow:
+    inset 0 0 0 7px var(--theme-canvas),
+    inset 0 0 0 8px currentColor;
+}
+
+body > aside .theme-toggle {
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 4px;
+  color: #dce7ed;
+  background: #102e45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .theme-toggle {
+    transition: none;
+  }
+
+}

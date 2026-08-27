@@ -1,10 +1,7 @@
-# VTIC ICT Solutions Consultation and Proposal Management System
+# VTIC E-commerce and Solution Review System
 
-A responsive consultation and project-quotation platform built with
-Python/Flask, HTML, page-specific CSS, SQLite, and vanilla JavaScript. Customers
-explore the solutions catalog, build a review list, consult with VTIC, and track
-requests through pricing, technical validation, BOM preparation, proposal, and
-final approval. The platform does not provide direct online checkout or payment.
+A responsive enterprise technology marketplace built with Python/Flask, HTML,
+page-specific CSS, SQLite, and vanilla JavaScript.
 
 ## Quick start
 
@@ -214,7 +211,7 @@ video access requires HTTPS and customer microphone permission.
 Development credentials:
 
 - Username: `admin`
-- Password: `visibletechintlcorp`
+- Password: `   `
 
 The initial administrator is assigned the `superadmin` role. Only a signed-in
 superadmin can open http://127.0.0.1:5000/admin/activity. The audit trail records

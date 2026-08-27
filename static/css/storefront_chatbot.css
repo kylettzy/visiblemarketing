@@ -105,6 +105,7 @@
 }
 
 .storefront-chat__panel {
+  position: relative;
   width: min(390px, calc(100vw - 32px));
   overflow: hidden;
   background: #fff;
@@ -157,6 +158,98 @@
   cursor: pointer;
   font-size: 25px;
   line-height: 1;
+}
+.storefront-chat__tools {
+  display: flex;
+  border-bottom: 1px solid #d9e1e6;
+  background: #f6f9fa;
+}
+.storefront-chat__tools button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid #d9e1e6;
+  color: #385464;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.storefront-chat__tools button:last-child {
+  margin-left: auto;
+  border-right: 0;
+  border-left: 1px solid #d9e1e6;
+}
+.storefront-chat__tools b {
+  margin-left: 5px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  color: #fff;
+  background: #2764ff;
+  font-size: 8px;
+}
+.storefront-chat__history {
+  position: absolute;
+  z-index: 3;
+  inset: 112px 0 auto;
+  max-height: 330px;
+  overflow: auto;
+  border-bottom: 1px solid #b9cbd4;
+  background: #fff;
+  box-shadow: 0 18px 36px rgba(5, 28, 43, 0.2);
+}
+.storefront-chat__history[hidden] {
+  display: none;
+}
+.storefront-chat__history > header {
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #e0e8ec;
+}
+.storefront-chat__history > header b {
+  font-size: 11px;
+}
+.storefront-chat__history > header span {
+  color: #718792;
+  font-size: 8px;
+}
+.storefront-chat__history > div > p {
+  padding: 18px;
+  margin: 0;
+  color: #718792;
+  font-size: 10px;
+  text-align: center;
+}
+.storefront-chat__history > div > button {
+  width: 100%;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border: 0;
+  border-bottom: 1px solid #e5ecef;
+  color: #173549;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.storefront-chat__history > div > button:hover,
+.storefront-chat__history > div > button.active {
+  background: #edf4ff;
+}
+.storefront-chat__history button b,
+.storefront-chat__history button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.storefront-chat__history button b {
+  font-size: 11px;
+}
+.storefront-chat__history button small,
+.storefront-chat__history button span {
+  color: #718792;
+  font-size: 8px;
 }
 
 .storefront-chat__context {

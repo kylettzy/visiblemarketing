@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Organizations and institutions served by Visible Technologies International Corporation." />
+    <title>Clients | VTIC</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clients.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_footer.css') }}" />
+    {% include '_theme.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/solution_header.css') }}" />
+  </head>
+  <body>
+    <header class="solution-header">
+      <div class="client-shell solution-header-inner">
+        <a class="solution-brand" href="/" aria-label="Visible Technologies home"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" /></a>
+        <nav aria-label="Company navigation">
+          <a class="solution-nav-link" href="/#company">Company</a>
+          <details class="solution-menu">
+            <summary>Solutions <i></i></summary>
+            <div>{% for slug, item in solutions.items() %}<a href="/solutions/{{ slug }}">{{ item.name }}</a>{% endfor %}</div>
+          </details>
+          <details class="solution-menu">
+            <summary class="is-active">Our partners<br />and clients <i></i></summary>
+            <div class="compact"><a href="/partners">Partners</a><a class="active" href="/clients">Clients</a></div>
+          </details>
+          <a class="solution-nav-link" href="/#approach">Our approach</a>
+          <a class="solution-nav-link" href="mailto:sales@vtic.com.ph">Contact</a>
+        </nav>
+        <div class="solution-account">{% if session.get('customer_id') %}<span>Welcome, {{ session.customer_name }}</span><a class="primary" href="/storefront">Open solutions catalog</a>{% elif session.get('admin_id') %}<span>Welcome, {{ session.admin_username }}</span><a class="primary" href="/admin">Go to admin console</a>{% else %}<a class="sign-in" href="/login">Sign in</a><a class="primary" href="/register">Create account</a>{% endif %}</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="clients-hero">
+        <div class="client-shell clients-hero-grid">
+          <div><p>OUR WORK / CLIENT PORTFOLIO</p><h1>Trusted where technology has to perform.</h1></div>
+          <div><p>From public institutions and major events to retail, education and hospitality, VTIC delivers systems designed around real operating environments.</p><span>{{ clients|length }} FEATURED CLIENTS</span></div>
+        </div>
+      </section>
+
+      <section class="clients-directory">
+        <div class="client-shell">
+          <header class="clients-directory-head">
+            <div><p>SELECTED ENGAGEMENTS</p><h2>Our clients.</h2></div>
+            <div class="client-filters" aria-label="Filter clients by sector">
+              <button class="active" type="button" data-client-filter="all">All</button>
+              {% for sector in sectors %}<button type="button" data-client-filter="{{ sector|lower|replace(' ', '-')|replace('&', 'and') }}">{{ sector }}</button>{% endfor %}
+            </div>
+          </header>
+
+          <div class="client-grid">
+            {% for client in clients %}
+            <article class="client-card" data-client-sector="{{ client.sector|lower|replace(' ', '-')|replace('&', 'and') }}">
+              <div class="client-card-image">
+                <img src="{{ client.image_src }}" alt="{{ client.name }}" loading="lazy" />
+                <span>{{ "%02d"|format(loop.index) }}</span>
+              </div>
+              <div class="client-card-copy">
+                <p>{{ client.sector }}</p>
+                <h3>{{ client.name }}</h3>
+                <dl><dt>VTIC PROJECT SCOPE</dt><dd>{{ client.scope }}</dd></dl>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+
+          <p class="client-disclosure">Project scopes are based on the VTIC portfolio information supplied for this page. Imagery was cross-checked against publicly available sources.</p>
+        </div>
+      </section>
+    </main>
+    {% include '_storefront_footer.html' %}
+    <script src="{{ url_for('static', filename='js/clients.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/landing-nav.js') }}" defer></script>
+  </body>
+</html>

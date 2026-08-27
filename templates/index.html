@@ -207,7 +207,7 @@
                 {% endif %}
               </div>
               <button class="add" data-add="{{ product|tojson|forceescape }}">
-                Add to cart
+                Add to review list
               </button>
             </div>
           </article>
@@ -217,7 +217,7 @@
 
     </main>
     {% include '_storefront_footer.html' %}
-    <div id="toast" role="status">Added to cart</div>
+    <div id="toast" role="status">Added to review list</div>
     {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>

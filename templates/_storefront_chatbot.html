@@ -60,6 +60,17 @@ active_product = chat_product if chat_product is defined else none %}
       </button>
     </header>
 
+    <div class="storefront-chat__tools">
+      <button type="button" data-chat-history-toggle aria-expanded="false">
+        Chats <b data-chat-history-count>0</b>
+      </button>
+      <button type="button" data-chat-new>+ New chat</button>
+    </div>
+    <aside class="storefront-chat__history" data-chat-history hidden>
+      <header><b>Your chats</b><span>Current account only</span></header>
+      <div data-chat-history-list><p>Loading conversations…</p></div>
+    </aside>
+
     {% if active_product %}
     <div class="storefront-chat__context">
       <span>Currently viewing</span>
@@ -87,7 +98,7 @@ active_product = chat_product if chat_product is defined else none %}
 
     {% if active_product %}
     <button class="storefront-chat__add" type="button" data-chat-add-product>
-      Add this product to cart
+      Add this product to review list
     </button>
     {% endif %}
 

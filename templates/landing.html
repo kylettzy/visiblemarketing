@@ -29,7 +29,21 @@
         </a>
         <nav aria-label="Main navigation">
           <a href="#company">Company</a>
-          <a href="#capabilities">Capabilities</a>
+          <details class="landing-menu">
+            <summary>Solutions <i></i></summary>
+            <div>
+              <a href="/solutions/physical-security">Physical security</a>
+              <a href="/solutions/information-security">Information security</a>
+              <a href="/solutions/wireless-connectivity">Wireless connectivity</a>
+              <a href="/solutions/communication">Communication</a>
+              <a href="/solutions/technology-backbone">Technology backbone</a>
+              <a href="/solutions/cloud-computing">Cloud computing</a>
+            </div>
+          </details>
+          <details class="landing-menu landing-menu--compact">
+            <summary>Our partners<br />and clients <i></i></summary>
+            <div><a href="/partners">Partners</a><a href="/clients">Clients</a></div>
+          </details>
           <a href="#approach">Our approach</a>
           <a href="mailto:sales@vtic.com.ph">Contact</a>
         </nav>
@@ -37,8 +51,11 @@
           {% if session.get('customer_id') %}
           <span>Welcome, {{ session.customer_name }}</span>
           <a class="button button--solid" href="/storefront"
-            >Enter storefront</a
+            >Open solutions catalog</a
           >
+          {% elif session.get('admin_id') %}
+          <span>Welcome, {{ session.admin_username }}</span>
+          <a class="button button--solid" href="/admin">Go to admin console</a>
           {% else %}
           <a class="sign-in" href="/login">Sign in</a>
           <a class="button button--solid" href="/register">Create account</a>
@@ -211,6 +228,7 @@
                 and data-center foundations.
               </p>
               <small>CONNECTIVITY / PERFORMANCE</small>
+              <a class="capability-link" href="/solutions/technology-backbone">Explore solution →</a>
             </article>
             <article>
               <span>02</span>
@@ -220,6 +238,7 @@
                 layered enterprise defense.
               </p>
               <small>PROTECTION / RESILIENCE</small>
+              <a class="capability-link" href="/solutions/information-security">Explore solution →</a>
             </article>
             <article>
               <span>03</span>
@@ -229,6 +248,7 @@
                 platforms.
               </p>
               <small>VOICE / COLLABORATION</small>
+              <a class="capability-link" href="/solutions/communication">Explore solution →</a>
             </article>
             <article>
               <span>04</span>
@@ -238,6 +258,7 @@
                 technologies.
               </p>
               <small>VISIBILITY / CONTROL</small>
+              <a class="capability-link" href="/solutions/physical-security">Explore solution →</a>
             </article>
             <article>
               <span>05</span>
@@ -247,6 +268,7 @@
                 workloads.
               </p>
               <small>CAPACITY / SCALE</small>
+              <a class="capability-link" href="/solutions/cloud-computing">Explore solution →</a>
             </article>
             <article class="capability-cta">
               <p>Not sure where to begin?</p>
@@ -373,7 +395,7 @@
             <details>
               <summary>
                 <i>02</i
-                ><span>Why are storefront prices submitted for review?</span
+                ><span>Why is pricing provided after technical review?</span
                 ><b>+</b>
               </summary>
               <p>
@@ -429,7 +451,7 @@
               >Book an appointment →</a
             >
             {% if session.get('customer_id') %}<a href="/storefront"
-              >Enter customer storefront</a
+              >Open solutions catalog</a
             >{% else %}<a href="/register">Create customer account</a>{% endif
             %}
           </div>
@@ -493,5 +515,9 @@
         ><span>Power up your business. Be Visible.</span>
       </div>
     </footer>
+    <script
+      src="{{ url_for('static', filename='js/landing-nav.js') }}"
+      defer
+    ></script>
   </body>
 </html>

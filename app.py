@@ -57,12 +57,19 @@ UPLOAD_ROOT = RUNTIME_ROOT / "uploads"
 MANUFACTURER_UPLOADS = UPLOAD_ROOT / "manufacturers"
 PRODUCT_UPLOADS = UPLOAD_ROOT / "products"
 ACCOUNT_UPLOADS = UPLOAD_ROOT / "accounts"
+PORTFOLIO_UPLOADS = UPLOAD_ROOT / "portfolio"
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 app.permanent_session_lifetime = timedelta(days=30)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_REFRESH_EACH_REQUEST=True,
+)
 MANUFACTURER_UPLOADS.mkdir(parents=True, exist_ok=True)
 PRODUCT_UPLOADS.mkdir(parents=True, exist_ok=True)
 ACCOUNT_UPLOADS.mkdir(parents=True, exist_ok=True)
+PORTFOLIO_UPLOADS.mkdir(parents=True, exist_ok=True)
 
 oauth = OAuth(app) if OAuth else None
 OAUTH_PROVIDERS = {
@@ -105,12 +112,24 @@ def static_files(filename):
     return send_from_directory(STATIC_ROOT, filename)
 
 
+@app.after_request
+def prevent_stale_authenticated_pages(response):
+    """Keep session-aware HTML headers in sync with the current login state."""
+    if response.mimetype == "text/html":
+        response.headers["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        response.vary.add("Cookie")
+    return response
+
+
 @app.route("/uploads/<kind>/<path:filename>")
 def uploaded_file(kind, filename):
     upload_directories = {
         "manufacturers": MANUFACTURER_UPLOADS,
         "products": PRODUCT_UPLOADS,
         "accounts": ACCOUNT_UPLOADS,
+        "portfolio": PORTFOLIO_UPLOADS,
     }
     directory = upload_directories.get(kind)
     if directory is None:
@@ -400,6 +419,18 @@ def save_account_photo(upload):
     stored_name = f"{secrets.token_hex(12)}.{extension}"
     upload.save(ACCOUNT_UPLOADS / stored_name)
     return url_for("uploaded_file", kind="accounts", filename=stored_name)
+
+
+def save_portfolio_image(upload):
+    if not upload or not upload.filename:
+        return None
+    filename = secure_filename(upload.filename)
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if extension not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError("Portfolio image must be a PNG, JPG, JPEG, or WebP file.")
+    stored_name = f"{secrets.token_hex(12)}.{extension}"
+    upload.save(PORTFOLIO_UPLOADS / stored_name)
+    return url_for("uploaded_file", kind="portfolio", filename=stored_name)
 
 
 def p(
@@ -1076,6 +1107,27 @@ def initialize_database():
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (request_id) REFERENCES review_requests(id)
             );
+            CREATE TABLE IF NOT EXISTS review_message_reads (
+                message_id INTEGER NOT NULL,
+                reader_type TEXT NOT NULL,
+                reader_id INTEGER NOT NULL,
+                read_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (message_id, reader_type, reader_id),
+                FOREIGN KEY (message_id) REFERENCES review_request_messages(id)
+            );
+            CREATE TABLE IF NOT EXISTS admin_conversation_preferences (
+                admin_id INTEGER NOT NULL,
+                request_id INTEGER NOT NULL,
+                is_muted INTEGER NOT NULL DEFAULT 0,
+                muted_until TEXT,
+                is_archived INTEGER NOT NULL DEFAULT 0,
+                is_blocked INTEGER NOT NULL DEFAULT 0,
+                deleted_at TEXT,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (admin_id, request_id),
+                FOREIGN KEY (admin_id) REFERENCES admins(id),
+                FOREIGN KEY (request_id) REFERENCES review_requests(id)
+            );
             CREATE TABLE IF NOT EXISTS review_request_materials (
                 id INTEGER PRIMARY KEY,
                 request_id INTEGER NOT NULL,
@@ -1155,6 +1207,36 @@ def initialize_database():
                 name TEXT NOT NULL COLLATE NOCASE UNIQUE,
                 logo_url TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS portfolio_clients (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                sector TEXT NOT NULL,
+                image_url TEXT NOT NULL DEFAULT '',
+                scope TEXT NOT NULL DEFAULT '',
+                display_order INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS portfolio_partner_groups (
+                id INTEGER PRIMARY KEY,
+                slug TEXT NOT NULL COLLATE NOCASE UNIQUE,
+                name TEXT NOT NULL,
+                summary TEXT NOT NULL DEFAULT '',
+                display_order INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS portfolio_partners (
+                id INTEGER PRIMARY KEY,
+                group_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                website_url TEXT NOT NULL DEFAULT '#',
+                logo_url TEXT NOT NULL DEFAULT '',
+                display_order INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (group_id) REFERENCES portfolio_partner_groups(id)
             );
             CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
             CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);
@@ -1250,6 +1332,30 @@ def initialize_database():
             database.execute(
                 """UPDATE ai_conversations SET conversation_type = 'product'
                    WHERE title LIKE 'Product chat:%'"""
+            )
+        message_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(review_request_messages)")
+        }
+        if "read_by_customer" not in message_columns:
+            database.execute(
+                "ALTER TABLE review_request_messages ADD COLUMN read_by_customer INTEGER NOT NULL DEFAULT 0"
+            )
+            database.execute(
+                "UPDATE review_request_messages SET read_by_customer = 1 WHERE sender_type = 'customer'"
+            )
+        if "read_by_admin" not in message_columns:
+            database.execute(
+                "ALTER TABLE review_request_messages ADD COLUMN read_by_admin INTEGER NOT NULL DEFAULT 0"
+            )
+            database.execute(
+                "UPDATE review_request_messages SET read_by_admin = 1 WHERE sender_type = 'admin'"
+            )
+        preference_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(admin_conversation_preferences)")
+        }
+        if "muted_until" not in preference_columns:
+            database.execute(
+                "ALTER TABLE admin_conversation_preferences ADD COLUMN muted_until TEXT"
             )
         if database.execute("SELECT COUNT(*) FROM products").fetchone()[0] == 0:
             database.executemany(
@@ -1526,6 +1632,305 @@ def customer_logout():
 @app.route("/")
 def home():
     return render_template("landing.html")
+
+
+SOLUTION_PAGES = {
+    "physical-security": {
+        "index": "01",
+        "name": "Physical Security",
+        "eyebrow": "SEE EARLIER. RESPOND FASTER.",
+        "headline": "Security intelligence for every site.",
+        "summary": "Unify cameras, recording, access visibility and operational response in one professionally designed physical-security environment.",
+        "description": "VTIC designs physical-security systems around real coverage requirements—not camera counts alone. We assess risk, fields of view, lighting, retention, network capacity and response workflows before specifying the system.",
+        "features": ["IP cameras and intelligent video", "NVR, storage and video management", "Remote monitoring and alerts", "Structured cabling, racks and power", "Installation, commissioning and training", "Maintenance and lifecycle support"],
+        "outcomes": [("Coverage", "Purpose-built camera placement"), ("Evidence", "Reliable recording and retention"), ("Response", "Faster operational awareness")],
+        "categories": ["CCTV", "IP Cameras", "NVR & DVR", "CCTV Accessories"],
+        "visual": "physical",
+    },
+    "information-security": {
+        "index": "02", "name": "Information Security", "eyebrow": "DEFENSE ACROSS EVERY LAYER.",
+        "headline": "Protect users, systems and critical data.",
+        "summary": "A coordinated security architecture spanning the perimeter, endpoint, identity and cloud.",
+        "description": "VTIC aligns security controls with your risk profile, operating model and existing infrastructure, then helps your team deploy and sustain them.",
+        "features": ["Next-generation firewalls", "Endpoint protection", "Secure access and identity", "Email and data protection", "Security assessment", "Implementation and support"],
+        "outcomes": [("Prevent", "Reduce the attack surface"), ("Detect", "Surface threats earlier"), ("Recover", "Strengthen operational resilience")],
+        "categories": ["Cybersecurity", "Endpoint Security", "Firewalls & Security Appliances"], "visual": "security",
+    },
+    "wireless-connectivity": {
+        "index": "03", "name": "Wireless Connectivity", "eyebrow": "COVERAGE WITHOUT COMPROMISE.",
+        "headline": "Reliable wireless built for real demand.",
+        "summary": "Enterprise Wi-Fi designed around users, devices, applications, capacity and the physical environment.",
+        "description": "From predictive design through validation, VTIC builds managed wireless environments that remain secure and ready to scale.",
+        "features": ["Wireless site surveys", "Indoor and outdoor access points", "Wireless controllers", "Point-to-point links", "Guest access", "Deployment and optimization"],
+        "outcomes": [("Reach", "Consistent usable coverage"), ("Capacity", "Designed for device density"), ("Control", "Secure centralized management")],
+        "categories": ["Wireless", "Access Points", "Wireless Controllers"], "visual": "wireless",
+    },
+    "communication": {
+        "index": "04", "name": "Communication", "eyebrow": "CONNECT EVERY CONVERSATION.",
+        "headline": "Communication that keeps teams moving.",
+        "summary": "Voice, collaboration and unified communication systems for modern organizations.",
+        "description": "VTIC connects people across offices, devices and working styles with communication platforms designed for clarity and continuity.",
+        "features": ["IP telephony", "Unified communications", "Video conferencing", "Contact-center systems", "Messaging platforms", "Deployment and support"],
+        "outcomes": [("Clarity", "Dependable business voice"), ("Access", "Work across locations"), ("Continuity", "Keep teams connected")],
+        "categories": ["Communications", "Video Conferencing"], "visual": "communication",
+    },
+    "technology-backbone": {
+        "index": "05", "name": "Technology Backbone", "eyebrow": "THE FOUNDATION FOR EVERYTHING.",
+        "headline": "Infrastructure engineered to carry the business.",
+        "summary": "Switching, routing, structured cabling, fiber and data-center foundations delivered as one system.",
+        "description": "We connect the physical and logical layers so performance, manageability and future expansion are considered from day one.",
+        "features": ["Enterprise switching and routing", "Structured copper cabling", "Fiber backbone", "Racks and cabinets", "Patch panels and accessories", "Testing and documentation"],
+        "outcomes": [("Speed", "Correctly sized performance"), ("Order", "Documented infrastructure"), ("Scale", "Room for future growth")],
+        "categories": ["Routers", "Switches", "Cabling", "Fiber", "Racks & Cabinets"], "visual": "backbone",
+    },
+    "cloud-computing": {
+        "index": "06", "name": "Cloud Computing", "eyebrow": "COMPUTE WHERE IT WORKS BEST.",
+        "headline": "A practical path to cloud and hybrid operations.",
+        "summary": "Cloud, server, storage and virtualization choices aligned to the workload—not the trend.",
+        "description": "VTIC helps organizations modernize infrastructure while balancing availability, control, performance and operating cost.",
+        "features": ["Cloud readiness", "Servers and storage", "Virtualization", "Backup and recovery", "Hybrid architecture", "Migration and support"],
+        "outcomes": [("Agility", "Deploy capacity faster"), ("Resilience", "Protect critical workloads"), ("Control", "Match platform to requirement")],
+        "categories": ["Servers", "Storage", "Cloud Software"], "visual": "cloud",
+    },
+}
+
+CLIENT_PORTFOLIO = [
+    {
+        "name": "2019 Southeast Asian Games",
+        "short_name": "SEA Games 2019",
+        "sector": "Events",
+        "image": "images/clients/sea-games-2019.jpg",
+        "scope": "Physical security and communication devices",
+        "url": "https://2019seagames.com/",
+    },
+    {
+        "name": "Philippine International Convention Center",
+        "short_name": "PICC",
+        "sector": "Government & Venues",
+        "image": "images/clients/picc.jpg",
+        "scope": "Wireless access points and network firewall",
+        "url": "https://www.picc.gov.ph/",
+    },
+    {
+        "name": "Dr. Emilio B. Espinosa Sr. Memorial State College",
+        "short_name": "DEBESMSCAT",
+        "sector": "Education",
+        "image": "images/clients/debesmscat.jpg",
+        "scope": "Technical support and CCTV",
+        "url": "https://debesmscat.edu.ph/",
+    },
+    {
+        "name": "University of Southern Mindanao",
+        "short_name": "USM",
+        "sector": "Education",
+        "image": "images/clients/usm.jpg",
+        "scope": "Wireless access points and aerial systems",
+        "url": "https://www.usm.edu.ph/",
+    },
+    {
+        "name": "Vista Mall",
+        "short_name": "Vista Mall",
+        "sector": "Retail",
+        "image": "images/clients/vista-mall.jpg",
+        "scope": "Managed wireless access points",
+        "url": "https://www.vistamalls.com.ph/",
+    },
+    {
+        "name": "Aqua Boracay",
+        "short_name": "Aqua Boracay",
+        "sector": "Hospitality",
+        "image": "images/clients/aqua-boracay.jpg",
+        "scope": "CCTV, structured cabling and grounding systems",
+        "url": "https://www.aquaboracay.com/",
+    },
+    {
+        "name": "Victoria Court",
+        "short_name": "Victoria Court",
+        "sector": "Hospitality",
+        "image": "images/clients/victoria-court.png",
+        "scope": "Firewall and endpoint security",
+        "url": "https://www.victoriacourt.com/",
+    },
+]
+
+PARTNER_PORTFOLIO = [
+    {
+        "slug": "infrastructure",
+        "name": "Data Center & Network Infrastructure",
+        "summary": "Cabling, compute, monitoring, testing and enterprise network foundations.",
+        "partners": [
+            ("3M", "https://www.3m.com/"), ("Alantek", "https://www.alantek.com/"),
+            ("Belden", "https://www.belden.com/"), ("Panduit", "https://www.panduit.com/"),
+            ("WhatsUp Gold", "https://www.progress.com/whatsup-gold"), ("SolarWinds", "https://www.solarwinds.com/"),
+            ("Sangfor", "https://www.sangfor.com/"), ("Fluke Networks", "https://www.flukenetworks.com/"),
+            ("HP", "https://www.hp.com/"), ("Apple", "https://www.apple.com/"),
+            ("Dell", "https://www.dell.com/"), ("Dell EMC", "https://www.dell.com/en-us/dt/storage/index.htm"),
+            ("Extreme Networks", "https://www.extremenetworks.com/"),
+        ],
+    },
+    {
+        "slug": "wireless",
+        "name": "Wireless Network Systems",
+        "summary": "Managed Wi-Fi, point-to-point connectivity and enterprise wireless control.",
+        "partners": [
+            ("Sundray", "https://www.sundray.com/"), ("XPossible", "#"),
+            ("Ruijie Networks", "https://www.ruijienetworks.com/"), ("Ubiquiti", "https://www.ui.com/"),
+            ("Cisco", "https://www.cisco.com/"), ("Cambium Networks", "https://www.cambiumnetworks.com/"),
+            ("HPE Aruba Networking", "https://www.hpe.com/us/en/networking.html"),
+        ],
+    },
+    {
+        "slug": "communication",
+        "name": "Communication Systems",
+        "summary": "Voice, collaboration, messaging and enterprise communication platforms.",
+        "partners": [
+            ("3CX", "https://www.3cx.com/"), ("Panasonic", "https://holdings.panasonic/global/"),
+            ("ShoreTel / Mitel", "https://www.mitel.com/"), ("Alcatel-Lucent Enterprise", "https://www.al-enterprise.com/"),
+            ("NEC", "https://www.nec.com/"), ("Icom", "https://www.icomjapan.com/"),
+            ("Avaya", "https://www.avaya.com/"), ("Motorola Solutions", "https://www.motorolasolutions.com/"),
+            ("Zimbra", "https://www.zimbra.com/"),
+        ],
+    },
+    {
+        "slug": "network-security",
+        "name": "Network & Information Security",
+        "summary": "Perimeter defense, endpoint protection, identity security and secure access.",
+        "partners": [
+            ("Sophos", "https://www.sophos.com/"), ("Cisco", "https://www.cisco.com/"),
+            ("Palo Alto Networks", "https://www.paloaltonetworks.com/"), ("WatchGuard", "https://www.watchguard.com/"),
+            ("Barracuda", "https://www.barracuda.com/"), ("SonicWall", "https://www.sonicwall.com/"),
+            ("Sangfor", "https://www.sangfor.com/"), ("24Online", "https://www.24online.in/"),
+            ("McAfee", "https://www.mcafee.com/"), ("Fortinet", "https://www.fortinet.com/"),
+            ("CyberArk", "https://www.cyberark.com/"),
+        ],
+    },
+    {
+        "slug": "physical-security",
+        "name": "Physical Security",
+        "summary": "Video surveillance, fire detection and integrated site-security platforms.",
+        "partners": [
+            ("Dahua Technology", "https://www.dahuasecurity.com/"), ("Hikvision", "https://www.hikvision.com/"),
+            ("Kidde", "https://www.kidde.com/"), ("GeoVision", "https://www.geovision.com.tw/"),
+            ("Honeywell", "https://www.honeywell.com/"),
+        ],
+    },
+    {
+        "slug": "cloud",
+        "name": "Hosting & Cloud Computing",
+        "summary": "Compute, storage, virtualization and public or hybrid cloud platforms.",
+        "partners": [
+            ("Apple", "https://www.apple.com/"), ("HP", "https://www.hp.com/"),
+            ("Dell", "https://www.dell.com/"), ("Microsoft", "https://www.microsoft.com/"),
+            ("Alibaba Cloud", "https://www.alibabacloud.com/"), ("IBM", "https://www.ibm.com/"),
+            ("VMware", "https://www.vmware.com/"), ("Amazon Web Services", "https://aws.amazon.com/"),
+            ("Microsoft Azure", "https://azure.microsoft.com/"), ("Supermicro", "https://www.supermicro.com/"),
+        ],
+    },
+]
+
+
+def ensure_portfolio_seeded():
+    """Copy the original portfolio into editable tables on first use."""
+    with get_db() as database:
+        if database.execute("SELECT COUNT(*) FROM portfolio_clients").fetchone()[0] == 0:
+            database.executemany(
+                """INSERT INTO portfolio_clients
+                   (name, sector, image_url, scope, display_order)
+                   VALUES (?, ?, ?, ?, ?)""",
+                [
+                    (item["name"], item["sector"], item["image"], item["scope"], position)
+                    for position, item in enumerate(CLIENT_PORTFOLIO, start=1)
+                ],
+            )
+        if database.execute("SELECT COUNT(*) FROM portfolio_partner_groups").fetchone()[0] == 0:
+            for group_position, group in enumerate(PARTNER_PORTFOLIO, start=1):
+                cursor = database.execute(
+                    """INSERT INTO portfolio_partner_groups
+                       (slug, name, summary, display_order) VALUES (?, ?, ?, ?)""",
+                    (group["slug"], group["name"], group["summary"], group_position),
+                )
+                database.executemany(
+                    """INSERT INTO portfolio_partners
+                       (group_id, name, website_url, display_order) VALUES (?, ?, ?, ?)""",
+                    [
+                        (cursor.lastrowid, name, website_url, partner_position)
+                        for partner_position, (name, website_url) in enumerate(group["partners"], start=1)
+                    ],
+                )
+
+
+ensure_portfolio_seeded()
+
+
+@app.route("/solutions/<slug>")
+def solution_page(slug):
+    solution = SOLUTION_PAGES.get(slug)
+    if not solution:
+        abort(404)
+    solution = {
+        **solution,
+        "slug": slug,
+        "video": f"videos/{slug}.mp4",
+        "video_version": "2" if slug in {"physical-security", "wireless-connectivity"} else "1",
+    }
+    return render_template("solution_page.html", solution=solution, solutions=SOLUTION_PAGES)
+
+
+@app.route("/clients")
+def clients_page():
+    with get_db() as database:
+        clients = rows_to_dicts(
+            database.execute(
+                "SELECT * FROM portfolio_clients ORDER BY display_order, name COLLATE NOCASE"
+            )
+    )
+    for client in clients:
+        image_url = client["image_url"] or "images/technology-eye.webp"
+        client["image_src"] = (
+            image_url
+            if image_url.startswith(("/", "http://", "https://"))
+            else url_for("static", filename=image_url)
+        )
+    sectors = sorted({client["sector"] for client in clients})
+    return render_template(
+        "clients.html",
+        clients=clients,
+        sectors=sectors,
+        solutions=SOLUTION_PAGES,
+    )
+
+
+@app.route("/partners")
+def partners_page():
+    with get_db() as database:
+        groups = rows_to_dicts(
+            database.execute(
+                "SELECT * FROM portfolio_partner_groups ORDER BY display_order, name COLLATE NOCASE"
+            )
+        )
+        partners = rows_to_dicts(
+            database.execute(
+                "SELECT * FROM portfolio_partners ORDER BY display_order, name COLLATE NOCASE"
+            )
+        )
+    partners_by_group = {}
+    for partner in partners:
+        logo_url = partner["logo_url"]
+        partner["logo_src"] = (
+            logo_url
+            if logo_url.startswith(("/", "http://", "https://"))
+            else url_for("static", filename=logo_url)
+        ) if logo_url else ""
+        partners_by_group.setdefault(partner["group_id"], []).append(partner)
+    for group in groups:
+        group["partners"] = partners_by_group.get(group["id"], [])
+    partner_count = len({partner["name"] for partner in partners})
+    return render_template(
+        "partners.html",
+        partner_groups=groups,
+        partner_count=partner_count,
+        solutions=SOLUTION_PAGES,
+    )
 
 
 @app.route("/storefront")
@@ -2200,7 +2605,8 @@ def storefront_product_chat():
     with get_db() as database:
         if conversation_id:
             conversation = database.execute(
-                f"SELECT id FROM ai_conversations WHERE id = ? AND {owner_clause}",
+                f"""SELECT id FROM ai_conversations
+                    WHERE id = ? AND {owner_clause} AND conversation_type = 'product'""",
                 (conversation_id, owner_id),
             ).fetchone()
             if not conversation:
@@ -2260,6 +2666,52 @@ def storefront_product_chat():
         + (f", product #{product_id}" if product else ""),
     )
     return jsonify(answer=answer, conversation_id=conversation_id)
+
+
+@app.route("/api/ai/product-chat/conversations")
+@customer_required
+def storefront_product_chat_conversations():
+    owner = ai_conversation_owner()
+    owner_clause, owner_id = ai_conversation_owner_clause(owner)
+    with get_db() as database:
+        conversations = rows_to_dicts(
+            database.execute(
+                f"""SELECT id, title, created_at, updated_at,
+                           (SELECT COUNT(*) FROM ai_messages message
+                            WHERE message.conversation_id = ai_conversations.id) AS message_count,
+                           (SELECT content FROM ai_messages message
+                            WHERE message.conversation_id = ai_conversations.id
+                            ORDER BY message.id DESC LIMIT 1) AS last_message
+                    FROM ai_conversations
+                    WHERE {owner_clause} AND conversation_type = 'product'
+                    ORDER BY updated_at DESC, id DESC LIMIT 100""",
+                (owner_id,),
+            )
+        )
+    return jsonify(conversations=conversations)
+
+
+@app.route("/api/ai/product-chat/conversations/<int:conversation_id>")
+@customer_required
+def storefront_product_chat_conversation(conversation_id):
+    owner = ai_conversation_owner()
+    owner_clause, owner_id = ai_conversation_owner_clause(owner)
+    with get_db() as database:
+        conversation = database.execute(
+            f"""SELECT id, title, created_at, updated_at FROM ai_conversations
+                WHERE id = ? AND {owner_clause} AND conversation_type = 'product'""",
+            (conversation_id, owner_id),
+        ).fetchone()
+        if not conversation:
+            return jsonify(error="Conversation not found."), 404
+        stored_messages = rows_to_dicts(
+            database.execute(
+                """SELECT role, content, created_at FROM ai_messages
+                   WHERE conversation_id = ? ORDER BY id""",
+                (conversation_id,),
+            )
+        )
+    return jsonify(conversation=dict(conversation), messages=stored_messages)
 
 
 @app.route("/api/review-requests", methods=["POST"])
@@ -2880,6 +3332,238 @@ def admin_review_requests():
     )
 
 
+@app.route("/admin/messages")
+@login_required
+def admin_messages():
+    role = session.get("admin_role")
+    access_sql = "1 = 1"
+    access_params = []
+    if role == "admin_marketing":
+        access_sql = "r.assigned_marketing_admin_id = ?"
+        access_params = [session["admin_id"]]
+    elif role == "admin_technical":
+        access_sql = "r.status IN ('technical_review', 'site_survey_scheduled', 'marketing_bom_review')"
+    elif role == "admin":
+        access_sql = "r.status NOT IN ('technical_review', 'site_survey_scheduled')"
+
+    show_archived = request.args.get("view") == "archived"
+    with get_db() as database:
+        conversations = rows_to_dicts(
+            database.execute(
+                f"""SELECT r.id, r.customer_id, r.customer_name, r.customer_email,
+                           r.status, r.created_at, r.service_scope,
+                           CASE WHEN COALESCE(pref.is_muted, 0) = 1
+                                  AND (pref.muted_until IS NULL OR pref.muted_until > CURRENT_TIMESTAMP)
+                                THEN 1 ELSE 0 END AS is_muted,
+                           pref.muted_until,
+                           COALESCE(pref.is_archived, 0) AS is_archived,
+                           COALESCE(pref.is_blocked, 0) AS is_blocked,
+                           COUNT(DISTINCT item.id) AS product_count,
+                           MAX(message.id) AS latest_message_id,
+                           MAX(message.created_at) AS latest_message_at,
+                           (SELECT latest.message FROM review_request_messages latest
+                            WHERE latest.request_id = r.id
+                            ORDER BY latest.id DESC LIMIT 1) AS latest_message,
+                           (SELECT COUNT(*) FROM review_request_messages incoming
+                            WHERE incoming.request_id = r.id
+                              AND incoming.sender_type = 'customer'
+                              AND NOT EXISTS (
+                                SELECT 1 FROM review_message_reads receipt
+                                WHERE receipt.message_id = incoming.id
+                                  AND receipt.reader_type = 'admin'
+                                  AND receipt.reader_id = ?
+                              )) AS unread_count
+                    FROM review_requests r
+                    LEFT JOIN review_request_items item ON item.request_id = r.id
+                    LEFT JOIN review_request_messages message ON message.request_id = r.id
+                    LEFT JOIN admin_conversation_preferences pref
+                      ON pref.request_id = r.id AND pref.admin_id = ?
+                    WHERE {access_sql}
+                      AND pref.deleted_at IS NULL
+                      AND COALESCE(pref.is_archived, 0) = ?
+                    GROUP BY r.id
+                    ORDER BY COALESCE(MAX(message.id), 0) DESC, r.id DESC""",
+                (
+                    session["admin_id"],
+                    session["admin_id"],
+                    *access_params,
+                    1 if show_archived else 0,
+                ),
+            )
+        )
+        requested_id = request.args.get("request_id", type=int)
+        active = next((row for row in conversations if row["id"] == requested_id), None)
+        if active is None and conversations:
+            active = conversations[0]
+        active_messages = []
+        active_items = []
+        customer_profile = None
+        if active:
+            active_messages = rows_to_dicts(
+                database.execute(
+                    """SELECT * FROM review_request_messages
+                       WHERE request_id = ? ORDER BY id""",
+                    (active["id"],),
+                )
+            )
+            active_items = rows_to_dicts(
+                database.execute(
+                    """SELECT product_name, brand, quantity FROM review_request_items
+                       WHERE request_id = ? ORDER BY id""",
+                    (active["id"],),
+                )
+            )
+            customer_profile = database.execute(
+                """SELECT customer.id, customer.full_name, customer.email,
+                          customer.avatar_url, customer.created_at,
+                          customer.last_login_at, customer.status,
+                          (SELECT COUNT(*) FROM review_requests review
+                           WHERE review.customer_id = customer.id) AS request_count,
+                          (SELECT COUNT(*) FROM review_requests review
+                           WHERE review.customer_id = customer.id
+                             AND review.status = 'approved') AS approved_count,
+                          (SELECT COUNT(*) FROM review_requests review
+                           WHERE review.customer_id = customer.id
+                             AND review.status NOT IN ('approved', 'cancelled')) AS active_count
+                   FROM customers customer WHERE customer.id = ?""",
+                (active["customer_id"],),
+            ).fetchone()
+            database.execute(
+                """INSERT OR IGNORE INTO review_message_reads
+                   (message_id, reader_type, reader_id)
+                   SELECT id, 'admin', ? FROM review_request_messages
+                   WHERE request_id = ?""",
+                (session["admin_id"], active["id"]),
+            )
+            active["unread_count"] = 0
+    return render_template(
+        "admin_messages.html",
+        conversations=conversations,
+        active=active,
+        active_messages=active_messages,
+        active_items=active_items,
+        customer_profile=dict(customer_profile) if customer_profile else None,
+        show_archived=show_archived,
+    )
+
+
+@app.route("/admin/messages/<int:request_id>/action", methods=["POST"])
+@login_required
+def admin_message_action(request_id):
+    validate_csrf()
+    action = request.form.get("action", "")
+    if action not in {"mute", "unmute", "archive", "unarchive", "block", "unblock", "delete"}:
+        abort(400)
+    with get_db() as database:
+        review = database.execute(
+            "SELECT id, assigned_marketing_admin_id, status FROM review_requests WHERE id = ?",
+            (request_id,),
+        ).fetchone()
+        if not review:
+            abort(404)
+        role = session.get("admin_role")
+        if role == "admin_marketing" and review["assigned_marketing_admin_id"] != session["admin_id"]:
+            abort(403)
+        if role == "admin_technical" and review["status"] not in {
+            "technical_review", "site_survey_scheduled", "marketing_bom_review"
+        }:
+            abort(403)
+        database.execute(
+            """INSERT OR IGNORE INTO admin_conversation_preferences
+               (admin_id, request_id) VALUES (?, ?)""",
+            (session["admin_id"], request_id),
+        )
+        updates = {
+            "archive": ("is_archived", 1), "unarchive": ("is_archived", 0),
+            "block": ("is_blocked", 1), "unblock": ("is_blocked", 0),
+        }
+        if action == "delete":
+            database.execute(
+                """UPDATE admin_conversation_preferences
+                   SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                   WHERE admin_id = ? AND request_id = ?""",
+                (session["admin_id"], request_id),
+            )
+        elif action == "mute":
+            duration = request.form.get("duration", "forever")
+            duration_minutes = {"15m": 15, "1h": 60, "8h": 480, "24h": 1440}
+            if duration not in {*duration_minutes, "forever"}:
+                abort(400)
+            muted_until = None
+            if duration != "forever":
+                muted_until = (
+                    datetime.now(timezone.utc) + timedelta(minutes=duration_minutes[duration])
+                ).strftime("%Y-%m-%d %H:%M:%S")
+            database.execute(
+                """UPDATE admin_conversation_preferences
+                   SET is_muted = 1, muted_until = ?, updated_at = CURRENT_TIMESTAMP
+                   WHERE admin_id = ? AND request_id = ?""",
+                (muted_until, session["admin_id"], request_id),
+            )
+        elif action == "unmute":
+            database.execute(
+                """UPDATE admin_conversation_preferences
+                   SET is_muted = 0, muted_until = NULL, updated_at = CURRENT_TIMESTAMP
+                   WHERE admin_id = ? AND request_id = ?""",
+                (session["admin_id"], request_id),
+            )
+        else:
+            column, value = updates[action]
+            database.execute(
+                f"""UPDATE admin_conversation_preferences
+                    SET {column} = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE admin_id = ? AND request_id = ?""",
+                (value, session["admin_id"], request_id),
+            )
+    action_messages = {
+        "mute": "Conversation muted.", "unmute": "Conversation unmuted.",
+        "archive": "Conversation archived.", "unarchive": "Conversation restored.",
+        "block": "Customer blocked for this request.", "unblock": "Customer unblocked.",
+        "delete": "Conversation removed from your inbox.",
+    }
+    flash(action_messages[action], "success")
+    destination = "/admin/messages?view=archived" if action == "unarchive" else "/admin/messages"
+    return redirect(destination)
+
+
+@app.route("/admin/review-requests/<int:request_id>/delete", methods=["POST"])
+@login_required
+def delete_review_request(request_id):
+    validate_csrf()
+    if session.get("admin_role") != "superadmin":
+        abort(403)
+    with get_db() as database:
+        review = database.execute(
+            "SELECT id, customer_name FROM review_requests WHERE id = ?",
+            (request_id,),
+        ).fetchone()
+        if not review:
+            abort(404)
+        database.execute(
+            """DELETE FROM review_message_reads
+               WHERE message_id IN (
+                 SELECT id FROM review_request_messages WHERE request_id = ?
+               )""",
+            (request_id,),
+        )
+        for table in (
+            "admin_conversation_preferences",
+            "calendar_events",
+            "review_request_materials",
+            "review_request_solution_options",
+            "review_request_items",
+            "review_request_messages",
+        ):
+            database.execute(f"DELETE FROM {table} WHERE request_id = ?", (request_id,))
+        database.execute("DELETE FROM review_requests WHERE id = ?", (request_id,))
+    log_activity(
+        "admin", session["admin_id"], session["admin_username"],
+        "review_request_deleted", f"Request #{request_id}: {review['customer_name']}"
+    )
+    flash(f"Review request #{request_id:05d} was permanently deleted.", "success")
+    return redirect(url_for("admin_review_requests"))
+
+
 def build_review_documents(review, items, materials=None):
     materials = materials or []
     bom_stream = io.StringIO()
@@ -2979,10 +3663,155 @@ def send_customer_workflow_email(review, subject, body):
 def add_review_message(database, request_id, sender_type, sender_id, sender_name, message):
     database.execute(
         """INSERT INTO review_request_messages
-           (request_id, sender_type, sender_id, sender_name, message)
-           VALUES (?, ?, ?, ?, ?)""",
-        (request_id, sender_type, sender_id, sender_name, message[:3000]),
+           (request_id, sender_type, sender_id, sender_name, message,
+            read_by_customer, read_by_admin)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (
+            request_id,
+            sender_type,
+            sender_id,
+            sender_name,
+            message[:3000],
+            1 if sender_type == "customer" else 0,
+            1 if sender_type == "admin" else 0,
+        ),
     )
+
+
+def review_notification_scope():
+    if session.get("customer_id"):
+        return (
+            "review.customer_id = ? AND message.sender_type = 'admin'",
+            (session["customer_id"],),
+            "customer",
+            session["customer_id"],
+            url_for("customer_reviews"),
+        )
+    role = session.get("admin_role")
+    if role == "admin_marketing":
+        condition = "review.assigned_marketing_admin_id = ? AND message.sender_type = 'customer'"
+        parameters = (session["admin_id"],)
+    elif role == "admin_technical":
+        condition = "review.status IN ('technical_review', 'site_survey_scheduled', 'marketing_bom_review') AND message.sender_type = 'customer'"
+        parameters = ()
+    else:
+        condition = "message.sender_type = 'customer'"
+        parameters = ()
+    condition += """ AND NOT EXISTS (
+        SELECT 1 FROM admin_conversation_preferences muted
+        WHERE muted.request_id = review.id AND muted.admin_id = ?
+          AND muted.is_muted = 1
+          AND (muted.muted_until IS NULL OR muted.muted_until > CURRENT_TIMESTAMP)
+    )"""
+    parameters = (*parameters, session["admin_id"])
+    return condition, parameters, "admin", session["admin_id"], url_for("admin_messages")
+
+
+@app.route("/api/message-notifications")
+@customer_required
+def message_notifications():
+    condition, parameters, reader_type, reader_id, target_url = review_notification_scope()
+    with get_db() as database:
+        unread = database.execute(
+            f"""SELECT COUNT(*) AS unread_count, MAX(message.id) AS latest_id
+                FROM review_request_messages message
+                JOIN review_requests review ON review.id = message.request_id
+                WHERE {condition}
+                  AND NOT EXISTS (
+                    SELECT 1 FROM review_message_reads receipt
+                    WHERE receipt.message_id = message.id
+                      AND receipt.reader_type = ? AND receipt.reader_id = ?
+                  )""",
+            (*parameters, reader_type, reader_id),
+        ).fetchone()
+        latest = database.execute(
+            f"""SELECT message.id, message.sender_name, message.message,
+                       message.request_id, message.created_at
+                FROM review_request_messages message
+                JOIN review_requests review ON review.id = message.request_id
+                WHERE {condition} ORDER BY message.id DESC LIMIT 1""",
+            parameters,
+        ).fetchone()
+    return jsonify(
+        unread_count=unread["unread_count"],
+        latest_id=unread["latest_id"],
+        latest=dict(latest) if latest else None,
+        target_url=target_url,
+    )
+
+
+@app.route("/api/live-state")
+@customer_required
+def live_state():
+    if session.get("customer_id"):
+        access_sql = "review.customer_id = ?"
+        parameters = (session["customer_id"],)
+    else:
+        role = session.get("admin_role")
+        if role == "admin_marketing":
+            access_sql = "review.assigned_marketing_admin_id = ?"
+            parameters = (session["admin_id"],)
+        elif role == "admin_technical":
+            access_sql = "review.status IN ('technical_review', 'site_survey_scheduled', 'marketing_bom_review')"
+            parameters = ()
+        elif role == "admin":
+            access_sql = "review.status NOT IN ('technical_review', 'site_survey_scheduled')"
+            parameters = ()
+        else:
+            access_sql = "1 = 1"
+            parameters = ()
+    with get_db() as database:
+        review_state = database.execute(
+            f"""SELECT COUNT(*) AS total, COALESCE(MAX(review.id), 0) AS latest_id,
+                       COALESCE(GROUP_CONCAT(
+                         review.id || ':' || review.status || ':' ||
+                         COALESCE(review.service_scope, '') || ':' ||
+                         COALESCE(review.site_survey_at, '')
+                       ), '') AS workflow_state
+                FROM review_requests review WHERE {access_sql}""",
+            parameters,
+        ).fetchone()
+        message_state = database.execute(
+            f"""SELECT COUNT(*) AS total, COALESCE(MAX(message.id), 0) AS latest_id
+                FROM review_request_messages message
+                JOIN review_requests review ON review.id = message.request_id
+                WHERE {access_sql}""",
+            parameters,
+        ).fetchone()
+        calendar_state = database.execute(
+            f"""SELECT COUNT(*) AS total, COALESCE(MAX(event.id), 0) AS latest_id,
+                       COALESCE(MAX(event.created_at), '') AS latest_at
+                FROM calendar_events event
+                LEFT JOIN review_requests review ON review.id = event.request_id
+                WHERE event.request_id IS NULL OR {access_sql}""",
+            parameters,
+        ).fetchone()
+    return jsonify(
+        reviews=dict(review_state),
+        messages=dict(message_state),
+        calendar=dict(calendar_state),
+        checked_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+@app.route("/api/message-notifications/read", methods=["POST"])
+@customer_required
+def read_message_notifications():
+    if not secrets.compare_digest(
+        session.get("csrf_token", ""), request.headers.get("X-CSRF-Token", "")
+    ):
+        abort(400, "Invalid security token")
+    condition, parameters, reader_type, reader_id, _ = review_notification_scope()
+    with get_db() as database:
+        database.execute(
+            f"""INSERT OR IGNORE INTO review_message_reads
+                (message_id, reader_type, reader_id)
+                SELECT message.id, ?, ? FROM review_request_messages message
+                JOIN review_requests review ON review.id = message.request_id
+                WHERE {condition}""",
+            (reader_type, reader_id, *parameters),
+        )
+    return jsonify(ok=True)
 
 
 @app.route("/admin/review-requests/<int:request_id>/message", methods=["POST"])
@@ -3032,7 +3861,10 @@ def admin_review_message(request_id):
         "review_chat_message",
         f"Request #{request_id}",
     )
-    flash("Message sent in customer web chat." + (" Email sent." if emailed else ""), "success")
+    flash("Message sent in customer conversation." + (" Email sent." if emailed else ""), "success")
+    return_to = request.form.get("return_to", "")
+    if return_to.startswith("/admin/messages"):
+        return redirect(return_to)
     return redirect(f"{url_for('admin_review_requests')}#request-{request_id}")
 
 
@@ -3049,11 +3881,18 @@ def customer_review_message(request_id):
         return redirect(f"{url_for('customer_reviews')}#request-{request_id}")
     with get_db() as database:
         review = database.execute(
-            "SELECT id FROM review_requests WHERE id = ? AND customer_id = ?",
+            """SELECT id FROM review_requests
+               WHERE id = ? AND customer_id = ?
+                 AND NOT EXISTS (
+                   SELECT 1 FROM admin_conversation_preferences preference
+                   WHERE preference.request_id = review_requests.id
+                     AND preference.is_blocked = 1
+                 )""",
             (request_id, session["customer_id"]),
         ).fetchone()
         if not review:
-            abort(404)
+            flash("Messaging is unavailable for this request. Contact VTIC through the project desk.", "error")
+            return redirect(f"{url_for('customer_reviews')}#request-{request_id}")
         add_review_message(
             database,
             request_id,
@@ -3611,6 +4450,249 @@ def admin_product_delete(product_id):
         )
     flash("Product deleted.", "success")
     return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/portfolio")
+@superadmin_required
+def admin_portfolio():
+    with get_db() as database:
+        clients = rows_to_dicts(database.execute(
+            "SELECT * FROM portfolio_clients ORDER BY display_order, name COLLATE NOCASE"
+        ))
+        groups = rows_to_dicts(database.execute(
+            "SELECT * FROM portfolio_partner_groups ORDER BY display_order, name COLLATE NOCASE"
+        ))
+        partners = rows_to_dicts(database.execute(
+            """SELECT p.*, g.name AS group_name FROM portfolio_partners p
+               JOIN portfolio_partner_groups g ON g.id = p.group_id
+               ORDER BY g.display_order, p.display_order, p.name COLLATE NOCASE"""
+        ))
+    for client in clients:
+        image_url = client["image_url"] or "images/technology-eye.webp"
+        client["image_src"] = image_url if image_url.startswith(("/", "http://", "https://")) else url_for("static", filename=image_url)
+    for partner in partners:
+        logo_url = partner["logo_url"]
+        partner["logo_src"] = (logo_url if logo_url.startswith(("/", "http://", "https://")) else url_for("static", filename=logo_url)) if logo_url else ""
+    return render_template("admin_portfolio.html", clients=clients, groups=groups, partners=partners)
+
+
+def portfolio_order_value():
+    try:
+        return max(0, int(request.form.get("display_order", "0")))
+    except ValueError:
+        return 0
+
+
+@app.route("/admin/portfolio/clients/new", methods=["POST"])
+@superadmin_required
+def admin_portfolio_client_create():
+    validate_csrf()
+    name = request.form.get("name", "").strip()
+    sector = request.form.get("sector", "").strip()
+    try:
+        image_url = save_portfolio_image(request.files.get("image_file")) or request.form.get("image_url", "").strip()
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin_portfolio"))
+    if not name or not sector:
+        flash("Client name and sector are required.", "error")
+    else:
+        with get_db() as database:
+            database.execute(
+                """INSERT INTO portfolio_clients
+                   (name, sector, image_url, scope, display_order) VALUES (?, ?, ?, ?, ?)""",
+                (name, sector, image_url,
+                 request.form.get("scope", "").strip(), portfolio_order_value()),
+            )
+        log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_client_create", name)
+        flash(f"{name} was added to the client gallery.", "success")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/clients/<int:item_id>/edit", methods=["POST"])
+@superadmin_required
+def admin_portfolio_client_edit(item_id):
+    validate_csrf()
+    name = request.form.get("name", "").strip()
+    sector = request.form.get("sector", "").strip()
+    try:
+        uploaded_image = save_portfolio_image(request.files.get("image_file"))
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin_portfolio"))
+    if not name or not sector:
+        flash("Client name and sector are required.", "error")
+    else:
+        with get_db() as database:
+            if not database.execute("SELECT id FROM portfolio_clients WHERE id = ?", (item_id,)).fetchone():
+                abort(404)
+            current = database.execute("SELECT image_url FROM portfolio_clients WHERE id = ?", (item_id,)).fetchone()
+            image_url = uploaded_image or request.form.get("image_url", "").strip() or current["image_url"]
+            database.execute(
+                """UPDATE portfolio_clients SET name = ?, sector = ?, image_url = ?, scope = ?,
+                   display_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+                (name, sector, image_url,
+                 request.form.get("scope", "").strip(), portfolio_order_value(), item_id),
+            )
+        log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_client_update", name)
+        flash("Client entry updated.", "success")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/clients/<int:item_id>/delete", methods=["POST"])
+@superadmin_required
+def admin_portfolio_client_delete(item_id):
+    validate_csrf()
+    with get_db() as database:
+        item = database.execute("SELECT name FROM portfolio_clients WHERE id = ?", (item_id,)).fetchone()
+        if not item:
+            abort(404)
+        database.execute("DELETE FROM portfolio_clients WHERE id = ?", (item_id,))
+    log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_client_delete", item["name"])
+    flash("Client entry deleted.", "success")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/groups/new", methods=["POST"])
+@superadmin_required
+def admin_portfolio_group_create():
+    validate_csrf()
+    name = request.form.get("name", "").strip()
+    slug = re.sub(r"[^a-z0-9]+", "-", request.form.get("slug", "").strip().lower()).strip("-")
+    if not name or not slug:
+        flash("Group name and slug are required.", "error")
+    else:
+        try:
+            with get_db() as database:
+                database.execute(
+                    """INSERT INTO portfolio_partner_groups
+                       (slug, name, summary, display_order) VALUES (?, ?, ?, ?)""",
+                    (slug, name, request.form.get("summary", "").strip(), portfolio_order_value()),
+                )
+            log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_group_create", name)
+            flash("Partner category added.", "success")
+        except sqlite3.IntegrityError:
+            flash("That partner-category slug already exists.", "error")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/groups/<int:item_id>/edit", methods=["POST"])
+@superadmin_required
+def admin_portfolio_group_edit(item_id):
+    validate_csrf()
+    name = request.form.get("name", "").strip()
+    slug = re.sub(r"[^a-z0-9]+", "-", request.form.get("slug", "").strip().lower()).strip("-")
+    if not name or not slug:
+        flash("Group name and slug are required.", "error")
+    else:
+        try:
+            with get_db() as database:
+                if not database.execute("SELECT id FROM portfolio_partner_groups WHERE id = ?", (item_id,)).fetchone():
+                    abort(404)
+                database.execute(
+                    """UPDATE portfolio_partner_groups SET slug = ?, name = ?, summary = ?,
+                       display_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+                    (slug, name, request.form.get("summary", "").strip(), portfolio_order_value(), item_id),
+                )
+            log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_group_update", name)
+            flash("Partner category updated.", "success")
+        except sqlite3.IntegrityError:
+            flash("That partner-category slug already exists.", "error")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/groups/<int:item_id>/delete", methods=["POST"])
+@superadmin_required
+def admin_portfolio_group_delete(item_id):
+    validate_csrf()
+    with get_db() as database:
+        item = database.execute("SELECT name FROM portfolio_partner_groups WHERE id = ?", (item_id,)).fetchone()
+        if not item:
+            abort(404)
+        database.execute("DELETE FROM portfolio_partners WHERE group_id = ?", (item_id,))
+        database.execute("DELETE FROM portfolio_partner_groups WHERE id = ?", (item_id,))
+    log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_group_delete", item["name"])
+    flash("Partner category and its entries were deleted.", "success")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/partners/new", methods=["POST"])
+@superadmin_required
+def admin_portfolio_partner_create():
+    validate_csrf()
+    name = request.form.get("name", "").strip()
+    try:
+        logo_url = save_portfolio_image(request.files.get("logo_file")) or request.form.get("logo_url", "").strip()
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin_portfolio"))
+    try:
+        group_id = int(request.form.get("group_id", ""))
+    except ValueError:
+        group_id = 0
+    with get_db() as database:
+        group = database.execute("SELECT id FROM portfolio_partner_groups WHERE id = ?", (group_id,)).fetchone()
+        if not name or not group:
+            flash("Partner name and a valid category are required.", "error")
+            return redirect(url_for("admin_portfolio"))
+        database.execute(
+            """INSERT INTO portfolio_partners
+               (group_id, name, website_url, logo_url, display_order) VALUES (?, ?, ?, ?, ?)""",
+            (group_id, name, request.form.get("website_url", "").strip() or "#",
+             logo_url, portfolio_order_value()),
+        )
+    log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_partner_create", name)
+    flash(f"{name} was added to the partner gallery.", "success")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/partners/<int:item_id>/edit", methods=["POST"])
+@superadmin_required
+def admin_portfolio_partner_edit(item_id):
+    validate_csrf()
+    name = request.form.get("name", "").strip()
+    try:
+        uploaded_logo = save_portfolio_image(request.files.get("logo_file"))
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin_portfolio"))
+    try:
+        group_id = int(request.form.get("group_id", ""))
+    except ValueError:
+        group_id = 0
+    with get_db() as database:
+        partner = database.execute("SELECT id FROM portfolio_partners WHERE id = ?", (item_id,)).fetchone()
+        group = database.execute("SELECT id FROM portfolio_partner_groups WHERE id = ?", (group_id,)).fetchone()
+        if not partner:
+            abort(404)
+        if not name or not group:
+            flash("Partner name and a valid category are required.", "error")
+            return redirect(url_for("admin_portfolio"))
+        current = database.execute("SELECT logo_url FROM portfolio_partners WHERE id = ?", (item_id,)).fetchone()
+        logo_url = uploaded_logo or request.form.get("logo_url", "").strip() or current["logo_url"]
+        database.execute(
+            """UPDATE portfolio_partners SET group_id = ?, name = ?, website_url = ?, logo_url = ?,
+               display_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+            (group_id, name, request.form.get("website_url", "").strip() or "#",
+             logo_url, portfolio_order_value(), item_id),
+        )
+    log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_partner_update", name)
+    flash("Partner entry updated.", "success")
+    return redirect(url_for("admin_portfolio"))
+
+
+@app.route("/admin/portfolio/partners/<int:item_id>/delete", methods=["POST"])
+@superadmin_required
+def admin_portfolio_partner_delete(item_id):
+    validate_csrf()
+    with get_db() as database:
+        item = database.execute("SELECT name FROM portfolio_partners WHERE id = ?", (item_id,)).fetchone()
+        if not item:
+            abort(404)
+        database.execute("DELETE FROM portfolio_partners WHERE id = ?", (item_id,))
+    log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_partner_delete", item["name"])
+    flash("Partner entry deleted.", "success")
+    return redirect(url_for("admin_portfolio"))
 
 
 @app.route("/admin/manufacturers", methods=["GET", "POST"])

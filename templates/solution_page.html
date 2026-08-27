@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="{{ solution.summary }}" />
+    <title>{{ solution.name }} Solutions | VTIC</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/solution_page.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/solution_video.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/solution_header.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_footer.css') }}" />
+    {% include '_theme.html' %}
+  </head>
+  <body>
+    <header class="solution-header">
+      <div class="solution-shell solution-header-inner">
+        <a class="solution-brand" href="/" aria-label="Visible Technologies home"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" /></a>
+        <nav aria-label="Company navigation">
+          <a class="solution-nav-link" href="/#company">Company</a>
+          <details class="solution-menu">
+            <summary>Solutions <i></i></summary>
+            <div>
+              {% for slug, item in solutions.items() %}<a class="{{ 'active' if item.name == solution.name else '' }}" href="/solutions/{{ slug }}">{{ item.name }}</a>{% endfor %}
+            </div>
+          </details>
+          <details class="solution-menu">
+            <summary>Our partners<br />and clients <i></i></summary>
+            <div class="compact"><a href="/partners">Partners</a><a href="/clients">Clients</a></div>
+          </details>
+          <a class="solution-nav-link" href="/#approach">Our approach</a>
+          <a class="solution-nav-link" href="mailto:sales@vtic.com.ph">Contact</a>
+        </nav>
+        <div class="solution-account">{% if session.get('customer_id') %}<span>Welcome, {{ session.customer_name }}</span><a class="primary" href="/storefront">Open solutions catalog</a>{% elif session.get('admin_id') %}<span>Welcome, {{ session.admin_username }}</span><a class="primary" href="/admin">Go to admin console</a>{% else %}<a class="sign-in" href="/login">Sign in</a><a class="primary" href="/register">Create account</a>{% endif %}</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="solution-hero solution-hero--cinematic solution-hero--{{ solution.visual }}">
+        <div class="solution-hero-media" aria-label="Animated {{ solution.name }} system visualization">
+          <video class="film-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+            <source src="{{ url_for('static', filename=solution.video, v=solution.video_version) }}" type="video/mp4" />
+          </video>
+        </div>
+        <div class="solution-hero-shade" aria-hidden="true"></div>
+        <div class="solution-shell solution-cinematic-copy">
+          <div>
+            <p>{{ solution.index }} / VTIC SOLUTIONS</p>
+            <span>{{ solution.eyebrow }}</span>
+            <h1>{{ solution.headline }}</h1>
+            <p class="summary">{{ solution.summary }}</p>
+            <div class="solution-highlight-list" aria-label="{{ solution.name }} highlights">
+              {% for title, copy in solution.outcomes %}<span>{{ title }} · {{ copy }}</span>{% endfor %}
+            </div>
+            <div class="solution-actions"><a href="mailto:sales@vtic.ph?subject={{ solution.name|urlencode }} project inquiry">Discuss a project →</a>{% if session.get('customer_id') %}<a href="/products">Browse products</a>{% else %}<a href="/register">Open customer account</a>{% endif %}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="solution-intro solution-shell">
+        <div><p>DESIGN PRINCIPLE</p><h2>Start with the operation.<br />Then specify the technology.</h2></div>
+        <p>{{ solution.description }}</p>
+      </section>
+
+      <section class="solution-capabilities">
+        <div class="solution-shell">
+          <header><span>WHAT VTIC CAN DELIVER</span><h2>A complete {{ solution.name|lower }} system.</h2></header>
+          <div class="solution-capability-grid">{% for feature in solution.features %}<article><i>{{ "%02d"|format(loop.index) }}</i><h3>{{ feature }}</h3><p>Designed, sourced and coordinated by the VTIC project team.</p></article>{% endfor %}</div>
+        </div>
+      </section>
+
+      <section class="solution-outcomes solution-shell">
+        <header><span>EXPECTED OUTCOMES</span><h2>Technology with an operational purpose.</h2></header>
+        <div>{% for title, copy in solution.outcomes %}<article><b>{{ title }}</b><p>{{ copy }}</p></article>{% endfor %}</div>
+      </section>
+
+    </main>
+    {% include '_storefront_footer.html' %}
+    <script
+      src="{{ url_for('static', filename='js/landing-nav.js') }}"
+      defer
+    ></script>
+  </body>
+</html>

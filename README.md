@@ -1,6 +1,25 @@
-# Cartly e-commerce demo
+# VTIC ICT Solutions Consultation and Proposal Management System
 
-A responsive Lazada-inspired marketplace built with Python/Flask, HTML, page-specific CSS, and vanilla JavaScript.
+A responsive consultation and project-quotation platform built with
+Python/Flask, HTML, page-specific CSS, SQLite, and vanilla JavaScript. Customers
+explore the solutions catalog, build a review list, consult with VTIC, and track
+requests through pricing, technical validation, BOM preparation, proposal, and
+final approval. The platform does not provide direct online checkout or payment.
+
+## Quick start
+
+Open PowerShell and run:
+
+```powershell
+cd C:\Users\VTIC-CTO\Desktop\solution-checker
+py -m pip install -r requirements.txt
+py -m flask --app app run --host 0.0.0.0 --port 5000
+```
+
+Then open http://127.0.0.1:5000 in a browser. Keep the terminal open while
+using the website. Press `Ctrl+C` in the terminal to stop the server.
+
+If the `py` command is unavailable, replace it with `python`.
 
 ## Run locally on Windows
 
@@ -53,13 +72,13 @@ required variable names without containing secret values.
 ### 5. Start the website
 
 ```powershell
-python app.py
+python -m flask --app app run --host 0.0.0.0 --port 5000
 ```
 
 Without activating the virtual environment, run:
 
 ```powershell
-.\.venv\Scripts\python.exe app.py
+.\.venv\Scripts\python.exe -m flask --app app run --host 0.0.0.0 --port 5000
 ```
 
 ### 6. Open the website

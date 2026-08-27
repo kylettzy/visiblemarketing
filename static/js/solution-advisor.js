@@ -138,12 +138,12 @@ function addOptionToCart(option, optionNumber, button) {
   });
   saveCart(cart);
   if (button) {
-    button.textContent = "Added to cart ✓";
+    button.textContent = "Added to review list ✓";
     window.setTimeout(() => {
       button.textContent = "Add this option →";
     }, 1800);
   }
-  showAdvisorToast(`${option.name} was added to your review cart.`);
+  showAdvisorToast(`${option.name} was added to your review list.`);
 }
 
 function renderOptions(options) {

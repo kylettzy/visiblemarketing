@@ -1,12 +1,12 @@
 <header class="vtic-nav">
   <div class="vtic-nav__rail shell">
-    <a class="vtic-nav__brand" href="/storefront" aria-label="VTIC storefront">
+    <a class="vtic-nav__brand" href="/storefront" aria-label="VTIC solutions catalog">
       <img
         src="{{ url_for('static', filename='images/vtic-logo.png') }}"
         alt="Visible Technologies International Corporation"
       />
     </a>
-    <nav class="vtic-nav__links" aria-label="Storefront navigation">
+    <nav class="vtic-nav__links" aria-label="Solutions catalog navigation">
       <a
         class="{{ 'active' if storefront_section == 'products' else '' }}"
         href="/products"
@@ -18,7 +18,7 @@
         >VTIC Advisor</a
       >
       <a href="/storefront#solutions">Solutions</a>
-      <a href="/storefront#partners">Partners</a>
+      <a href="/partners">Partners</a>
     </nav>
     <form class="vtic-nav__search" action="/products">
       <label class="sr-only" for="global-catalog-search">Search catalog</label>
@@ -37,8 +37,9 @@
       <button type="submit">Search</button>
     </form>
     <div class="vtic-nav__actions">
+      {% include '_message_notifications.html' %}
       <a class="vtic-nav__cart" href="/cart"
-        ><span>Cart</span><b data-cart-count>0</b></a
+        ><span>Review list</span><b data-cart-count>0</b></a
       >
       {% include '_admin_storefront_menu.html' %}
     </div>
@@ -48,7 +49,7 @@
       <span>Enterprise technology procurement</span>
       <span
         >{{ session.customer_name if session.customer_id else
-        session.admin_username if session.admin_id else 'VTIC storefront'
+        session.admin_username if session.admin_id else 'VTIC solutions catalog'
         }}</span
       >
     </div>

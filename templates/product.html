@@ -27,7 +27,7 @@
     '_storefront_header.html' %}
     <main class="shell">
       <div class="breadcrumb">
-        <a href="/storefront">Storefront</a><span>/</span
+        <a href="/storefront">Solutions catalog</a><span>/</span
         ><a href="/products?category={{ product.category|urlencode }}"
           >{{ product.category }}</a
         ><span>/</span>{{ product.name }}
@@ -74,7 +74,7 @@
             >{% endif %} {% else %} <span>Commercial review</span
             ><b>Pricing available after review</b
             ><small
-              >Add this product to your cart. VTIC will confirm configuration,
+              >Add this product to your review list. VTIC will confirm configuration,
               availability and commercial terms.</small
             >
             {% endif %}
@@ -85,7 +85,7 @@
               ><button data-qty="1">+</button>
             </div>
             <button class="buy" data-add="{{ product|tojson|forceescape }}">
-              Add to cart
+              Add to review list
             </button>
           </div>
           <div class="assurance">
@@ -127,7 +127,7 @@
       </section>
     </main>
     {% include '_storefront_footer.html' %}
-    <div id="toast" role="status">Added to cart</div>
+    <div id="toast" role="status">Added to review list</div>
     {% set chat_product = product %} {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>

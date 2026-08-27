@@ -39,7 +39,7 @@
         <div><span>MANUFACTURER</span><b>{{ manufacturer.name }}</b></div>
         <div><span>ASSIGNED PRODUCTS</span><b>{{ products|length }}</b></div>
         <div>
-          <span>STOREFRONT STATUS</span
+          <span>CATALOG STATUS</span
           ><b class="{{ 'visible' if products else 'hidden' }}"
             >{{ 'Visible' if products else 'Hidden until a product is added'
             }}</b
@@ -312,7 +312,7 @@
           {% else %}
           <div class="no-manufacturer-products">
             <span>NO PRODUCTS</span>
-            <h3>This partner is hidden from the storefront.</h3>
+            <h3>This partner is hidden from the solutions catalog.</h3>
             <p>
               Add one product manually or import a CSV to make the manufacturer
               visible to customers.

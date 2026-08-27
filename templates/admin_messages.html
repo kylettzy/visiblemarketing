@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Messages | VTIC Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_messages.css') }}" />
+    {% include '_theme.html' %}
+  </head>
+  <body>
+    {% include '_admin_sidebar.html' %}
+    <main class="messages-page">
+      {% with notices = get_flashed_messages(with_categories=true) %}{% for category, notice in notices %}<div class="alert {{ category }}">{{ notice }}</div>{% endfor %}{% endwith %}
+      <section class="messenger-shell">
+        <aside class="conversation-list">
+          <header><div><p>CLIENT COMMUNICATIONS</p><h1>{{ 'Archived' if show_archived else 'Messages' }}</h1></div><b>{{ conversations|length }}</b></header>
+          <div class="inbox-tabs"><a class="{{ 'active' if not show_archived else '' }}" href="/admin/messages">Inbox</a><a class="{{ 'active' if show_archived else '' }}" href="/admin/messages?view=archived">Archived</a></div>
+          <label class="conversation-search"><span>⌕</span><input type="search" placeholder="Search customers or requests" data-conversation-search /></label>
+          <nav aria-label="Customer conversations">
+            {% for conversation in conversations %}
+            <div class="conversation-card {{ 'active' if active and active.id == conversation.id else '' }} {{ 'is-muted' if conversation.is_muted else '' }}" data-conversation-card data-search="{{ (conversation.customer_name ~ ' ' ~ conversation.customer_email ~ ' ' ~ conversation.id)|lower }}">
+              <a class="conversation-card-main" href="/admin/messages?request_id={{ conversation.id }}">
+                <i>{{ conversation.customer_name[:1]|upper }}</i>
+                <span><b>{{ conversation.customer_name }}</b><small>{{ conversation.latest_message or 'No messages yet' }}</small></span>
+                <time>{{ conversation.latest_message_at[:10] if conversation.latest_message_at else conversation.created_at[:10] }}</time>
+                {% if conversation.unread_count %}<em>{{ conversation.unread_count }}</em>{% endif %}
+              </a>
+              {% if conversation.is_muted %}<span class="muted-indicator" title="Notifications muted{{ ' until ' ~ conversation.muted_until if conversation.muted_until else '' }}" aria-label="Notifications muted"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 18h7.6M10 21h4M18 8a6 6 0 0 0-9.7-4.7M6.2 7.2A6 6 0 0 0 6 8v5l-2 3h12M3 3l18 18" /></svg></span>{% endif %}
+              <details class="conversation-actions conversation-card-actions">
+                <summary aria-label="Options for {{ conversation.customer_name }}">•••</summary>
+                <div>
+                  <a href="/admin/messages?request_id={{ conversation.id }}&profile=1">View customer profile</a>
+                  <form method="post" action="/admin/messages/{{ conversation.id }}/action">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                    {% if conversation.is_muted %}<button name="action" value="unmute">Unmute notifications</button>{% else %}<button type="button" data-open-mute data-request-id="{{ conversation.id }}" data-customer-name="{{ conversation.customer_name }}">Mute notifications</button>{% endif %}
+                    <button name="action" value="{{ 'unblock' if conversation.is_blocked else 'block' }}">{{ 'Unblock customer' if conversation.is_blocked else 'Block customer' }}</button>
+                    <button name="action" value="{{ 'unarchive' if conversation.is_archived else 'archive' }}">{{ 'Restore to inbox' if conversation.is_archived else 'Archive conversation' }}</button>
+                    <button class="danger" name="action" value="delete" data-vtic-confirm-button data-confirm-title="Remove conversation?" data-confirm-message="This conversation will be removed from your inbox. The project communication record will remain safely stored." data-confirm-label="Remove conversation">Delete from my inbox</button>
+                  </form>
+                </div>
+              </details>
+            </div>
+            {% else %}<div class="conversation-empty">No customer conversations are available in your work queue.</div>{% endfor %}
+          </nav>
+        </aside>
+
+        {% if active %}
+        <section class="message-thread">
+          <header><div class="thread-person"><i>{{ active.customer_name[:1]|upper }}</i><span><b>{{ active.customer_name }}</b><small>{{ active.customer_email }}</small></span></div><div class="thread-tools"><a href="/admin/review-requests#request-{{ active.id }}">Open request #{{ "%05d"|format(active.id) }} →</a></div></header>
+          <div class="thread-messages" data-thread-messages>
+            {% for message in active_messages %}
+            <article class="{{ message.sender_type }}"><div><b>{{ message.sender_name }}</b><time>{{ message.created_at }}</time></div><p>{{ message.message }}</p></article>
+            {% else %}<div class="thread-empty"><b>Start the conversation</b><span>Send an update or question about this project request.</span></div>{% endfor %}
+          </div>
+          <form class="message-composer" method="post" action="/admin/review-requests/{{ active.id }}/message">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <input type="hidden" name="return_to" value="/admin/messages?request_id={{ active.id }}" />
+            <label for="message-body">Reply to {{ active.customer_name }}</label>
+            <textarea id="message-body" name="message" maxlength="3000" placeholder="Write a message…" required></textarea>
+            <footer><label><input type="checkbox" name="notify_email" value="1" /> Send a copy by email</label><button type="submit">Send message →</button></footer>
+          </form>
+        </section>
+        <aside class="conversation-context" id="customer-profile">
+          <header><span>CUSTOMER PROFILE</span><h2>{{ customer_profile.full_name }}</h2></header>
+          <div class="profile-avatar">{% if customer_profile.avatar_url %}<img src="{{ customer_profile.avatar_url }}" alt="{{ customer_profile.full_name }}" />{% else %}<i>{{ customer_profile.full_name[:1]|upper }}</i>{% endif %}<div><b>{{ customer_profile.email }}</b><small>{{ customer_profile.status|title }} account</small></div></div>
+          <dl class="profile-meta"><div><dt>Customer since</dt><dd>{{ customer_profile.created_at[:10] }}</dd></div><div><dt>Last active</dt><dd>{{ customer_profile.last_login_at[:16] if customer_profile.last_login_at else 'Never' }}</dd></div></dl>
+          <header class="project-context-title"><span>PROJECT CONTEXT</span><h2>Request #{{ "%05d"|format(active.id) }}</h2></header>
+          <dl><div><dt>Status</dt><dd>{{ active.status|replace('_', ' ') }}</dd></div><div><dt>Scope</dt><dd>{{ active.service_scope|replace('_', ' ') if active.service_scope else 'Awaiting confirmation' }}</dd></div><div><dt>Products</dt><dd>{{ active.product_count }} line(s)</dd></div><div><dt>Submitted</dt><dd>{{ active.created_at[:10] }}</dd></div></dl>
+          <div class="context-products"><span>SELECTED PRODUCTS</span>{% for item in active_items %}<article><b>{{ item.product_name }}</b><small>{{ item.brand }} · Qty {{ item.quantity }}</small></article>{% else %}<p>No products attached.</p>{% endfor %}</div>
+          <a href="/admin/review-requests#request-{{ active.id }}">View complete workflow →</a>
+        </aside>
+        {% else %}<section class="no-active-thread"><i>✉</i><h2>No conversation selected</h2><p>Customer project conversations will appear here.</p></section>{% endif %}
+      </section>
+    </main>
+    <dialog class="mute-dialog" data-mute-dialog>
+      <form method="post" data-mute-form>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="action" value="mute" />
+        <header><div><span>NOTIFICATION CONTROL</span><h2>Mute conversation</h2><p data-mute-customer></p></div><button type="button" data-close-mute aria-label="Close">×</button></header>
+        <fieldset>
+          <label><input type="radio" name="duration" value="15m" checked /><span><b>For 15 minutes</b><small>Pause brief interruptions</small></span></label>
+          <label><input type="radio" name="duration" value="1h" /><span><b>For 1 hour</b><small>Resume automatically in one hour</small></span></label>
+          <label><input type="radio" name="duration" value="8h" /><span><b>For 8 hours</b><small>Mute for the working day</small></span></label>
+          <label><input type="radio" name="duration" value="24h" /><span><b>For 24 hours</b><small>Resume at the same time tomorrow</small></span></label>
+          <label><input type="radio" name="duration" value="forever" /><span><b>Until I turn it back on</b><small>Manually unmute from conversation options</small></span></label>
+        </fieldset>
+        <footer><button type="button" data-close-mute>Cancel</button><button type="submit">Mute notifications</button></footer>
+      </form>
+    </dialog>
+    {% if customer_profile %}<dialog class="profile-dialog" data-profile-dialog data-open-profile="{{ 'true' if request.args.get('profile') == '1' else 'false' }}">
+      <article>
+        <header><button type="button" data-close-profile aria-label="Close profile">×</button><span>CUSTOMER PROFILE / VTIC</span></header>
+        <section class="profile-identity">
+          {% if customer_profile.avatar_url %}<img src="{{ customer_profile.avatar_url }}" alt="{{ customer_profile.full_name }}" />{% else %}<i>{{ customer_profile.full_name[:1]|upper }}</i>{% endif %}
+          <div><h2>{{ customer_profile.full_name }}</h2><p>{{ customer_profile.email }}</p><b class="profile-status profile-status--{{ customer_profile.status }}">● {{ customer_profile.status|upper }}</b></div>
+        </section>
+        <section class="profile-statistics">
+          <div><b>{{ customer_profile.request_count }}</b><span>Total requests</span></div><div><b>{{ customer_profile.active_count }}</b><span>Active projects</span></div><div><b>{{ customer_profile.approved_count }}</b><span>Approved</span></div>
+        </section>
+        <section class="profile-information">
+          <header><span>ACCOUNT INFORMATION</span><b>Customer #{{ "%04d"|format(customer_profile.id) }}</b></header>
+          <dl><div><dt>Email address</dt><dd>{{ customer_profile.email }}</dd></div><div><dt>Account status</dt><dd>{{ customer_profile.status|title }}</dd></div><div><dt>Customer since</dt><dd>{{ customer_profile.created_at[:10] }}</dd></div><div><dt>Last active</dt><dd>{{ customer_profile.last_login_at[:16] if customer_profile.last_login_at else 'Never' }}</dd></div><div><dt>Current request</dt><dd>#{{ "%05d"|format(active.id) }} · {{ active.status|replace('_', ' ')|title }}</dd></div><div><dt>Service scope</dt><dd>{{ active.service_scope|replace('_', ' ')|title if active.service_scope else 'Awaiting confirmation' }}</dd></div></dl>
+        </section>
+        <footer><a href="mailto:{{ customer_profile.email }}">Send email</a><a class="primary" href="/admin/review-requests#request-{{ active.id }}">Open project request →</a></footer>
+      </article>
+    </dialog>{% endif %}
+    <script src="{{ url_for('static', filename='js/admin_messages.js') }}" defer></script>
+  </body>
+</html>

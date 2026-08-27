@@ -1,7 +1,7 @@
 {% set catalog_open = request.path == '/admin' or
 request.path.startswith('/admin/products') or
 request.path.startswith('/admin/manufacturers') %} {% set requests_open =
-request.path.startswith('/admin/review-requests') or request.path.startswith('/admin/calendar') or request.path.startswith('/admin/catered-customers') %} {% set account_open =
+request.path.startswith('/admin/review-requests') or request.path.startswith('/admin/messages') or request.path.startswith('/admin/calendar') or request.path.startswith('/admin/catered-customers') %} {% set account_open =
 request.path.startswith('/admin/account') or
 request.path.startswith('/admin/activity') %}
 
@@ -31,6 +31,9 @@ request.path.startswith('/admin/activity') %}
         >
       </div>
     </details>
+    <a class="admin-nav-home {{ 'active' if request.path.startswith('/admin/messages') else '' }}" href="/admin/messages">
+      <span class="admin-nav-icon" aria-hidden="true">✉</span><span>Messages</span>
+    </a>
     <details class="admin-nav-group" {% if requests_open %}open{% endif %}>
       <summary>
         <span class="admin-nav-icon" aria-hidden="true">◎</span
@@ -85,9 +88,14 @@ request.path.startswith('/admin/activity') %}
         </form>
       </div>
     </details>
+    {% if session.admin_role == 'superadmin' %}
+    <a class="admin-nav-home {{ 'active' if request.path.startswith('/admin/portfolio') else '' }}" href="/admin/portfolio">
+      <span class="admin-nav-icon" aria-hidden="true">▧</span><span>Clients &amp; partners</span>
+    </a>
+    {% endif %}
     <a class="admin-nav-home" href="/storefront" target="_blank">
       <span class="admin-nav-icon" aria-hidden="true">↗</span
-      ><span>View storefront</span>
+      ><span>View solutions catalog</span>
     </a>
   </nav>
   <div class="admin-sidebar-footer">
@@ -95,5 +103,6 @@ request.path.startswith('/admin/activity') %}
     <p>{{ session.admin_username }}</p>
     <small>{{ session.admin_role }}</small>
   </div>
+  {% include '_message_notifications.html' %}
   <script src="{{ url_for('static', filename='js/signout-confirm.js') }}" defer></script>
 </aside>

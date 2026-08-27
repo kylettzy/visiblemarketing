@@ -31,7 +31,7 @@
     <header><small>CUSTOMER ACCOUNT</small><b>{{ session.customer_name }}</b></header>
     <a href="/account/reviews">My review requests</a>
     <a href="/solution-advisor">Saved advisor consultations</a>
-    <a href="/cart">Procurement cart</a>
+    <a href="/cart">My review list</a>
     <form action="/logout" method="post" data-confirm-signout><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form>
   </div>
 </details>

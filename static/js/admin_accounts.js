@@ -110,7 +110,9 @@
       document.body.classList.add("status-modal-open");
       syncDuration();
     });
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
+      if (form.dataset.confirmed === "true") return;
+      event.preventDefault();
       const nextStatus = form.elements.status.value;
       const account = form.dataset.accountLabel;
       let durationText = "";
@@ -119,9 +121,15 @@
           ? " permanently"
           : ` for ${amount.value} ${unit.value}`;
       }
-      if (!window.confirm(`Set ${account} to ${nextStatus}${durationText}?`)) {
-        event.preventDefault();
-      }
+      const confirmed = await window.VTICConfirm.ask({
+        title: "Change account status?",
+        message: `Set ${account} to ${nextStatus}${durationText}? Access to the VTIC system may be affected immediately.`,
+        confirmLabel: "Update status",
+        tone: nextStatus === "active" ? "standard" : "danger",
+      });
+      if (!confirmed) return;
+      form.dataset.confirmed = "true";
+      form.requestSubmit(event.submitter || undefined);
     });
     syncDuration();
   });

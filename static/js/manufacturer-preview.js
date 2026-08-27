@@ -115,7 +115,7 @@ selectAllProducts?.addEventListener("change", () => {
   updateProductBatchControls();
 });
 
-batchForm?.addEventListener("submit", (event) => {
+batchForm?.addEventListener("submit", async (event) => {
   const selectedCount = productSelections.filter(
     (checkbox) => checkbox.checked,
   ).length;
@@ -123,8 +123,15 @@ batchForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     return;
   }
-  const confirmed = window.confirm(
-    `Delete ${selectedCount} selected product${selectedCount === 1 ? "" : "s"}? This cannot be undone.`,
-  );
-  if (!confirmed) event.preventDefault();
+  if (batchForm.dataset.confirmed === "true") return;
+  event.preventDefault();
+  const confirmed = await window.VTICConfirm.ask({
+    title: "Delete selected products?",
+    message: `Delete ${selectedCount} selected product${selectedCount === 1 ? "" : "s"}? They will be permanently removed from the solutions catalog.`,
+    confirmLabel: "Delete products",
+    tone: "danger",
+  });
+  if (!confirmed) return;
+  batchForm.dataset.confirmed = "true";
+  batchForm.requestSubmit(event.submitter || undefined);
 });

@@ -8,10 +8,15 @@ main > header > span {
   font: 9px "DM Mono";
 }
 .request-owner { display: block; margin-top: 7px; color: var(--blue) !important; font: 8px "DM Mono" !important; }
+.request-admin-actions { display: flex; align-items: flex-end; flex-direction: column; }
+.request-admin-actions form { margin-top: 10px; }
+.request-admin-actions form button { padding: 7px 9px; border: 1px solid #e7aeb4; color: #c43b49; background: #fff5f6; font-size: 7px; font-weight: 700; cursor: pointer; }
+.request-admin-actions form button:hover { border-color: #c43b49; background: #ffe9eb; }
 .role-queue { margin-bottom: 18px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--admin-border, var(--theme-border)); background: var(--admin-panel, var(--theme-surface)); }
 .role-queue span,.role-queue b { display: block; }
 .role-queue span { color: var(--blue); font: 8px "DM Mono"; letter-spacing: .1em; }
 .role-queue b { margin-top: 5px; color: var(--admin-text, var(--theme-text)); font-size: 12px; }
+.role-queue nav { display: flex; gap: 8px; }
 .role-queue a { padding: 10px 12px; color: white; background: linear-gradient(90deg,#2764ff,#15bce2); font-size: 9px; font-weight: 700; }
 .requests {
   display: grid;
@@ -91,21 +96,45 @@ main > header > span {
 .technical-workspace textarea { height: 88px; resize: none; overflow-y: auto; }
 .technical-workspace label small { font-size: 7px; font-weight: 400; }
 .technical-workspace button { min-height: 40px; border: 0; color: white; background: linear-gradient(90deg,#2764ff,#15bce2); font-size: 9px; font-weight: 700; cursor: pointer; }
-.request-chat { border-top: 1px solid var(--line); }
-.request-chat summary { padding: 14px 20px; color: var(--ink); background: #f7f9fa; cursor: pointer; font-size: 9px; font-weight: 700; }
-.request-chat summary b { margin-left: 6px; color: var(--blue); }
-.request-chat > div { max-height: 280px; overflow-y: auto; padding: 16px 20px; display: grid; gap: 10px; background: #fff; }
+.request-chat { display: none; }
+.request-chat[open] { z-index: 100; bottom: 86px; width: min(390px, calc(100vw - 32px)); height: min(540px, calc(100vh - 120px)); border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 22px 65px rgba(9,35,56,.24); }
+.request-chat summary { position: absolute; left: 0; bottom: 0; width: 54px; height: 54px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; color: #fff; background: linear-gradient(145deg,#2764ff,#11bae2); box-shadow: 0 8px 24px rgba(9,35,56,.28); cursor: pointer; list-style: none; }
+.request-chat[open] summary { bottom: -66px; }
+.request-chat summary::-webkit-details-marker { display: none; }
+.request-chat summary > strong { font-size: 16px; }
+.request-chat summary > em { position: absolute; right: -5px; bottom: -4px; padding: 2px 4px; border: 2px solid #fff; border-radius: 7px; color: #426075; background: #eef3f7; font: normal 6px "DM Mono"; }
+.request-chat summary > span { position: absolute; left: 64px; bottom: 7px; width: max-content; max-width: 220px; padding: 8px 11px; display: none; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; box-shadow: 0 8px 22px rgba(9,35,56,.16); font-size: 9px; }
+.request-chat summary:hover > span { display: block; }
+.request-chat summary > span small { display: block; margin-bottom: 2px; color: var(--muted); font: 7px "DM Mono"; text-transform: uppercase; }
+.request-chat summary > b { position: absolute; top: -5px; right: -5px; min-width: 19px; height: 19px; padding: 0 5px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 10px; color: #fff; background: #ff4759; font-size: 8px; }
+.request-chat-heading { height: 64px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.request-chat-heading > div { display: flex; align-items: center; gap: 10px; }
+.request-chat-heading strong { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(145deg,#2764ff,#11bae2); }
+.request-chat-heading span b,.request-chat-heading span small { display: block; }
+.request-chat-heading span b { font-size: 10px; }
+.request-chat-heading span small { margin-top: 3px; color: var(--muted); font: 7px "DM Mono"; }
+.request-chat-heading button { width: 30px; height: 30px; border: 0; border-radius: 50%; color: var(--muted); background: #eef3f7; font-size: 18px; cursor: pointer; }
+.request-chat > div { height: calc(100% - 210px); overflow-y: auto; padding: 16px; display: grid; align-content: start; gap: 10px; background: #fff; }
 .request-chat article { max-width: 75%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #f7f9fa; }
 .request-chat article.customer { margin-left: auto; background: #edf4ff; }
 .request-chat article header { padding: 0; display: flex; justify-content: space-between; border: 0; }
 .request-chat article header b,.request-chat article header time { font-size: 7px; }
 .request-chat article p { margin: 7px 0 0; font-size: 9px; line-height: 1.5; }
 .request-chat .chat-empty { margin: 5px; color: var(--muted); font-size: 9px; text-align: center; }
-.request-chat > form { padding: 16px 20px; display: grid; gap: 8px; border-top: 1px solid var(--line); background: #f7f9fa; }
+.request-chat > form { height: 146px; padding: 12px 16px; display: grid; gap: 7px; border-top: 1px solid var(--line); border-radius: 0 0 16px 16px; background: #f7f9fa; }
 .request-chat > form > label { color: var(--muted); font: 8px "DM Mono"; text-transform: uppercase; }
-.request-chat > form textarea { width: 100%; height: 64px; padding: 10px 12px; resize: none; border: 1px solid var(--line); color: var(--ink); background: #fff; font-size: 9px; line-height: 1.5; }
+.request-chat > form textarea { width: 100%; height: 54px; padding: 10px 12px; resize: none; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; font-size: 9px; line-height: 1.5; }
 .request-chat > form > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.request-chat > form button { min-height: 38px; padding: 0 18px; border: 0; color: #fff; background: linear-gradient(90deg,#2764ff,#15bce2); font-size: 9px; font-weight: 700; cursor: pointer; }
+.request-chat > form button { min-height: 34px; padding: 0 15px; border: 0; border-radius: 7px; color: #fff; background: linear-gradient(90deg,#2764ff,#15bce2); font-size: 9px; font-weight: 700; cursor: pointer; }
+
+@media (max-width: 520px) {
+  .request-chat { left: 14px; }
+  .request-chat[open] { right: 14px; bottom: 82px; width: auto; height: min(520px, calc(100vh - 106px)); }
+}
+
+@media (min-width: 521px) and (max-width: 800px) {
+  .request-chat { left: 20px; }
+}
 .review-actions > div { display: flex; min-width: 270px; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .review-actions > div span { display: flex; gap: 8px; }
 .review-actions a { padding: 8px 10px; border: 1px solid var(--line); color: var(--blue); font-size: 8px; font-weight: 700; }

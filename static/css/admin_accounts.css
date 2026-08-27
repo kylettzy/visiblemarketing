@@ -167,11 +167,14 @@
 }
 
 .account-table-wrap {
-  overflow-x: auto;
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .account-table {
-  min-width: 1260px;
+  width: 100%;
+  min-width: 0;
 }
 
 .account-row {
@@ -179,12 +182,32 @@
   min-height: 82px;
   padding: 14px 20px;
   display: grid;
-  grid-template-columns: minmax(190px, 1.15fr) minmax(190px, 1.1fr) 125px 135px 110px 105px 130px 80px;
+  grid-template-columns:
+    minmax(0, 1.45fr)
+    minmax(0, 1.15fr)
+    minmax(0, 0.85fr)
+    minmax(0, 0.92fr)
+    minmax(0, 0.72fr)
+    minmax(0, 0.78fr)
+    minmax(0, 0.9fr)
+    62px;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   border-top: 1px solid var(--admin-border, var(--theme-border));
   color: var(--admin-text, var(--theme-text));
   background: var(--admin-surface, var(--theme-surface-raised));
+}
+
+.account-row > * {
+  min-width: 0;
+}
+
+.account-row--head > span,
+.account-row > .identifier,
+.account-row > time {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .account-row:not(.account-row--head):hover {
@@ -585,10 +608,17 @@ input:checked + .status-choice--banned {
 }
 
 .row-actions {
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.row-actions > a {
+  width: 100%;
+  padding-inline: 6px;
+  text-align: center;
 }
 
 .row-actions > a,
@@ -668,6 +698,23 @@ input:checked + .status-choice--banned {
   .directory-filters {
     grid-template-columns: 1fr 1fr;
   }
+
+  .account-row {
+    padding-inline: 14px;
+    grid-template-columns:
+      minmax(0, 1.4fr)
+      minmax(0, 1fr)
+      minmax(0, 0.85fr)
+      minmax(0, 0.85fr)
+      minmax(0, 0.7fr)
+      minmax(0, 0.8fr)
+      62px;
+    gap: 9px;
+  }
+
+  .account-row > :nth-child(6) {
+    display: none;
+  }
 }
 
 @media (max-width: 700px) {
@@ -689,5 +736,16 @@ input:checked + .status-choice--banned {
 
   .directory-filters {
     grid-template-columns: 1fr;
+  }
+
+  .account-row {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.9fr) 58px;
+  }
+
+  .account-row > :nth-child(2),
+  .account-row > :nth-child(3),
+  .account-row > :nth-child(6),
+  .account-row > :nth-child(7) {
+    display: none;
   }
 }

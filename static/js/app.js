@@ -57,7 +57,7 @@ function updateCartCount() {
   });
 }
 
-function showToast(message = "Added to cart") {
+function showToast(message = "Added to review list") {
   const toast = document.getElementById("toast");
   if (!toast) return;
 
@@ -83,7 +83,7 @@ document.querySelectorAll("[data-add]").forEach((button) => {
     }
 
     saveCart(cart);
-    showToast(`${product.name} added to cart`);
+    showToast(`${product.name} added to review list`);
   });
 });
 
@@ -358,7 +358,7 @@ document
       );
       selectedCartItems.clear();
       renderCart();
-      status.textContent = `Request #${result.request_id} was submitted successfully. Unselected products remain in your cart.`;
+      status.textContent = `Request #${result.request_id} was submitted successfully. Unselected products remain in your review list.`;
       status.className = "success";
       window.setTimeout(() => {
         window.location.href = "/account/reviews";

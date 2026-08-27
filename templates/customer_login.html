@@ -22,14 +22,14 @@
             <div><dt>VTIC</dt><dd>Guided solutions</dd></div>
           </dl>
         </div>
-        <div class="system-status"><span class="status-dot"></span><span>CUSTOMER STOREFRONT</span><strong>AVAILABLE</strong></div>
+        <div class="system-status"><span class="status-dot"></span><span>SOLUTIONS CONSULTATION PORTAL</span><strong>AVAILABLE</strong></div>
       </section>
       <section class="login-panel" aria-label="Customer sign in">
         <div class="login-box">
           <header>
             <p class="portal-label">CUSTOMER ACCESS / 02</p>
             <h2>Continue to VTIC.</h2>
-            <span>Sign in to access your catalog, cart and requests.</span>
+            <span>Sign in to explore solutions, manage your review list and track requests.</span>
           </header>
           {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}<div class="alert {{ category }}" role="alert">{{ message }}</div>{% endfor %}
@@ -39,7 +39,7 @@
             <label><span>Email address</span><input type="email" name="email" autocomplete="email" placeholder="name@company.com" required autofocus /></label>
             <label><span>Password</span><div class="password-control"><input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
             <label class="remember-session"><input type="checkbox" name="remember_me" value="1" /><span><b>Keep me signed in</b><small>Stay signed in on this device for 30 days.</small></span></label>
-            <button class="submit-button" type="submit">Open customer storefront <span>→</span></button>
+            <button class="submit-button" type="submit">Open solutions portal <span>→</span></button>
           </form>
           <div class="account-actions"><p>New to VTIC? <a href="/register">Create an account →</a></p><a class="admin-entry" href="/admin/login">Administrator access</a></div>
           <footer class="login-footer"><a href="/">← Return to company website</a><span>Secure customer access</span></footer>

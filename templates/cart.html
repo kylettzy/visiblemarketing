@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Procurement Cart | VTIC Systems</title>
+    <title>Project Review List | VTIC Systems</title>
     <meta name="csrf-token" content="{{ csrf_token }}" />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
@@ -28,19 +28,19 @@
     %}
     <main class="shell">
       <div class="cart-progress" aria-label="Request progress">
-        <b><span>01</span> Cart</b>
+        <b><span>01</span> Selection</b>
         <i></i>
         <span><b>02</b> Review</span>
         <i></i>
         <span><b>03</b> Confirmation</span>
       </div>
       <div class="breadcrumb">
-        <a href="/storefront">Storefront</a><span>/</span> Procurement cart
+        <a href="/storefront">Solutions catalog</a><span>/</span> Review list
       </div>
       <section class="heading">
         <div>
           <p>YOUR SELECTION</p>
-          <h1>Procurement cart</h1>
+          <h1>Project review list</h1>
         </div>
         <span data-cart-title>0 items</span>
       </section>
@@ -62,7 +62,7 @@
           </label>
           <button id="checkout" disabled>Select products to continue</button
           ><small
-            >No pricing is shown in the customer storefront. The VTIC team will
+            >No pricing is shown in the customer portal. The VTIC team will
             review only the products you select and prepare the commercial
             response.</small
           >
@@ -70,8 +70,8 @@
         </aside>
       </div>
       <section class="empty-cart" id="empty-cart">
-        <span>PROCUREMENT CART / 00</span>
-        <h2>Your cart is empty.</h2>
+        <span>PROJECT REVIEW LIST / 00</span>
+        <h2>Your review list is empty.</h2>
         <p>
           Browse the catalog or contact our project desk for a configured
           enterprise solution.

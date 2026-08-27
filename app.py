@@ -10,6 +10,7 @@ import urllib.request
 import calendar
 import smtplib
 import re
+import click
 from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -1418,6 +1419,57 @@ def initialize_database():
 
 
 initialize_database()
+
+
+@app.cli.command("reset-admin-password")
+@click.option(
+    "--username",
+    default="admin",
+    show_default=True,
+    help="Administrator username to recover.",
+)
+@click.option(
+    "--activate/--no-activate",
+    default=True,
+    show_default=True,
+    help="Reactivate the administrator account while resetting it.",
+)
+@click.password_option(
+    "--password",
+    confirmation_prompt=True,
+    help="New administrator password. Omit this option for a hidden prompt.",
+)
+def reset_admin_password_command(username, activate, password):
+    """Reset an existing administrator password without modifying other data."""
+    username = username.strip()
+    if not username:
+        raise click.ClickException("Administrator username cannot be empty.")
+    if password_error := password_strength_error(password):
+        raise click.ClickException(password_error)
+
+    with get_db() as database:
+        admin = database.execute(
+            "SELECT id, username FROM admins WHERE username = ? COLLATE NOCASE",
+            (username,),
+        ).fetchone()
+        if not admin:
+            raise click.ClickException(
+                f'Administrator "{username}" does not exist in {DATABASE}.'
+            )
+        if activate:
+            database.execute(
+                """UPDATE admins
+                   SET password_hash = ?, status = 'active', status_expires_at = NULL
+                   WHERE id = ?""",
+                (generate_password_hash(password), admin["id"]),
+            )
+        else:
+            database.execute(
+                "UPDATE admins SET password_hash = ? WHERE id = ?",
+                (generate_password_hash(password), admin["id"]),
+            )
+
+    click.echo(f'Password reset completed for administrator "{admin["username"]}".')
 
 
 @app.context_processor

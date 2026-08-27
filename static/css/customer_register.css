@@ -50,6 +50,19 @@
   gap: 9px;
 }
 
+.login-social-auth {
+  grid-template-columns: 1fr;
+}
+
+.login-social-auth .social-button {
+  grid-template-columns: 22px 1fr auto;
+}
+
+.login-social-auth .social-button small {
+  grid-column: 3;
+  margin-top: 0;
+}
+
 .social-button {
   min-height: 52px;
   padding: 9px 11px;

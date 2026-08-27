@@ -31,6 +31,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 try:
     from authlib.integrations.flask_client import OAuth
@@ -49,6 +50,9 @@ STATIC_ROOT = APP_ROOT / "static"
 # bypassed by Vercel, so static assets are served explicitly from the bundle and
 # runtime writes are confined to /tmp.
 app = Flask(__name__, static_folder=None)
+# Cloudflare terminates HTTPS before forwarding requests to Flask. Trust one
+# proxy hop so generated URLs use the public HTTPS scheme and hostname.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config["SECRET_KEY"] = os.environ.get(
     "VTIC_SECRET_KEY", "development-only-change-me"
 )
@@ -64,6 +68,10 @@ app.permanent_session_lifetime = timedelta(days=30)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("VTIC_PUBLIC_URL", "")
+    .strip()
+    .lower()
+    .startswith("https://"),
     SESSION_REFRESH_EACH_REQUEST=True,
 )
 MANUFACTURER_UPLOADS.mkdir(parents=True, exist_ok=True)
@@ -98,6 +106,10 @@ OAUTH_PROVIDERS = {
     },
 }
 
+PUBLIC_BASE_URL = os.environ.get("VTIC_PUBLIC_URL", "").strip().rstrip("/")
+if PUBLIC_BASE_URL and not PUBLIC_BASE_URL.startswith(("https://", "http://")):
+    raise RuntimeError("VTIC_PUBLIC_URL must start with https:// or http://")
+
 if oauth:
     for provider_name, provider_config in OAUTH_PROVIDERS.items():
         if provider_config["client_id"] and provider_config["client_secret"]:
@@ -105,6 +117,21 @@ if oauth:
                 name=provider_name,
                 **{key: value for key, value in provider_config.items() if key != "label"},
             )
+
+
+def oauth_provider_status():
+    """Return provider availability without exposing OAuth credentials."""
+    return {
+        name: bool(oauth and config["client_id"] and config["client_secret"])
+        for name, config in OAUTH_PROVIDERS.items()
+    }
+
+
+def oauth_callback_url(provider):
+    path = url_for("customer_oauth_callback", provider=provider)
+    return f"{PUBLIC_BASE_URL}{path}" if PUBLIC_BASE_URL else url_for(
+        "customer_oauth_callback", provider=provider, _external=True
+    )
 
 
 @app.route("/static/<path:filename>", endpoint="static")
@@ -1441,7 +1468,9 @@ def customer_login():
                     f"This account is {customer['status']}. Contact VTIC for assistance.",
                     "error",
                 )
-                return render_template("customer_login.html")
+                return render_template(
+                    "customer_login.html", oauth_status=oauth_provider_status()
+                )
             session.clear()
             session.permanent = request.form.get("remember_me") == "1"
             session["customer_id"] = customer["id"]
@@ -1459,7 +1488,9 @@ def customer_login():
                 next_url if next_url.startswith("/") else url_for("storefront")
             )
         flash("Invalid email or password.", "error")
-    return render_template("customer_login.html")
+    return render_template(
+        "customer_login.html", oauth_status=oauth_provider_status()
+    )
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -1496,12 +1527,7 @@ def customer_register():
                 flash("An account already uses that email address.", "error")
     return render_template(
         "customer_register.html",
-        oauth_status={
-            name: bool(
-                oauth and config["client_id"] and config["client_secret"]
-            )
-            for name, config in OAUTH_PROVIDERS.items()
-        },
+        oauth_status=oauth_provider_status(),
     )
 
 
@@ -1531,9 +1557,7 @@ def customer_oauth_start(provider):
         )
         return redirect(url_for("customer_register"))
     client = oauth.create_client(provider)
-    redirect_uri = url_for(
-        "customer_oauth_callback", provider=provider, _external=True
-    )
+    redirect_uri = oauth_callback_url(provider)
     parameters = {"redirect_uri": redirect_uri}
     if provider == "apple":
         parameters["response_mode"] = "form_post"

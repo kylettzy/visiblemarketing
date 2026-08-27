@@ -211,7 +211,7 @@ video access requires HTTPS and customer microphone permission.
 Development credentials:
 
 - Username: `admin`
-- Password: `   `
+- Password: `@Dmin1234567890`
 
 The initial administrator is assigned the `superadmin` role. Only a signed-in
 superadmin can open http://127.0.0.1:5000/admin/activity. The audit trail records

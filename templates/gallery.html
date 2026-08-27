@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gallery | VTIC</title>
+    <meta name="description" content="Behind the scenes, project work and events from Visible Technologies International Corporation." />
+    {% include '_theme.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clients.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/solution_header.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gallery.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gallery_album.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/storefront_footer.css') }}" />
+  </head>
+  <body>
+    <header class="solution-header">
+      <div class="client-shell solution-header-inner">
+        <a class="solution-brand" href="/" aria-label="Visible Technologies home"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" /></a>
+        <nav aria-label="Company navigation">
+          <a class="solution-nav-link" href="/#company">Company</a>
+          <details class="solution-menu"><summary>Solutions <i></i></summary><div>{% for slug, item in solutions.items() %}<a href="/solutions/{{ slug }}">{{ item.name }}</a>{% endfor %}</div></details>
+          <details class="solution-menu"><summary>Our partners<br />and clients <i></i></summary><div class="compact"><a href="/partners">Partners</a><a href="/clients">Clients</a></div></details>
+          <a class="solution-nav-link is-active" href="/gallery">Gallery</a>
+          <a class="solution-nav-link" href="/#approach">Our approach</a>
+          <a class="solution-nav-link" href="mailto:sales@vtic.ph">Contact</a>
+        </nav>
+        <div class="solution-account">{% if session.get('customer_id') %}<span>Welcome, {{ session.customer_name }}</span><a class="primary" href="/storefront">Open solutions catalog</a>{% elif session.get('admin_id') %}<span>Welcome, {{ session.admin_username }}</span><a class="primary" href="/admin">Go to admin console</a>{% else %}<a class="sign-in" href="/login">Sign in</a><a class="primary" href="/register">Create account</a>{% endif %}</div>
+      </div>
+    </header>
+    <main>
+      <section class="gallery-hero"><div class="client-shell"><p>INSIDE VTIC / FIELD NOTES</p><h1>Work worth<br />showing.</h1><span>Projects, people, events and the moments behind every deployment.</span></div></section>
+      <section class="gallery-directory"><div class="client-shell">
+        <header class="gallery-heading"><div><p>VISUAL JOURNAL</p><h2>Behind the scenes.</h2></div>{% if gallery_categories %}<div class="gallery-filters"><button class="active" type="button" data-gallery-filter="all">All</button>{% for category in gallery_categories %}<button type="button" data-gallery-filter="{{ category|lower }}">{{ category }}</button>{% endfor %}</div>{% endif %}</header>
+        <div class="gallery-grid">{% for item in gallery_items %}<article class="gallery-card{% if item.is_album %} gallery-card--album{% endif %}" data-gallery-item data-category="{{ item.category|lower }}" data-gallery-photos="{{ item.photos|tojson|forceescape }}"><button type="button" data-gallery-open aria-label="View {{ item.title }}{% if item.is_album %} album{% else %} full size{% endif %}">{% if item.media_type == 'video' %}<video src="{{ item.video_src }}#t=0.1" muted loop playsinline preload="metadata"></video><b class="gallery-video-badge">PLAY VIDEO ▶</b>{% else %}<img src="{{ item.image_src }}" alt="{{ item.title }}" loading="lazy" />{% endif %}{% if item.is_album %}<b class="gallery-album-count">{{ item.photos|length }} PHOTOS</b>{% endif %}</button><div><p>{{ item.category }}{% if item.event_date %} · {{ item.event_date }}{% endif %}</p><h3>{{ item.title }}</h3>{% if item.is_album %}<span class="gallery-album-label">ALBUM · Open gallery</span>{% elif item.description %}<span>{{ item.description }}</span>{% endif %}</div></article>{% else %}<div class="gallery-empty"><span>GALLERY / 00</span><h2>New stories are coming.</h2><p>VTIC events and behind-the-scenes project work will appear here.</p></div>{% endfor %}</div>
+      </div></section>
+    </main>
+    <dialog class="gallery-lightbox" data-gallery-lightbox><button type="button" data-gallery-close aria-label="Close">×</button><a class="gallery-download" data-gallery-download download>Download media ↓</a><button class="gallery-lightbox-nav gallery-lightbox-prev" type="button" data-gallery-prev aria-label="Previous photo">‹</button><img alt="" data-gallery-full /><video controls playsinline data-gallery-video></video><button class="gallery-lightbox-nav gallery-lightbox-next" type="button" data-gallery-next aria-label="Next photo">›</button><div><b data-gallery-title></b><span data-gallery-meta></span></div></dialog>
+    {% include '_storefront_footer.html' %}
+    <script src="{{ url_for('static', filename='js/gallery.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/landing-nav.js') }}" defer></script>
+  </body>
+</html>

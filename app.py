@@ -64,7 +64,8 @@ PRODUCT_UPLOADS = UPLOAD_ROOT / "products"
 ACCOUNT_UPLOADS = UPLOAD_ROOT / "accounts"
 PORTFOLIO_UPLOADS = UPLOAD_ROOT / "portfolio"
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
-app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "webm"}
+app.config["MAX_CONTENT_LENGTH"] = 128 * 1024 * 1024
 app.permanent_session_lifetime = timedelta(days=30)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -456,6 +457,18 @@ def save_portfolio_image(upload):
     extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if extension not in ALLOWED_IMAGE_EXTENSIONS:
         raise ValueError("Portfolio image must be a PNG, JPG, JPEG, or WebP file.")
+    stored_name = f"{secrets.token_hex(12)}.{extension}"
+    upload.save(PORTFOLIO_UPLOADS / stored_name)
+    return url_for("uploaded_file", kind="portfolio", filename=stored_name)
+
+
+def save_portfolio_video(upload):
+    if not upload or not upload.filename:
+        return None
+    filename = secure_filename(upload.filename)
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if extension not in ALLOWED_VIDEO_EXTENSIONS:
+        raise ValueError("Gallery video must be an MP4 or WebM file.")
     stored_name = f"{secrets.token_hex(12)}.{extension}"
     upload.save(PORTFOLIO_UPLOADS / stored_name)
     return url_for("uploaded_file", kind="portfolio", filename=stored_name)
@@ -1246,6 +1259,21 @@ def initialize_database():
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS gallery_items (
+                id INTEGER PRIMARY KEY,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL DEFAULT 'Behind the scenes',
+                description TEXT NOT NULL DEFAULT '',
+                event_date TEXT,
+                album_name TEXT NOT NULL DEFAULT '',
+                image_url TEXT NOT NULL,
+                media_type TEXT NOT NULL DEFAULT 'image',
+                video_url TEXT NOT NULL DEFAULT '',
+                is_album_cover INTEGER NOT NULL DEFAULT 0,
+                display_order INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             CREATE TABLE IF NOT EXISTS portfolio_partner_groups (
                 id INTEGER PRIMARY KEY,
                 slug TEXT NOT NULL COLLATE NOCASE UNIQUE,
@@ -1270,6 +1298,25 @@ def initialize_database():
             CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);
             """
         )
+        gallery_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(gallery_items)")
+        }
+        if "album_name" not in gallery_columns:
+            database.execute(
+                "ALTER TABLE gallery_items ADD COLUMN album_name TEXT NOT NULL DEFAULT ''"
+            )
+        if "media_type" not in gallery_columns:
+            database.execute(
+                "ALTER TABLE gallery_items ADD COLUMN media_type TEXT NOT NULL DEFAULT 'image'"
+            )
+        if "video_url" not in gallery_columns:
+            database.execute(
+                "ALTER TABLE gallery_items ADD COLUMN video_url TEXT NOT NULL DEFAULT ''"
+            )
+        if "is_album_cover" not in gallery_columns:
+            database.execute(
+                "ALTER TABLE gallery_items ADD COLUMN is_album_cover INTEGER NOT NULL DEFAULT 0"
+            )
         manufacturer_columns = {
             row[1] for row in database.execute("PRAGMA table_info(manufacturers)")
         }
@@ -1904,6 +1951,49 @@ PARTNER_PORTFOLIO = [
     },
 ]
 
+GALLERY_PORTFOLIO = [
+    ("Alantek Structured Cabling Project", "Structured Cabling", "1377214_604647296260697_1789237869_n.jpg"),
+    ("Alantek Structured Cabling Project", "Structured Cabling", "1375785_604647059594054_1267088196_n.jpg"),
+    ("Alantek Structured Cabling Project", "Structured Cabling", "1374717_604646479594112_1011801746_n.jpg"),
+    ("Alantek Structured Cabling", "Structured Cabling", "1381886_604637142928379_548915560_n.jpg"),
+    ("Alantek Structured Cabling", "Structured Cabling", "1378771_604600406265386_1632712501_n-1.jpg"),
+    ("Alantek Structured Cabling", "Structured Cabling", "539164_604599782932115_802772839_n.jpg"),
+    ("94-Kilometer Point-to-Multipoint Backhaul", "Wireless Connectivity", "10710954_805534289505329_1969606592359628299_n.jpg"),
+    ("Ubiquiti Access Point", "Wireless Connectivity", "5313_516284708430290_95426616_n.jpg"),
+    ("Ubiquiti Access Point", "Wireless Connectivity", "599749_516284955096932_1782641302_n.jpg"),
+    ("Ubiquiti Access Point", "Wireless Connectivity", "6806_516283101763784_687292251_n.jpg"),
+    ("UBNT Point-to-Point", "Wireless Connectivity", "11140055_1013456482046441_4955113478435975178_n.jpg"),
+    ("Ubiquiti WiFi Backhauling", "Wireless Connectivity", "312462_485192101539551_1810722419_n.jpg"),
+    ("Ubiquiti WiFi AP Project", "Wireless Connectivity", "622288_440151659376929_119192134_o-1.jpg"),
+    ("Alantek Structured Cabling", "Structured Cabling", "11072061_919853338073423_6405040444130753060_n.jpg"),
+    ("Alantek Structured Cabling", "Structured Cabling", "11377124_919853088073448_170279434157696791_n.jpg"),
+]
+
+SOCIAL_GALLERY_ALBUM = [
+    "787125037_1724684039662645_1739330955557713164_n.jpg",
+    "787774002_1724684229662626_8600232777247085432_n.jpg",
+    "787077051_1724684159662633_5659619453893339649_n.jpg",
+    "788602785_1724684152995967_1548544710536154953_n.jpg",
+    "788108927_1724684196329296_8182551738348804936_n.jpg",
+    "778985406_1724684219662627_4473359736789472093_n.jpg",
+    "778985495_1724684376329278_2664715687500646007_n.jpg",
+    "787701810_1724684409662608_8236030915986521351_n.jpg",
+    "788613707_1724684249662624_1755631153909057547_n.jpg",
+    "786975596_1724684342995948_2755314318401834512_n.jpg",
+    "786929319_1724684066329309_5000285991339149201_n.jpg",
+    "786769097_1724684269662622_3601148537706991709_n.jpg",
+    "778985402_1724684199662629_1804740502040774070_n.jpg",
+    "787038614_1724684299662619_7972917705146374397_n.jpg",
+]
+
+SOCIAL_GALLERY_VIDEO = {
+    "title": "Tagaytay Highlands 2025 President’s Cup",
+    "category": "Events",
+    "description": "Highlights from a day of great swings, friendly competition and memorable moments at the Tagaytay Highlands 2025 President’s Cup.",
+    "event_date": "2025-01-01",
+    "video_url": "/uploads/portfolio/gallery/videos/tagaytay-highlands-2025-presidents-cup.mp4",
+}
+
 
 def ensure_portfolio_seeded():
     """Copy the original portfolio into editable tables on first use."""
@@ -1933,6 +2023,55 @@ def ensure_portfolio_seeded():
                         for partner_position, (name, website_url) in enumerate(group["partners"], start=1)
                     ],
                 )
+        if database.execute("SELECT COUNT(*) FROM gallery_items").fetchone()[0] == 0:
+            database.executemany(
+                """INSERT INTO gallery_items
+                   (title, category, description, image_url, display_order)
+                   VALUES (?, ?, ?, ?, ?)""",
+                [
+                    (
+                        title,
+                        category,
+                        "From the VTIC project gallery.",
+                        f"/uploads/portfolio/gallery/{filename}",
+                        len(SOCIAL_GALLERY_ALBUM) + position + 1,
+                    )
+                    for position, (title, category, filename) in enumerate(
+                        GALLERY_PORTFOLIO, start=1
+                    )
+                ],
+            )
+            database.executemany(
+                """INSERT INTO gallery_items
+                   (title, category, description, event_date, album_name, image_url, display_order)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                [
+                    (
+                        f"Confederation Annual Golf Tournament 2026 — Photo {position}",
+                        "Events",
+                        "VTIC provided the Visible Golf Tournament System and Event Management System for the Confederation Annual Golf Tournament 2026.",
+                        "2026-08-27",
+                        "Confederation Annual Golf Tournament 2026",
+                        f"/uploads/portfolio/gallery/confederation-golf-2026/{filename}",
+                        position + 1,
+                    )
+                    for position, filename in enumerate(SOCIAL_GALLERY_ALBUM, start=1)
+                ],
+            )
+            database.execute(
+                """INSERT INTO gallery_items
+                   (title, category, description, event_date, album_name, image_url,
+                    media_type, video_url, display_order)
+                   VALUES (?, ?, ?, ?, '', '', 'video', ?, ?)""",
+                (
+                    SOCIAL_GALLERY_VIDEO["title"],
+                    SOCIAL_GALLERY_VIDEO["category"],
+                    SOCIAL_GALLERY_VIDEO["description"],
+                    SOCIAL_GALLERY_VIDEO["event_date"],
+                    SOCIAL_GALLERY_VIDEO["video_url"],
+                    1,
+                ),
+            )
 
 
 ensure_portfolio_seeded()
@@ -1947,7 +2086,18 @@ def solution_page(slug):
         **solution,
         "slug": slug,
         "video": f"videos/{slug}.mp4",
-        "video_version": "2" if slug in {"physical-security", "wireless-connectivity"} else "1",
+        "video_version": (
+            "3"
+            if slug in {
+                "information-security",
+                "technology-backbone",
+                "communication",
+                "cloud-computing",
+            }
+            else "2"
+            if slug in {"physical-security", "wireless-connectivity"}
+            else "1"
+        ),
     }
     return render_template("solution_page.html", solution=solution, solutions=SOLUTION_PAGES)
 
@@ -2005,6 +2155,60 @@ def partners_page():
         "partners.html",
         partner_groups=groups,
         partner_count=partner_count,
+        solutions=SOLUTION_PAGES,
+    )
+
+
+@app.route("/gallery")
+def gallery_page():
+    with get_db() as database:
+        items = rows_to_dicts(
+            database.execute(
+                """SELECT * FROM gallery_items
+                   ORDER BY display_order ASC, id DESC"""
+            )
+        )
+    gallery_entries = []
+    albums = {}
+    for item in items:
+        image_url = item["image_url"]
+        item["image_src"] = (
+            image_url
+            if image_url.startswith(("/", "http://", "https://"))
+            else url_for("static", filename=image_url)
+        )
+        video_url = item.get("video_url", "")
+        item["video_src"] = (
+            video_url
+            if video_url.startswith(("/", "http://", "https://"))
+            else url_for("static", filename=video_url)
+        ) if video_url else ""
+        album_name = item.get("album_name", "").strip()
+        key = f"album:{album_name}" if album_name else f"item:{item['id']}"
+        if key not in albums:
+            entry = {**item, "photos": [], "is_album": bool(album_name)}
+            if album_name:
+                entry["title"] = album_name
+            albums[key] = entry
+            gallery_entries.append(entry)
+        albums[key]["photos"].append(
+            {
+                "src": item["image_src"],
+                "video_src": item["video_src"],
+                "type": item.get("media_type", "image"),
+                "title": item["title"],
+                "meta": f"{item['category']} · {item['event_date']}" if item["event_date"] else item["category"],
+            }
+        )
+        if album_name and item.get("is_album_cover"):
+            albums[key]["image_src"] = item["image_src"]
+            albums[key]["video_src"] = item["video_src"]
+            albums[key]["media_type"] = item.get("media_type", "image")
+    categories = sorted({item["category"] for item in items})
+    return render_template(
+        "gallery.html",
+        gallery_items=gallery_entries,
+        gallery_categories=categories,
         solutions=SOLUTION_PAGES,
     )
 
@@ -4528,6 +4732,184 @@ def admin_product_delete(product_id):
     return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/admin/gallery")
+@superadmin_required
+def admin_gallery():
+    with get_db() as database:
+        items = rows_to_dicts(
+            database.execute(
+                """SELECT * FROM gallery_items
+                   ORDER BY display_order ASC, id DESC"""
+            )
+        )
+    for item in items:
+        image_url = item["image_url"]
+        item["image_src"] = (
+            image_url
+            if image_url.startswith(("/", "http://", "https://"))
+            else url_for("static", filename=image_url)
+        )
+    albums = {}
+    standalone_items = []
+    for item in items:
+        album_name = item.get("album_name", "").strip()
+        if album_name:
+            album = albums.setdefault(
+                album_name,
+                {
+                    "name": album_name,
+                    "category": item["category"],
+                    "event_date": item["event_date"],
+                    "description": item["description"],
+                    "items": [],
+                },
+            )
+            album["items"].append(item)
+        else:
+            standalone_items.append(item)
+    for album in albums.values():
+        cover = next(
+            (item for item in album["items"] if item["is_album_cover"]),
+            album["items"][0],
+        )
+        album["cover_src"] = cover["image_src"]
+        album["cover_id"] = cover["id"]
+        album["sort_order"] = min(item["display_order"] for item in album["items"])
+    gallery_records = [
+        {"kind": "album", "value": album, "sort_order": album["sort_order"]}
+        for album in albums.values()
+    ] + [
+        {"kind": "item", "value": item, "sort_order": item["display_order"]}
+        for item in standalone_items
+    ]
+    gallery_records.sort(key=lambda record: record["sort_order"])
+    return render_template(
+        "admin_gallery.html",
+        gallery_items=items,
+        gallery_albums=list(albums.values()),
+        standalone_items=standalone_items,
+        gallery_records=gallery_records,
+    )
+
+
+@app.route("/admin/gallery/album/cover", methods=["POST"])
+@superadmin_required
+def admin_gallery_album_cover():
+    validate_csrf()
+    album_name = request.form.get("album_name", "").strip()
+    try:
+        cover_id = int(request.form.get("cover_id", ""))
+    except ValueError:
+        cover_id = 0
+    with get_db() as database:
+        cover = database.execute(
+            "SELECT id FROM gallery_items WHERE id = ? AND album_name = ?",
+            (cover_id, album_name),
+        ).fetchone()
+        if not album_name or not cover:
+            abort(400)
+        database.execute(
+            "UPDATE gallery_items SET is_album_cover = 0 WHERE album_name = ?",
+            (album_name,),
+        )
+        database.execute(
+            "UPDATE gallery_items SET is_album_cover = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (cover_id,),
+        )
+    log_activity("admin", session["admin_id"], session["admin_username"], "gallery_album_cover", album_name)
+    flash("Album thumbnail updated.", "success")
+    return redirect(url_for("admin_gallery"))
+
+
+@app.route("/admin/gallery/new", methods=["POST"])
+@superadmin_required
+def admin_gallery_create():
+    validate_csrf()
+    title = request.form.get("title", "").strip()
+    category = request.form.get("category", "").strip() or "Behind the scenes"
+    try:
+        image_url = save_portfolio_image(request.files.get("image_file"))
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin_gallery"))
+    if not title or not image_url:
+        flash("A title and picture are required.", "error")
+    else:
+        with get_db() as database:
+            cursor = database.execute(
+                """INSERT INTO gallery_items
+                   (title, category, description, event_date, album_name, image_url, display_order)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    title[:160], category[:80],
+                    request.form.get("description", "").strip()[:1000],
+                    request.form.get("event_date", "").strip() or None,
+                    request.form.get("album_name", "").strip()[:160],
+                    image_url, 0,
+                ),
+            )
+            move_gallery_item(database, cursor.lastrowid, portfolio_order_value() or 1)
+        log_activity("admin", session["admin_id"], session["admin_username"], "gallery_create", title)
+        flash("Gallery picture uploaded.", "success")
+    return redirect(url_for("admin_gallery"))
+
+
+@app.route("/admin/gallery/<int:item_id>/edit", methods=["POST"])
+@superadmin_required
+def admin_gallery_edit(item_id):
+    validate_csrf()
+    title = request.form.get("title", "").strip()
+    category = request.form.get("category", "").strip() or "Behind the scenes"
+    try:
+        uploaded_image = save_portfolio_image(request.files.get("image_file"))
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin_gallery"))
+    with get_db() as database:
+        current = database.execute(
+            "SELECT * FROM gallery_items WHERE id = ?", (item_id,)
+        ).fetchone()
+        if not current:
+            abort(404)
+        if not title:
+            flash("A title is required.", "error")
+            return redirect(url_for("admin_gallery"))
+        database.execute(
+            """UPDATE gallery_items
+               SET title = ?, category = ?, description = ?, event_date = ?, album_name = ?,
+                   image_url = ?, display_order = ?, updated_at = CURRENT_TIMESTAMP
+               WHERE id = ?""",
+            (
+                title[:160], category[:80],
+                request.form.get("description", "").strip()[:1000],
+                request.form.get("event_date", "").strip() or None,
+                request.form.get("album_name", "").strip()[:160],
+                uploaded_image or current["image_url"], current["display_order"], item_id,
+            ),
+        )
+        move_gallery_item(database, item_id, portfolio_order_value() or 1)
+    log_activity("admin", session["admin_id"], session["admin_username"], "gallery_update", title)
+    flash("Gallery entry updated.", "success")
+    return redirect(url_for("admin_gallery"))
+
+
+@app.route("/admin/gallery/<int:item_id>/delete", methods=["POST"])
+@superadmin_required
+def admin_gallery_delete(item_id):
+    validate_csrf()
+    with get_db() as database:
+        item = database.execute(
+            "SELECT title FROM gallery_items WHERE id = ?", (item_id,)
+        ).fetchone()
+        if not item:
+            abort(404)
+        database.execute("DELETE FROM gallery_items WHERE id = ?", (item_id,))
+        normalize_gallery_order(database)
+    log_activity("admin", session["admin_id"], session["admin_username"], "gallery_delete", item["title"])
+    flash("Gallery entry deleted.", "success")
+    return redirect(url_for("admin_gallery"))
+
+
 @app.route("/admin/portfolio")
 @superadmin_required
 def admin_portfolio():
@@ -4557,6 +4939,39 @@ def portfolio_order_value():
         return max(0, int(request.form.get("display_order", "0")))
     except ValueError:
         return 0
+
+
+def normalize_gallery_order(database, ordered_ids=None):
+    """Keep gallery positions contiguous and unique, starting at one."""
+    if ordered_ids is None:
+        ordered_ids = [
+            row["id"]
+            for row in database.execute(
+                """SELECT id FROM gallery_items
+                   ORDER BY CASE WHEN display_order < 1 THEN 2147483647 ELSE display_order END,
+                            created_at DESC, id DESC"""
+            ).fetchall()
+        ]
+    database.executemany(
+        "UPDATE gallery_items SET display_order = ? WHERE id = ?",
+        [(position, item_id) for position, item_id in enumerate(ordered_ids, start=1)],
+    )
+
+
+def move_gallery_item(database, item_id, requested_position):
+    """Move one item and shift every surrounding position without overlaps."""
+    ordered_ids = [
+        row["id"]
+        for row in database.execute(
+            """SELECT id FROM gallery_items
+               ORDER BY CASE WHEN display_order < 1 THEN 2147483647 ELSE display_order END,
+                        created_at DESC, id DESC"""
+        ).fetchall()
+        if row["id"] != item_id
+    ]
+    position = max(1, min(requested_position, len(ordered_ids) + 1))
+    ordered_ids.insert(position - 1, item_id)
+    normalize_gallery_order(database, ordered_ids)
 
 
 @app.route("/admin/portfolio/clients/new", methods=["POST"])
@@ -4745,7 +5160,9 @@ def admin_portfolio_partner_edit(item_id):
             flash("Partner name and a valid category are required.", "error")
             return redirect(url_for("admin_portfolio"))
         current = database.execute("SELECT logo_url FROM portfolio_partners WHERE id = ?", (item_id,)).fetchone()
-        logo_url = uploaded_logo or request.form.get("logo_url", "").strip() or current["logo_url"]
+        logo_url = "" if request.form.get("remove_logo") == "1" else (
+            uploaded_logo or request.form.get("logo_url", "").strip() or current["logo_url"]
+        )
         database.execute(
             """UPDATE portfolio_partners SET group_id = ?, name = ?, website_url = ?, logo_url = ?,
                display_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",

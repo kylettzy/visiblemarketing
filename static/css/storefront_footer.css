@@ -168,7 +168,8 @@
   gap: 9px;
 }
 
-.vtic-footer__social span {
+.vtic-footer__social span,
+.vtic-footer__social a {
   display: grid;
   width: 32px;
   height: 32px;

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gallery Manager | VTIC</title>
+    {% include '_theme.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_gallery.css') }}" />
+  </head>
+  <body>
+    {% include '_admin_sidebar.html' %}
+    <main class="gallery-admin">
+      <header class="gallery-admin-heading"><div><p>SUPERADMIN / WEBSITE CONTENT</p><h1>Gallery manager</h1><span>Publish events, field work and behind-the-scenes moments on a dedicated public page.</span></div><a href="/gallery" target="_blank">View public gallery ↗</a></header>
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+      <section class="gallery-upload"><header><span>NEW GALLERY STORY</span><h2>Upload a picture</h2></header><form method="post" action="/admin/gallery/new" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><label>Title<input name="title" required placeholder="Event or behind-the-scenes title" /></label><label>Category<input name="category" required value="Behind the scenes" /></label><label>Event date<input name="event_date" type="date" /></label><label>Album name<input name="album_name" placeholder="Optional — use the same name to group pictures" /></label><label>Order<input name="display_order" type="number" min="1" value="1" /></label><label class="wide">Description<textarea name="description" maxlength="1000" placeholder="What was happening in this photo?"></textarea></label><label class="wide">Picture<input type="file" name="image_file" accept="image/png,image/jpeg,image/webp" data-image-editor data-aspect="1.6" required /></label><button>Publish picture</button></form></section>
+      <section class="gallery-records">
+        <header><span>PUBLISHED GALLERY</span><h2>{{ gallery_items|length }} media item{{ '' if gallery_items|length == 1 else 's' }}</h2></header>
+        <div class="gallery-admin-grid">
+          {% for record in gallery_records %}{% if record.kind == 'album' %}{% set album = record.value %}
+          <details class="gallery-record gallery-album-record">
+            <summary><img src="{{ album.cover_src }}" alt="" /><span><small>ALBUM &middot; {{ album["items"]|length }} PHOTOS{% if album.event_date %} &middot; {{ album.event_date }}{% endif %}</small><b>{{ album.name }}</b><em>{{ album.description or 'No description' }}</em></span><i>Edit album</i></summary>
+            <div class="gallery-album-editor">
+              <form method="post" action="/admin/gallery/album/cover" class="album-cover-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="album_name" value="{{ album.name }}" />
+                <h3>Choose album thumbnail</h3><p>Select the picture visitors will see as the album cover.</p>
+                <div class="album-cover-grid">{% for photo in album["items"] %}<label><input type="radio" name="cover_id" value="{{ photo.id }}" {% if photo.id == album.cover_id %}checked{% endif %} /><img src="{{ photo.image_src }}" alt="{{ photo.title }}" /><span>{{ 'Current cover' if photo.id == album.cover_id else 'Use as cover' }}</span></label>{% endfor %}</div>
+                <button>Save album thumbnail</button>
+              </form>
+              <div class="album-photo-list">{% for item in album["items"] %}<details><summary><img src="{{ item.image_src }}" alt="" /><span>{{ item.title }}</span><i>Edit photo</i></summary><div><form method="post" action="/admin/gallery/{{ item.id }}/edit" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><label>Title<input name="title" value="{{ item.title }}" required /></label><label>Category<input name="category" value="{{ item.category }}" required /></label><label>Event date<input name="event_date" type="date" value="{{ item.event_date or '' }}" /></label><label>Album name<input name="album_name" value="{{ item.album_name }}" /></label><label>Order<input name="display_order" type="number" min="0" value="{{ item.display_order }}" /></label><label class="wide">Description<textarea name="description" maxlength="1000">{{ item.description }}</textarea></label><label class="wide">Replace picture<input type="file" name="image_file" accept="image/png,image/jpeg,image/webp" data-image-editor data-aspect="1.6" /></label><button>Save photo</button></form><form class="delete" method="post" action="/admin/gallery/{{ item.id }}/delete" onsubmit="return confirm('Delete this album photo?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Delete photo</button></form></div></details>{% endfor %}</div>
+            </div>
+          </details>
+          {% else %}{% set item = record.value %}<details class="gallery-record"><summary>{% if item.media_type == 'video' %}<span class="gallery-admin-video">VIDEO ▶</span>{% else %}<img src="{{ item.image_src }}" alt="" />{% endif %}<span><small>{{ item.category }}{% if item.event_date %} · {{ item.event_date }}{% endif %}</small><b>{{ item.title }}</b><em>{{ item.description or 'No description' }}</em></span><i>Edit</i></summary><div><form method="post" action="/admin/gallery/{{ item.id }}/edit" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><label>Title<input name="title" value="{{ item.title }}" required /></label><label>Category<input name="category" value="{{ item.category }}" required /></label><label>Event date<input name="event_date" type="date" value="{{ item.event_date or '' }}" /></label><label>Album name<input name="album_name" value="{{ item.album_name or '' }}" placeholder="Optional" /></label><label>Order<input name="display_order" type="number" min="0" value="{{ item.display_order }}" /></label><label class="wide">Description<textarea name="description" maxlength="1000">{{ item.description }}</textarea></label>{% if item.media_type != 'video' %}<label class="wide">Replace picture<input type="file" name="image_file" accept="image/png,image/jpeg,image/webp" data-image-editor data-aspect="1.6" /></label>{% endif %}<button>Save changes</button></form><form class="delete" method="post" action="/admin/gallery/{{ item.id }}/delete" onsubmit="return confirm('Delete this gallery item?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Delete item</button></form></div></details>{% endif %}{% endfor %}
+          {% if not gallery_items %}<p class="empty">No media has been uploaded yet.</p>{% endif %}
+        </div>
+      </section>
+    </main>
+    <dialog class="image-editor" data-image-editor-dialog><form method="dialog"><header><div><span>IMAGE EDITOR</span><h2>Resize and position</h2></div><button value="cancel" aria-label="Close">×</button></header></form><div class="image-editor-stage"><canvas data-image-canvas></canvas></div><div class="image-editor-controls"><label>Zoom<input type="range" min="1" max="3" step="0.01" value="1" data-image-zoom /></label><label>Horizontal position<input type="range" min="-1" max="1" step="0.01" value="0" data-image-x /></label><label>Vertical position<input type="range" min="-1" max="1" step="0.01" value="0" data-image-y /></label></div><footer><button type="button" class="secondary" data-image-cancel>Cancel</button><button type="button" data-image-apply>Use resized image</button></footer></dialog>
+    <script src="{{ url_for('static', filename='js/portfolio-image-editor.js') }}" defer></script>
+  </body>
+</html>

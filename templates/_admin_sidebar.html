@@ -92,6 +92,9 @@ request.path.startswith('/admin/activity') %}
     <a class="admin-nav-home {{ 'active' if request.path.startswith('/admin/portfolio') else '' }}" href="/admin/portfolio">
       <span class="admin-nav-icon" aria-hidden="true">▧</span><span>Clients &amp; partners</span>
     </a>
+    <a class="admin-nav-home {{ 'active' if request.path.startswith('/admin/gallery') else '' }}" href="/admin/gallery">
+      <span class="admin-nav-icon" aria-hidden="true">▦</span><span>Gallery</span>
+    </a>
     {% endif %}
     <a class="admin-nav-home" href="/storefront" target="_blank">
       <span class="admin-nav-icon" aria-hidden="true">↗</span

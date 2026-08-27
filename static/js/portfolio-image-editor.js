@@ -19,10 +19,11 @@
     const [width, height] = dimensions();
     canvas.width = width;
     canvas.height = height;
-    const baseScale = Math.max(
-      width / sourceImage.naturalWidth,
-      height / sourceImage.naturalHeight,
-    );
+    // Wide partner logos should fit entirely inside the holder. Client
+    // photography continues to use cover so it fills its card.
+    const baseScale = Number(activeInput?.dataset.aspect || 1.6) >= 2
+      ? Math.min(width / sourceImage.naturalWidth, height / sourceImage.naturalHeight)
+      : Math.max(width / sourceImage.naturalWidth, height / sourceImage.naturalHeight);
     const scale = baseScale * Number(zoom.value);
     const drawWidth = sourceImage.naturalWidth * scale;
     const drawHeight = sourceImage.naturalHeight * scale;

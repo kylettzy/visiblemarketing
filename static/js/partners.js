@@ -2,7 +2,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const buttons = [...document.querySelectorAll("[data-partner-filter]")];
   const groups = [...document.querySelectorAll("[data-partner-group]")];
   const search = document.querySelector("[data-partner-search]");
-  let activeCategory = "all";
+  const storageKey = `vtic-active-tab:${location.pathname}`;
+  let activeCategory = sessionStorage.getItem(storageKey) || "all";
 
   const update = () => {
     const query = (search?.value || "").trim().toLowerCase();
@@ -20,8 +21,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   buttons.forEach((button) => button.addEventListener("click", () => {
     activeCategory = button.dataset.partnerFilter;
+    sessionStorage.setItem(storageKey, activeCategory);
     buttons.forEach((item) => item.classList.toggle("active", item === button));
     update();
   }));
   search?.addEventListener("input", update);
+  const activeButton = buttons.find(
+    (button) => button.dataset.partnerFilter === activeCategory,
+  ) || buttons[0];
+  activeCategory = activeButton?.dataset.partnerFilter || "all";
+  buttons.forEach((item) => item.classList.toggle("active", item === activeButton));
+  update();
 });

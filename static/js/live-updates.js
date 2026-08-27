@@ -11,22 +11,24 @@
   );
   let baseline = null;
   let checking = false;
-  let formIsDirty = false;
-  let updateWaiting = false;
 
-  const stateKey = (state) =>
-    JSON.stringify({
-      reviews: state.reviews,
-      messages: state.messages,
-      calendar: state.calendar,
-    });
-
-  const hasActiveEditing = () => {
-    const active = document.activeElement;
-    const editing =
-      active?.matches?.("input:not([type='checkbox']):not([type='radio']), textarea, select") ??
-      false;
-    return editing || formIsDirty || Boolean(document.querySelector("dialog[open]"));
+  const stateKey = (state) => {
+    if (location.pathname.startsWith("/admin/messages")) {
+      return JSON.stringify({ messages: state.messages });
+    }
+    if (location.pathname.startsWith("/admin/calendar")) {
+      return JSON.stringify({ calendar: state.calendar });
+    }
+    if (
+      location.pathname.startsWith("/admin/review-requests") ||
+      location.pathname.startsWith("/account/reviews")
+    ) {
+      return JSON.stringify({ reviews: state.reviews, messages: state.messages });
+    }
+    if (location.pathname.startsWith("/admin/catered-customers")) {
+      return JSON.stringify({ reviews: state.reviews });
+    }
+    return "";
   };
 
   const showRefreshBanner = () => {
@@ -35,19 +37,14 @@
     banner.className = "live-update-banner";
     banner.dataset.liveUpdateBanner = "";
     banner.innerHTML =
-      '<span><b>New activity received</b><small>Messages or project information changed.</small></span><button type="button">Refresh now</button>';
+      '<span><b>New activity received</b><small>Refresh when you are ready to view the latest information.</small></span><button type="button">Refresh now</button>';
     banner.querySelector("button").addEventListener("click", () => location.reload());
     document.body.appendChild(banner);
   };
 
   const applyUpdate = () => {
     if (!shouldRefreshPage) return;
-    if (document.visibilityState !== "visible" || hasActiveEditing()) {
-      updateWaiting = true;
-      showRefreshBanner();
-      return;
-    }
-    location.reload();
+    showRefreshBanner();
   };
 
   const check = async () => {
@@ -71,16 +68,9 @@
     }
   };
 
-  document.addEventListener("input", (event) => {
-    if (event.target.closest("form")) formIsDirty = true;
-  });
-  document.addEventListener("submit", () => {
-    formIsDirty = false;
-  });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-      if (updateWaiting && !hasActiveEditing()) location.reload();
-      else check();
+      check();
     }
   });
 

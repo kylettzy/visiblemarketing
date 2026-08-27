@@ -44,6 +44,7 @@
             <summary>Our partners<br />and clients <i></i></summary>
             <div><a href="/partners">Partners</a><a href="/clients">Clients</a></div>
           </details>
+          <a href="/gallery">Gallery</a>
           <a href="#approach">Our approach</a>
           <a href="mailto:sales@vtic.com.ph">Contact</a>
         </nav>
@@ -66,8 +67,31 @@
 
     <main>
       <section class="hero">
-        <div class="hero-glow hero-glow--left" aria-hidden="true"></div>
-        <div class="hero-glow hero-glow--right" aria-hidden="true"></div>
+        <div class="hero-solution-reel" data-solution-reel>
+          <video
+            autoplay
+            muted
+            playsinline
+            preload="metadata"
+            aria-label="VTIC integrated technology solutions"
+            data-solution-reel-video
+          >
+            <source
+              src="{{ url_for('static', filename='videos/integrated-solutions.mp4') }}"
+              type="video/mp4"
+            />
+          </video>
+          <div class="hero-solution-reel__shade" aria-hidden="true"></div>
+          <div class="hero-solution-reel__nav" aria-label="Choose a solution video">
+            <button class="is-active" type="button" data-video="{{ url_for('static', filename='videos/integrated-solutions.mp4') }}" data-title="Integrated solutions" data-link="#capabilities">Overview</button>
+            <button type="button" data-video="{{ url_for('static', filename='videos/physical-security.mp4') }}" data-title="Physical security" data-link="/solutions/physical-security">Physical</button>
+            <button type="button" data-video="{{ url_for('static', filename='videos/information-security.mp4', v='3') }}" data-title="Information security" data-link="/solutions/information-security">Security</button>
+            <button type="button" data-video="{{ url_for('static', filename='videos/wireless-connectivity.mp4') }}" data-title="Wireless connectivity" data-link="/solutions/wireless-connectivity">Wireless</button>
+            <button type="button" data-video="{{ url_for('static', filename='videos/communication.mp4', v='3') }}" data-title="Communication" data-link="/solutions/communication">Communication</button>
+            <button type="button" data-video="{{ url_for('static', filename='videos/technology-backbone.mp4', v='3') }}" data-title="Technology backbone" data-link="/solutions/technology-backbone">Backbone</button>
+            <button type="button" data-video="{{ url_for('static', filename='videos/cloud-computing.mp4', v='3') }}" data-title="Cloud computing" data-link="/solutions/cloud-computing">Cloud</button>
+          </div>
+        </div>
         <div class="shell hero-grid">
           <div class="hero-copy">
             <p class="eyebrow">PHILIPPINE ENTERPRISE TECHNOLOGY PARTNER</p>
@@ -94,55 +118,6 @@
               >
               {% endif %}
             </div>
-          </div>
-          <div
-            class="hero-architecture"
-            aria-label="VTIC delivery architecture"
-          >
-            <span class="architecture-label">VTIC / DELIVERY ARCHITECTURE</span>
-            <div class="architecture-ring architecture-ring--outer"></div>
-            <div class="architecture-ring architecture-ring--middle"></div>
-            <div class="architecture-core">
-              <small>ONE ACCOUNTABLE PARTNER</small>
-              <img
-                src="{{ url_for('static', filename='images/vtic-logo.png') }}"
-                alt="Visible Technologies International Corporation"
-              />
-              <span>DESIGN · SOURCE · DEPLOY · SUPPORT</span>
-            </div>
-            <div class="architecture-node architecture-node--network">
-              <i>01</i><b>Networks</b>
-            </div>
-            <div class="architecture-node architecture-node--security">
-              <i>02</i><b>Security</b>
-            </div>
-            <div class="architecture-node architecture-node--cloud">
-              <i>03</i><b>Cloud</b>
-            </div>
-            <div class="architecture-node architecture-node--physical">
-              <i>04</i><b>Physical</b>
-            </div>
-          </div>
-        </div>
-        <div class="hero-metrics shell" aria-label="VTIC service commitments">
-          <div>
-            <span>17+</span>
-            <p>YEARS OF INDUSTRY LEADERSHIP</p>
-          </div>
-          <div>
-            <span>06</span>
-            <p>CONNECTED SOLUTION DISCIPLINES</p>
-          </div>
-          <div>
-            <span>01</span>
-            <p>ACCOUNTABLE DELIVERY PARTNER</p>
-          </div>
-        </div>
-        <div class="hero-strip">
-          <div class="shell">
-            <span>NETWORKS</span><i></i><span>DATA CENTER</span><i></i
-            ><span>CLOUD</span><i></i><span>CYBERSECURITY</span><i></i
-            ><span>CCTV</span><i></i><span>ENTERPRISE COMMUNICATIONS</span>
           </div>
         </div>
       </section>
@@ -475,8 +450,8 @@
             class="social-links"
             aria-label="Visible Technologies social channels"
           >
-            <span title="Facebook" aria-label="Facebook">f</span>
-            <span title="Instagram" aria-label="Instagram">◎</span>
+            <a href="https://www.facebook.com/visibletechintlcorp" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Visit VTIC on Facebook">f</a>
+            <a href="https://www.instagram.com/visibletechintlcorp/" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Visit VTIC on Instagram">◎</a>
             <span title="LinkedIn" aria-label="LinkedIn">in</span>
           </div>
         </div>
@@ -517,6 +492,10 @@
     </footer>
     <script
       src="{{ url_for('static', filename='js/landing-nav.js') }}"
+      defer
+    ></script>
+    <script
+      src="{{ url_for('static', filename='js/landing-solution-reel.js') }}"
       defer
     ></script>
   </body>

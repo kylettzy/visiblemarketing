@@ -1,0 +1,7 @@
+Options -Indexes
+
+PassengerEnabled on
+PassengerAppRoot /home2/visiblg1/repositories/visiblemarketing
+PassengerAppType wsgi
+PassengerStartupFile passenger_wsgi.py
+

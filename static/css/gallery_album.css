@@ -173,9 +173,13 @@
   cursor: pointer;
   transform: translateY(-50%);
 }
+.gallery-lightbox > .gallery-lightbox-nav {
+  top: 50%;
+  right: auto;
+}
 .gallery-lightbox.is-album .gallery-lightbox-nav { display: block; }
 .gallery-lightbox-prev { left: 14px; }
-.gallery-lightbox-next { right: 14px; }
+.gallery-lightbox > .gallery-lightbox-next { right: 14px; }
 .gallery-download {
   position: absolute;
   z-index: 4;
@@ -194,3 +198,26 @@
   cursor: pointer;
 }
 .gallery-download:hover { background: #2866ff; }
+
+@media (max-width: 540px) {
+  .gallery-download {
+    top: 14px;
+    right: 58px;
+    min-height: 34px;
+    padding-inline: 11px;
+    font-size: 8px;
+  }
+
+  .gallery-lightbox > button[data-gallery-close] {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .gallery-lightbox > .gallery-lightbox-nav {
+    top: 50%;
+    width: 40px;
+    height: 40px;
+  }
+}

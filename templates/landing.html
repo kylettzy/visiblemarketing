@@ -27,26 +27,55 @@
             alt="Visible Technologies International Corporation"
           />
         </a>
-        <nav aria-label="Main navigation">
+        <button
+          class="mobile-nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="landing-navigation"
+          aria-label="Open navigation"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav id="landing-navigation" aria-label="Main navigation">
           <a href="#company">Company</a>
           <details class="landing-menu">
             <summary>Solutions <i></i></summary>
             <div>
               <a href="/solutions/physical-security">Physical security</a>
               <a href="/solutions/information-security">Information security</a>
-              <a href="/solutions/wireless-connectivity">Wireless connectivity</a>
+              <a href="/solutions/wireless-connectivity"
+                >Wireless connectivity</a
+              >
               <a href="/solutions/communication">Communication</a>
               <a href="/solutions/technology-backbone">Technology backbone</a>
               <a href="/solutions/cloud-computing">Cloud computing</a>
             </div>
           </details>
           <details class="landing-menu landing-menu--compact">
-            <summary>Our partners<br />and clients <i></i></summary>
-            <div><a href="/partners">Partners</a><a href="/clients">Clients</a></div>
+            <summary>Our partners<br /> and clients <i></i></summary>
+            <div>
+              <a href="/partners">Partners</a><a href="/clients">Clients</a>
+            </div>
           </details>
           <a href="/gallery">Gallery</a>
           <a href="#approach">Our approach</a>
           <a href="mailto:sales@vtic.com.ph">Contact</a>
+          <div class="mobile-account-actions">
+            {% if session.get('customer_id') %}
+            <span>Welcome, {{ session.customer_name }}</span>
+            <a class="button button--solid" href="/storefront"
+              >Open solutions catalog</a
+            >
+            {% elif session.get('admin_id') %}
+            <span>Welcome, {{ session.admin_username }}</span>
+            <a class="button button--solid" href="/admin"
+              >Go to admin console</a
+            >
+            {% else %}
+            <a class="sign-in" href="/login">Sign in</a>
+            <a class="button button--solid" href="/register">Create account</a>
+            {% endif %}
+          </div>
         </nav>
         <div class="account-actions">
           {% if session.get('customer_id') %}
@@ -82,21 +111,76 @@
             />
           </video>
           <div class="hero-solution-reel__shade" aria-hidden="true"></div>
-          <div class="hero-solution-reel__nav" aria-label="Choose a solution video">
-            <button class="is-active" type="button" data-video="{{ url_for('static', filename='videos/integrated-solutions.mp4') }}" data-title="Integrated solutions" data-link="#capabilities">Overview</button>
-            <button type="button" data-video="{{ url_for('static', filename='videos/physical-security.mp4') }}" data-title="Physical security" data-link="/solutions/physical-security">Physical</button>
-            <button type="button" data-video="{{ url_for('static', filename='videos/information-security.mp4', v='3') }}" data-title="Information security" data-link="/solutions/information-security">Security</button>
-            <button type="button" data-video="{{ url_for('static', filename='videos/wireless-connectivity.mp4') }}" data-title="Wireless connectivity" data-link="/solutions/wireless-connectivity">Wireless</button>
-            <button type="button" data-video="{{ url_for('static', filename='videos/communication.mp4', v='3') }}" data-title="Communication" data-link="/solutions/communication">Communication</button>
-            <button type="button" data-video="{{ url_for('static', filename='videos/technology-backbone.mp4', v='3') }}" data-title="Technology backbone" data-link="/solutions/technology-backbone">Backbone</button>
-            <button type="button" data-video="{{ url_for('static', filename='videos/cloud-computing.mp4', v='3') }}" data-title="Cloud computing" data-link="/solutions/cloud-computing">Cloud</button>
+          <div
+            class="hero-solution-reel__nav"
+            aria-label="Choose a solution video"
+          >
+            <button
+              class="is-active"
+              type="button"
+              data-video="{{ url_for('static', filename='videos/integrated-solutions.mp4') }}"
+              data-title="Integrated solutions"
+              data-link="#capabilities"
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              data-video="{{ url_for('static', filename='videos/physical-security.mp4') }}"
+              data-title="Physical security"
+              data-link="/solutions/physical-security"
+            >
+              Physical
+            </button>
+            <button
+              type="button"
+              data-video="{{ url_for('static', filename='videos/information-security.mp4', v='3') }}"
+              data-title="Information security"
+              data-link="/solutions/information-security"
+            >
+              Security
+            </button>
+            <button
+              type="button"
+              data-video="{{ url_for('static', filename='videos/wireless-connectivity.mp4') }}"
+              data-title="Wireless connectivity"
+              data-link="/solutions/wireless-connectivity"
+            >
+              Wireless
+            </button>
+            <button
+              type="button"
+              data-video="{{ url_for('static', filename='videos/communication.mp4', v='3') }}"
+              data-title="Communication"
+              data-link="/solutions/communication"
+            >
+              Communication
+            </button>
+            <button
+              type="button"
+              data-video="{{ url_for('static', filename='videos/technology-backbone.mp4', v='3') }}"
+              data-title="Technology backbone"
+              data-link="/solutions/technology-backbone"
+            >
+              Backbone
+            </button>
+            <button
+              type="button"
+              data-video="{{ url_for('static', filename='videos/cloud-computing.mp4', v='3') }}"
+              data-title="Cloud computing"
+              data-link="/solutions/cloud-computing"
+            >
+              Cloud
+            </button>
           </div>
         </div>
         <div class="shell hero-grid">
           <div class="hero-copy">
             <p class="eyebrow">PHILIPPINE ENTERPRISE TECHNOLOGY PARTNER</p>
             <h1>
-              Transforming your Businesses<br /><span>through innovative IT Solutions!</span>
+              Transforming your Businesses<br /><span
+                >through innovative IT Solutions!</span
+              >
             </h1>
             <p class="hero-intro">
               Visible Technologies International Corporation helps organizations
@@ -203,7 +287,9 @@
                 and data-center foundations.
               </p>
               <small>CONNECTIVITY / PERFORMANCE</small>
-              <a class="capability-link" href="/solutions/technology-backbone">Explore solution →</a>
+              <a class="capability-link" href="/solutions/technology-backbone"
+                >Explore solution →</a
+              >
             </article>
             <article>
               <span>02</span>
@@ -213,7 +299,9 @@
                 layered enterprise defense.
               </p>
               <small>PROTECTION / RESILIENCE</small>
-              <a class="capability-link" href="/solutions/information-security">Explore solution →</a>
+              <a class="capability-link" href="/solutions/information-security"
+                >Explore solution →</a
+              >
             </article>
             <article>
               <span>03</span>
@@ -223,7 +311,9 @@
                 platforms.
               </p>
               <small>VOICE / COLLABORATION</small>
-              <a class="capability-link" href="/solutions/communication">Explore solution →</a>
+              <a class="capability-link" href="/solutions/communication"
+                >Explore solution →</a
+              >
             </article>
             <article>
               <span>04</span>
@@ -233,7 +323,9 @@
                 technologies.
               </p>
               <small>VISIBILITY / CONTROL</small>
-              <a class="capability-link" href="/solutions/physical-security">Explore solution →</a>
+              <a class="capability-link" href="/solutions/physical-security"
+                >Explore solution →</a
+              >
             </article>
             <article>
               <span>05</span>
@@ -243,7 +335,9 @@
                 workloads.
               </p>
               <small>CAPACITY / SCALE</small>
-              <a class="capability-link" href="/solutions/cloud-computing">Explore solution →</a>
+              <a class="capability-link" href="/solutions/cloud-computing"
+                >Explore solution →</a
+              >
             </article>
             <article class="capability-cta">
               <p>Not sure where to begin?</p>
@@ -398,8 +492,8 @@
                 <i>04</i><span>How do we begin a consultation?</span><b>+</b>
               </summary>
               <p>
-                Create a customer account, use the VTIC Advisor or
-                contact the project desk. We will help structure the next step.
+                Create a customer account, use the VTIC Advisor or contact the
+                project desk. We will help structure the next step.
               </p>
             </details>
           </div>
@@ -450,8 +544,22 @@
             class="social-links"
             aria-label="Visible Technologies social channels"
           >
-            <a href="https://www.facebook.com/visibletechintlcorp" target="_blank" rel="noopener noreferrer" title="Facebook" aria-label="Visit VTIC on Facebook">f</a>
-            <a href="https://www.instagram.com/visibletechintlcorp/" target="_blank" rel="noopener noreferrer" title="Instagram" aria-label="Visit VTIC on Instagram">◎</a>
+            <a
+              href="https://www.facebook.com/visibletechintlcorp"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Facebook"
+              aria-label="Visit VTIC on Facebook"
+              >f</a
+            >
+            <a
+              href="https://www.instagram.com/visibletechintlcorp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Instagram"
+              aria-label="Visit VTIC on Instagram"
+              >◎</a
+            >
             <span title="LinkedIn" aria-label="LinkedIn">in</span>
           </div>
         </div>

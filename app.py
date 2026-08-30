@@ -31,7 +31,7 @@ from flask import (
     url_for,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
+from werkzeug.utils import safe_join, secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 try:
@@ -46,6 +46,7 @@ IS_VERCEL = bool(os.environ.get("VERCEL"))
 DEFAULT_RUNTIME_ROOT = Path("/tmp/vtic-store") if IS_VERCEL else APP_ROOT
 RUNTIME_ROOT = Path(os.environ.get("VTIC_RUNTIME_ROOT", DEFAULT_RUNTIME_ROOT))
 STATIC_ROOT = APP_ROOT / "static"
+BUNDLED_UPLOAD_ROOT = APP_ROOT / "uploads"
 
 # Vercel's deployed bundle is read-only. Flask's normal static handler is also
 # bypassed by Vercel, so static assets are served explicitly from the bundle and
@@ -163,6 +164,11 @@ def uploaded_file(kind, filename):
     directory = upload_directories.get(kind)
     if directory is None:
         abort(404)
+    runtime_file = safe_join(directory, filename)
+    if runtime_file and Path(runtime_file).is_file():
+        return send_from_directory(directory, filename)
+    if IS_VERCEL:
+        return send_from_directory(BUNDLED_UPLOAD_ROOT / kind, filename)
     return send_from_directory(directory, filename)
 
 

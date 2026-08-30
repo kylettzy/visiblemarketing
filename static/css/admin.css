@@ -1212,6 +1212,69 @@ body {
   box-shadow: 0 0 9px var(--admin-accent);
 }
 
+.admin-nav-icon--settings {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #eaf9fd;
+  background: rgba(104, 223, 247, 0.14);
+  font-family: Inter, Arial, sans-serif;
+  font-size: 14px;
+}
+
+.admin-sidebar .admin-settings-list {
+  gap: 5px;
+  margin-left: 14px;
+  padding: 8px 0 8px 12px;
+}
+
+.admin-sidebar .admin-settings-list > a,
+.admin-settings-list .admin-nav-signout button {
+  min-height: 43px;
+  padding: 0 10px;
+  gap: 11px;
+  font-size: 0.68rem;
+}
+
+.admin-sidebar .admin-settings-list > a::before,
+.admin-settings-list .admin-nav-signout button::before {
+  content: none;
+  display: none;
+}
+
+.admin-settings-icon {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #d9f7fd;
+  background: rgba(122, 151, 164, 0.22);
+  font-family: Inter, Arial, sans-serif;
+  font-size: 13px;
+}
+
+.admin-settings-list a > i {
+  margin-left: auto;
+  color: #7896a4;
+  font-style: normal;
+  font-size: 18px;
+}
+
+.admin-sidebar .admin-settings-list > a.active {
+  padding-left: 10px;
+  border-left-width: 1px;
+}
+
+.admin-sidebar .admin-settings-list > a.active .admin-settings-icon {
+  color: #fff;
+  background: var(--admin-accent);
+  box-shadow: 0 0 12px rgba(17, 186, 227, 0.45);
+}
+
 .admin-sidebar-footer {
   padding-inline: 13px;
 }

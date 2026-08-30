@@ -3,6 +3,7 @@
   "framework": "flask",
   "functions": {
     "app.py": {
+      "includeFiles": "uploads/**",
       "excludeFiles": "{.venv/**,__pycache__/**,**/*.pyc,vtic_store.db}"
     }
   }

@@ -72,6 +72,74 @@
   .gallery-card:nth-child(n) > button {
     height: min(118vw, 460px);
   }
+
+  .gallery-swipe {
+    position: relative;
+    height: min(118vw, 460px);
+    overflow: hidden;
+    background: #dce7ec;
+  }
+
+  .gallery-swipe__track {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gallery-swipe__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gallery-swipe__slide {
+    width: 100%;
+    height: 100%;
+    min-width: 100%;
+    padding: 0;
+    flex: 0 0 100%;
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    border: 0;
+    background: #dce7ec;
+  }
+
+  .gallery-swipe__slide img,
+  .gallery-swipe__slide video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .gallery-swipe__counter,
+  .gallery-swipe__hint {
+    position: absolute;
+    z-index: 2;
+    bottom: 14px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    color: #fff !important;
+    background: rgba(6, 21, 33, 0.84);
+    font: 600 8px "DM Mono", monospace !important;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+
+  .gallery-swipe__counter {
+    right: 14px;
+  }
+
+  .gallery-swipe__hint {
+    left: 14px;
+  }
 }
 .gallery-album-count {
   position: absolute;

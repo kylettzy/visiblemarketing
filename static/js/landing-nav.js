@@ -1,7 +1,7 @@
 (() => {
-  const header = document.querySelector(".site-header");
-  const navigation = document.querySelector("#landing-navigation");
-  const toggle = document.querySelector(".mobile-nav-toggle");
+  const header = document.querySelector(".site-header, .solution-header");
+  const navigation = document.querySelector("[data-mobile-navigation]");
+  const toggle = document.querySelector("[data-mobile-nav-toggle]");
   const menus = [...document.querySelectorAll(".landing-menu, .solution-menu")];
 
   const closeOthers = (activeMenu) => {

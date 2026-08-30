@@ -16,13 +16,15 @@
     <header class="solution-header">
       <div class="client-shell solution-header-inner">
         <a class="solution-brand" href="/" aria-label="Visible Technologies home"><img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" /></a>
-        <nav aria-label="Company navigation">
+        <button class="solution-mobile-nav-toggle" data-mobile-nav-toggle type="button" aria-expanded="false" aria-controls="gallery-navigation" aria-label="Open navigation"><span></span><span></span><span></span></button>
+        <nav id="gallery-navigation" data-mobile-navigation aria-label="Company navigation">
           <a class="solution-nav-link" href="/#company">Company</a>
           <details class="solution-menu"><summary>Solutions <i></i></summary><div>{% for slug, item in solutions.items() %}<a href="/solutions/{{ slug }}">{{ item.name }}</a>{% endfor %}</div></details>
-          <details class="solution-menu"><summary>Our partners<br />and clients <i></i></summary><div class="compact"><a href="/partners">Partners</a><a href="/clients">Clients</a></div></details>
+          <details class="solution-menu"><summary>Our partners<br /> and clients <i></i></summary><div class="compact"><a href="/partners">Partners</a><a href="/clients">Clients</a></div></details>
           <a class="solution-nav-link is-active" href="/gallery">Gallery</a>
           <a class="solution-nav-link" href="/#approach">Our approach</a>
           <a class="solution-nav-link" href="mailto:sales@vtic.ph">Contact</a>
+          <div class="solution-mobile-account">{% if session.get('customer_id') %}<span>Welcome, {{ session.customer_name }}</span><a class="primary" href="/storefront">Open solutions catalog</a>{% elif session.get('admin_id') %}<span>Welcome, {{ session.admin_username }}</span><a class="primary" href="/admin">Go to admin console</a>{% else %}<a class="sign-in" href="/login">Sign in</a><a class="primary" href="/register">Create account</a>{% endif %}</div>
         </nav>
         <div class="solution-account">{% if session.get('customer_id') %}<span>Welcome, {{ session.customer_name }}</span><a class="primary" href="/storefront">Open solutions catalog</a>{% elif session.get('admin_id') %}<span>Welcome, {{ session.admin_username }}</span><a class="primary" href="/admin">Go to admin console</a>{% else %}<a class="sign-in" href="/login">Sign in</a><a class="primary" href="/register">Create account</a>{% endif %}</div>
       </div>

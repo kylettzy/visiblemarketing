@@ -3,6 +3,7 @@
   const navigation = document.querySelector("[data-mobile-navigation]");
   const toggle = document.querySelector("[data-mobile-nav-toggle]");
   const menus = [...document.querySelectorAll(".landing-menu, .solution-menu")];
+  const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine)");
 
   const closeOthers = (activeMenu) => {
     menus.forEach((menu) => {
@@ -11,14 +12,16 @@
   };
 
   menus.forEach((menu) => {
-    menu.addEventListener("pointerenter", () => {
-      closeOthers(menu);
-      menu.open = true;
-    });
+    if (supportsHover.matches) {
+      menu.addEventListener("pointerenter", () => {
+        closeOthers(menu);
+        menu.open = true;
+      });
 
-    menu.addEventListener("pointerleave", () => {
-      menu.open = false;
-    });
+      menu.addEventListener("pointerleave", () => {
+        menu.open = false;
+      });
+    }
 
     menu.addEventListener("focusin", () => {
       closeOthers(menu);

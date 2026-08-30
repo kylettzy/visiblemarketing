@@ -2189,6 +2189,11 @@ def gallery_page():
             if video_url.startswith(("/", "http://", "https://"))
             else url_for("static", filename=video_url)
         ) if video_url else ""
+        item["poster_src"] = (
+            f"{video_url.rsplit('.', 1)[0]}-poster.jpg"
+            if item.get("media_type") == "video" and video_url
+            else item["image_src"]
+        )
         album_name = item.get("album_name", "").strip()
         key = f"album:{album_name}" if album_name else f"item:{item['id']}"
         if key not in albums:

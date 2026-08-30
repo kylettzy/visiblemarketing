@@ -129,8 +129,7 @@ body {
 }
 
 :root[data-theme="dark"] body > header,
-:root[data-theme="dark"] .site-header,
-:root[data-theme="dark"] header:not(.hero):not(.admin-header) {
+:root[data-theme="dark"] .site-header {
   border-color: var(--theme-border);
   background-color: var(--theme-header);
 }

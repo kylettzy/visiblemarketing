@@ -41,7 +41,7 @@
           name="csrf_token"
           value="{{ session.csrf_token }}"
         />
-        <section>
+        <section id="credentials" class="settings-anchor-section">
           <div class="account-intro">
             <span>{{ admin.username[:2]|upper }}</span>
             <div>
@@ -123,7 +123,11 @@
         </div>
       </form>
 
-      <section class="appearance-card" aria-labelledby="appearance-title">
+      <section
+        id="appearance"
+        class="appearance-card settings-anchor-section"
+        aria-labelledby="appearance-title"
+      >
         <div class="appearance-copy">
           <span>05</span>
           <div>
@@ -149,7 +153,11 @@
       </section>
 
       {% if session.admin_role == 'superadmin' %}
-      <section class="database-card" aria-labelledby="database-title">
+      <section
+        id="database"
+        class="database-card settings-anchor-section"
+        aria-labelledby="database-title"
+      >
         <div class="database-heading">
           <span>06</span>
           <div>

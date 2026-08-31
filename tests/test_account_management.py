@@ -85,6 +85,17 @@ class AccountManagementTests(unittest.TestCase):
             session["admin_role"] = "admin"
         self.assertEqual(self.client.get("/admin/accounts").status_code, 403)
 
+    def test_superadmin_settings_navigation_exposes_account_sections(self):
+        response = self.client.get("/admin/account")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'href="/admin/account#credentials"', response.data)
+        self.assertIn(b'href="/admin/account#appearance"', response.data)
+        self.assertIn(b'href="/admin/account#database"', response.data)
+        self.assertIn(b'id="credentials"', response.data)
+        self.assertIn(b'id="appearance"', response.data)
+        self.assertIn(b'id="database"', response.data)
+
     def test_active_superadmin_cannot_demote_themselves(self):
         response = self.client.post(
             "/admin/accounts/admin/1/edit",

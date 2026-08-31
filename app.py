@@ -1990,6 +1990,7 @@ PARTNER_PORTFOLIO = [
             ("Alibaba Cloud", "https://www.alibabacloud.com/"), ("IBM", "https://www.ibm.com/"),
             ("VMware", "https://www.vmware.com/"), ("Amazon Web Services", "https://aws.amazon.com/"),
             ("Microsoft Azure", "https://azure.microsoft.com/"), ("Supermicro", "https://www.supermicro.com/"),
+            ("StorageCraft", "https://www.storagecraft.com/"),
         ],
     },
 ]
@@ -2066,6 +2067,24 @@ def ensure_portfolio_seeded():
                         for partner_position, (name, website_url) in enumerate(group["partners"], start=1)
                     ],
                 )
+        partner_logo_position = 1
+        for group in PARTNER_PORTFOLIO:
+            for name, _website_url in group["partners"]:
+                database.execute(
+                    """UPDATE portfolio_partners
+                       SET logo_url = ?
+                       WHERE name = ?
+                         AND group_id = (
+                           SELECT id FROM portfolio_partner_groups WHERE slug = ?
+                         )
+                         AND (logo_url IS NULL OR TRIM(logo_url) = '')""",
+                    (
+                        f"/uploads/portfolio/partners/partner-{partner_logo_position:02d}.png",
+                        name,
+                        group["slug"],
+                    ),
+                )
+                partner_logo_position += 1
         if database.execute("SELECT COUNT(*) FROM gallery_items").fetchone()[0] == 0:
             database.executemany(
                 """INSERT INTO gallery_items

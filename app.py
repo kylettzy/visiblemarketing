@@ -11,8 +11,10 @@ import calendar
 import smtplib
 import re
 import click
+import tempfile
 from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
+from contextlib import closing
 from functools import wraps
 from pathlib import Path
 
@@ -26,6 +28,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     send_from_directory,
     session,
     url_for,
@@ -271,7 +274,7 @@ def login_required(view):
     def wrapped_view(*args, **kwargs):
         if not session.get("admin_id"):
             return redirect(url_for("admin_login", next=request.path))
-        with get_db() as database:
+        with closing(get_db()) as database:
             refresh_expired_account_statuses(database)
             account = database.execute(
                 "SELECT status FROM admins WHERE id = ?", (session["admin_id"],)
@@ -292,7 +295,7 @@ def customer_required(view):
             return redirect(url_for("customer_login", next=request.full_path))
         account_type = "admins" if session.get("admin_id") else "customers"
         account_id = session.get("admin_id") or session.get("customer_id")
-        with get_db() as database:
+        with closing(get_db()) as database:
             refresh_expired_account_statuses(database)
             account = database.execute(
                 f"SELECT status FROM {account_type} WHERE id = ?", (account_id,)
@@ -372,7 +375,7 @@ def superadmin_required(view):
             return redirect(url_for("admin_login", next=request.path))
         if session.get("admin_role") != "superadmin":
             abort(403)
-        with get_db() as database:
+        with closing(get_db()) as database:
             refresh_expired_account_statuses(database)
             account = database.execute(
                 "SELECT status FROM admins WHERE id = ?", (session["admin_id"],)
@@ -3326,6 +3329,110 @@ def admin_account():
                 flash("That username is already in use.", "error")
 
     return render_template("admin_account.html", admin=dict(admin))
+
+
+@app.route("/admin/database/backup")
+@superadmin_required
+def admin_database_backup():
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    temporary = tempfile.NamedTemporaryFile(
+        prefix="vtic-backup-", suffix=".db", dir=RUNTIME_ROOT, delete=False
+    )
+    backup_path = Path(temporary.name)
+    temporary.close()
+    try:
+        with closing(get_db()) as source, closing(
+            sqlite3.connect(backup_path)
+        ) as destination:
+            source.backup(destination)
+        response = send_file(
+            backup_path,
+            as_attachment=True,
+            download_name=f"vtic-database-{timestamp}.db",
+            mimetype="application/vnd.sqlite3",
+        )
+        response.headers["Cache-Control"] = "private, no-store"
+        response.call_on_close(lambda: backup_path.unlink(missing_ok=True))
+        return response
+    except Exception:
+        backup_path.unlink(missing_ok=True)
+        raise
+
+
+@app.route("/admin/database/restore", methods=["POST"])
+@superadmin_required
+def admin_database_restore():
+    validate_csrf()
+    uploaded = request.files.get("database_file")
+    current_password = request.form.get("current_password", "")
+    if not uploaded or not uploaded.filename:
+        flash("Choose a VTIC database backup to restore.", "error")
+        return redirect(url_for("admin_account"))
+    if Path(uploaded.filename).suffix.lower() not in {".db", ".sqlite", ".sqlite3"}:
+        flash("The restore file must be a SQLite .db, .sqlite or .sqlite3 backup.", "error")
+        return redirect(url_for("admin_account"))
+
+    with closing(get_db()) as database:
+        admin = database.execute(
+            "SELECT password_hash FROM admins WHERE id = ?", (session["admin_id"],)
+        ).fetchone()
+    if not admin or not check_password_hash(admin["password_hash"], current_password):
+        flash("The current superadmin password is incorrect.", "error")
+        return redirect(url_for("admin_account"))
+
+    restore_path = RUNTIME_ROOT / f"restore-{secrets.token_hex(12)}.db"
+    uploaded.save(restore_path)
+    required_tables = {"admins", "customers", "products", "manufacturers"}
+    try:
+        with closing(sqlite3.connect(restore_path)) as candidate:
+            integrity = candidate.execute("PRAGMA quick_check").fetchone()
+            tables = {
+                row[0]
+                for row in candidate.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            if not integrity or integrity[0] != "ok":
+                raise ValueError("The uploaded database failed its integrity check.")
+            missing_tables = sorted(required_tables - tables)
+            if missing_tables:
+                raise ValueError(
+                    "The backup is missing required VTIC tables: "
+                    + ", ".join(missing_tables)
+                    + "."
+                )
+            active_superadmin = candidate.execute(
+                """SELECT COUNT(*) FROM admins
+                   WHERE role = 'superadmin' AND status = 'active'"""
+            ).fetchone()[0]
+            if active_superadmin < 1:
+                raise ValueError(
+                    "The backup must contain at least one active superadmin account."
+                )
+
+        recovery_directory = RUNTIME_ROOT / "backups"
+        recovery_directory.mkdir(parents=True, exist_ok=True)
+        recovery_path = recovery_directory / (
+            "before-restore-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".db"
+        )
+        with closing(get_db()) as source, closing(
+            sqlite3.connect(recovery_path)
+        ) as destination:
+            source.backup(destination)
+
+        os.replace(restore_path, DATABASE)
+        for suffix in ("-wal", "-shm"):
+            Path(str(DATABASE) + suffix).unlink(missing_ok=True)
+        initialize_database()
+        ensure_portfolio_seeded()
+    except (sqlite3.DatabaseError, OSError, ValueError) as error:
+        restore_path.unlink(missing_ok=True)
+        flash(f"Database restore stopped: {error}", "error")
+        return redirect(url_for("admin_account"))
+
+    session.clear()
+    flash("Database restored successfully. Sign in using an account from the backup.", "success")
+    return redirect(url_for("admin_login"))
 
 
 @app.route("/admin/accounts")

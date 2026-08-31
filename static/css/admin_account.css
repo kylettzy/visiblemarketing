@@ -167,12 +167,130 @@
   font: 500 11px "DM Mono", monospace;
 }
 
+.database-card {
+  max-width: 760px;
+  margin-top: 22px;
+  padding: 28px;
+  border: 1px solid var(--theme-border, var(--line));
+  background: var(--theme-surface, #f3f6f7);
+}
+.database-heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--theme-border, var(--line));
+}
+.database-heading > span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--theme-border, var(--line));
+  color: var(--blue);
+  font: 500 11px "DM Mono", monospace;
+}
+.database-heading p {
+  margin: 0 0 8px;
+  color: var(--blue);
+  font: 500 9px "DM Mono", monospace;
+  letter-spacing: 0.12em;
+}
+.database-heading h2 {
+  margin: 0 0 7px;
+  color: var(--theme-text, var(--ink));
+}
+.database-heading small,
+.database-actions small {
+  color: var(--theme-muted, var(--muted));
+  font-size: 10px;
+  line-height: 1.55;
+}
+.database-actions article {
+  padding: 22px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--theme-border, var(--line));
+}
+.database-actions article:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.database-actions b,
+.database-actions small {
+  display: block;
+}
+.database-actions b {
+  margin-bottom: 6px;
+  color: var(--theme-text, var(--ink));
+  font-size: 12px;
+}
+.database-download,
+.database-restore-button {
+  padding: 12px 15px;
+  border: 0;
+  color: #fff;
+  background: linear-gradient(90deg, #2764ff, #15bce2);
+  font-size: 9px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.database-restore {
+  grid-template-columns: 1fr !important;
+}
+.database-restore form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.database-restore form > label {
+  display: grid;
+  gap: 7px;
+  color: var(--theme-text, var(--ink));
+  font-size: 9px;
+  font-weight: 700;
+}
+.database-restore input[type="file"],
+.database-restore input[type="password"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--theme-border, var(--line));
+  color: var(--theme-text, var(--ink));
+  background: var(--theme-surface-raised, #fff);
+}
+.database-restore .restore-confirm {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-muted, var(--muted));
+  font-weight: 500;
+}
+.restore-confirm input {
+  margin: 0;
+}
+.database-restore-button {
+  width: max-content;
+  grid-column: 1 / -1;
+  background: #b32929;
+}
+
 @media (max-width: 800px) {
   .account-fields {
     grid-template-columns: 1fr;
   }
 
   .appearance-card {
+    grid-template-columns: 1fr;
+  }
+
+  .database-actions article,
+  .database-restore form {
     grid-template-columns: 1fr;
   }
 }

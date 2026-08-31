@@ -147,6 +147,38 @@
           </small>
         </label>
       </section>
+
+      {% if session.admin_role == 'superadmin' %}
+      <section class="database-card" aria-labelledby="database-title">
+        <div class="database-heading">
+          <span>06</span>
+          <div>
+            <p>DATA PROTECTION</p>
+            <h2 id="database-title">Database backup &amp; restore</h2>
+            <small>
+              Download a complete copy of the current VTIC database or restore
+              the system from a previously downloaded backup.
+            </small>
+          </div>
+        </div>
+        <div class="database-actions">
+          <article>
+            <div><b>Download backup</b><small>Includes accounts, products, requests, portfolio records and gallery metadata.</small></div>
+            <a class="database-download" href="/admin/database/backup">Download .db backup ↓</a>
+          </article>
+          <article class="database-restore">
+            <div><b>Restore database</b><small>The current database will be saved as a server recovery copy before restoration.</small></div>
+            <form method="post" action="/admin/database/restore" enctype="multipart/form-data" onsubmit="return confirm('Restore this database backup? Current live data will be replaced and you will be signed out.');">
+              <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
+              <label>SQLite backup<input type="file" name="database_file" accept=".db,.sqlite,.sqlite3,application/vnd.sqlite3" required /></label>
+              <label>Current superadmin password<div class="password-control"><input type="password" name="current_password" autocomplete="current-password" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
+              <label class="restore-confirm"><input type="checkbox" required /><span>I understand that restored data replaces the current live database.</span></label>
+              <button class="database-restore-button" type="submit">Validate &amp; restore database</button>
+            </form>
+          </article>
+        </div>
+      </section>
+      {% endif %}
     </main>
     <script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
   </body>

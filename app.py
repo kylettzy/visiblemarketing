@@ -1462,11 +1462,29 @@ def initialize_database():
                SELECT DISTINCT brand FROM products WHERE trim(brand) != ''"""
         )
         admin_username = os.environ.get("VTIC_ADMIN_USERNAME", "admin")
-        admin_password = os.environ.get("VTIC_ADMIN_PASSWORD", "ChangeMe-VTIC-2026!")
-        if database.execute("SELECT COUNT(*) FROM admins").fetchone()[0] == 0:
+        configured_admin_password = os.environ.get("VTIC_ADMIN_PASSWORD")
+        admin_password = configured_admin_password or "ChangeMe-VTIC-2026!"
+        bootstrap_admin = database.execute(
+            "SELECT id FROM admins WHERE username = ? COLLATE NOCASE",
+            (admin_username,),
+        ).fetchone()
+        if not bootstrap_admin:
             database.execute(
                 "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
                 (admin_username, generate_password_hash(admin_password)),
+            )
+        elif configured_admin_password:
+            # A deployment-level recovery password must also repair an existing
+            # runtime database. This is essential on ephemeral serverless hosts,
+            # where an older /tmp database can outlive the code that created it.
+            database.execute(
+                """UPDATE admins
+                   SET password_hash = ?, status = 'active', status_expires_at = NULL
+                   WHERE id = ?""",
+                (
+                    generate_password_hash(configured_admin_password),
+                    bootstrap_admin["id"],
+                ),
             )
         database.execute("PRAGMA optimize")
 

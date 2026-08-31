@@ -1461,6 +1461,59 @@ def initialize_database():
             """INSERT OR IGNORE INTO manufacturers (name)
                SELECT DISTINCT brand FROM products WHERE trim(brand) != ''"""
         )
+        manufacturer_partner_logos = {
+            "3CX": 21,
+            "3M": 1,
+            "Alantek": 2,
+            "Aruba": 20,
+            "Avaya": 27,
+            "AWS": 53,
+            "Barracuda": 34,
+            "Belden": 3,
+            "Cambium Networks": 19,
+            "Cisco": 18,
+            "CyberArk": 40,
+            "Dahua": 41,
+            "Dell": 11,
+            "Dell EMC": 12,
+            "Extreme Networks": 13,
+            "Fluke Networks": 8,
+            "Fortinet": 39,
+            "GeoVision": 44,
+            "Hikvision": 42,
+            "Honeywell": 45,
+            "HPE": 20,
+            "IBM": 51,
+            "McAfee": 38,
+            "Microsoft": 49,
+            "Motorola": 28,
+            "Palo Alto Networks": 32,
+            "Panasonic": 22,
+            "Panduit": 4,
+            "Ruijie": 16,
+            "Sangfor": 7,
+            "SolarWinds": 6,
+            "SonicWall": 35,
+            "Sophos": 30,
+            "Sundray": 14,
+            "Supermicro": 55,
+            "Ubiquiti": 17,
+            "VMware": 52,
+            "WatchGuard": 33,
+            "WhatsUp Gold": 5,
+            "Zimbra": 29,
+        }
+        for manufacturer_name, partner_logo_position in manufacturer_partner_logos.items():
+            database.execute(
+                """UPDATE manufacturers
+                   SET logo_url = ?
+                   WHERE name = ? COLLATE NOCASE
+                     AND (logo_url IS NULL OR TRIM(logo_url) = '')""",
+                (
+                    f"/uploads/portfolio/partners/partner-{partner_logo_position:02d}.png",
+                    manufacturer_name,
+                ),
+            )
         admin_username = os.environ.get("VTIC_ADMIN_USERNAME", "admin")
         configured_admin_password = os.environ.get("VTIC_ADMIN_PASSWORD")
         admin_password = configured_admin_password or "ChangeMe-VTIC-2026!"

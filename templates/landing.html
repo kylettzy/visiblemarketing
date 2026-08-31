@@ -16,19 +16,23 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/landing.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/solution_header.css') }}"
+    />
     {% include '_theme.html' %}
   </head>
   <body>
-    <header class="site-header">
-      <div class="shell header-inner">
-        <a class="brand" href="/" aria-label="Visible Technologies home">
+    <header class="site-header solution-header">
+      <div class="shell header-inner solution-header-inner">
+        <a class="brand solution-brand" href="/" aria-label="Visible Technologies home">
           <img
             src="{{ url_for('static', filename='images/vtic-logo.png') }}"
             alt="Visible Technologies International Corporation"
           />
         </a>
         <button
-          class="mobile-nav-toggle"
+          class="mobile-nav-toggle solution-mobile-nav-toggle"
           data-mobile-nav-toggle
           type="button"
           aria-expanded="false"
@@ -38,8 +42,8 @@
           <span></span><span></span><span></span>
         </button>
         <nav id="landing-navigation" data-mobile-navigation aria-label="Main navigation">
-          <a href="#company">Company</a>
-          <details class="landing-menu">
+          <a class="solution-nav-link" href="#company">Company</a>
+          <details class="landing-menu solution-menu">
             <summary>Solutions <i></i></summary>
             <div>
               <a href="/solutions/physical-security">Physical security</a>
@@ -52,16 +56,16 @@
               <a href="/solutions/cloud-computing">Cloud computing</a>
             </div>
           </details>
-          <details class="landing-menu landing-menu--compact">
+          <details class="landing-menu landing-menu--compact solution-menu">
             <summary>Our partners<br /> and clients <i></i></summary>
             <div>
               <a href="/partners">Partners</a><a href="/clients">Clients</a>
             </div>
           </details>
-          <a href="/gallery">Gallery</a>
-          <a href="#approach">Our approach</a>
-          <a href="mailto:sales@vtic.com.ph">Contact</a>
-          <div class="mobile-account-actions">
+          <a class="solution-nav-link" href="/gallery">Gallery</a>
+          <a class="solution-nav-link" href="#approach">Our approach</a>
+          <a class="solution-nav-link" href="mailto:sales@vtic.com.ph">Contact</a>
+          <div class="mobile-account-actions solution-mobile-account">
             {% if session.get('customer_id') %}
             <span>Welcome, {{ session.customer_name }}</span>
             <a class="button button--solid" href="/storefront"
@@ -78,7 +82,7 @@
             {% endif %}
           </div>
         </nav>
-        <div class="account-actions">
+        <div class="account-actions solution-account">
           {% if session.get('customer_id') %}
           <span>Welcome, {{ session.customer_name }}</span>
           <a class="button button--solid" href="/storefront"

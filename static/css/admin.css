@@ -1308,3 +1308,29 @@ body {
     display: flex;
   }
 }
+
+/* Keep long administrator menus reachable without letting a short page cut the
+   sidebar background off at the viewport edge. */
+body > aside.admin-sidebar {
+  align-self: start;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 201, 228, 0.42) transparent;
+}
+
+@media (max-width: 800px) {
+  body > aside.admin-sidebar {
+    position: relative;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    scrollbar-gutter: auto;
+  }
+}

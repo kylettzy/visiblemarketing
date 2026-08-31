@@ -1569,8 +1569,11 @@ def customer_login():
             ).fetchone()
         if customer and check_password_hash(customer["password_hash"], password):
             if customer["status"] != "active":
+                message = f"This account is {customer['status']}. Contact VTIC for assistance."
+                if request.headers.get("X-Requested-With") == "fetch":
+                    return jsonify(ok=False, message=message, fields=["email"]), 403
                 flash(
-                    f"This account is {customer['status']}. Contact VTIC for assistance.",
+                    message,
                     "error",
                 )
                 return render_template(
@@ -1589,10 +1592,14 @@ def customer_login():
                 )
             log_activity("customer", customer["id"], customer["email"], "login")
             next_url = request.args.get("next", "")
-            return redirect(
-                next_url if next_url.startswith("/") else url_for("storefront")
-            )
-        flash("Invalid email or password.", "error")
+            destination = next_url if next_url.startswith("/") else url_for("storefront")
+            if request.headers.get("X-Requested-With") == "fetch":
+                return jsonify(ok=True, redirect=destination)
+            return redirect(destination)
+        message = "Invalid email or password."
+        if request.headers.get("X-Requested-With") == "fetch":
+            return jsonify(ok=False, message=message, fields=["email", "password"]), 401
+        flash(message, "error")
     return render_template(
         "customer_login.html", oauth_status=oauth_provider_status()
     )
@@ -1609,14 +1616,21 @@ def customer_register():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
+        error_message = None
+        error_fields = []
         if len(full_name) < 2:
-            flash("Enter your full name.", "error")
+            error_message, error_fields = "Enter your full name.", ["full_name"]
         elif "@" not in email or len(email) > 254:
-            flash("Enter a valid email address.", "error")
+            error_message, error_fields = "Enter a valid email address.", ["email"]
         elif password_error := password_strength_error(password):
-            flash(password_error, "error")
+            error_message, error_fields = password_error, ["password"]
         elif password != confirm_password:
-            flash("Password confirmation does not match.", "error")
+            error_message, error_fields = "Password confirmation does not match.", ["confirm_password"]
+
+        if error_message:
+            if request.headers.get("X-Requested-With") == "fetch":
+                return jsonify(ok=False, message=error_message, fields=error_fields), 400
+            flash(error_message, "error")
         else:
             try:
                 with get_db() as database:
@@ -1626,10 +1640,15 @@ def customer_register():
                     )
                     customer_id = cursor.lastrowid
                 log_activity("customer", customer_id, email, "register")
+                if request.headers.get("X-Requested-With") == "fetch":
+                    return jsonify(ok=True, redirect=url_for("customer_login"))
                 flash("Account created. You can now sign in.", "success")
                 return redirect(url_for("customer_login"))
             except sqlite3.IntegrityError:
-                flash("An account already uses that email address.", "error")
+                message = "An account already uses that email address."
+                if request.headers.get("X-Requested-With") == "fetch":
+                    return jsonify(ok=False, message=message, fields=["email"]), 409
+                flash(message, "error")
     return render_template(
         "customer_register.html",
         oauth_status=oauth_provider_status(),
@@ -3127,9 +3146,10 @@ def admin_login():
             ).fetchone()
         if admin and check_password_hash(admin["password_hash"], password):
             if admin["status"] != "active":
-                flash(
-                    f"This administrator account is {admin['status']}.", "error"
-                )
+                message = f"This administrator account is {admin['status']}."
+                if request.headers.get("X-Requested-With") == "fetch":
+                    return jsonify(ok=False, message=message, fields=["username"]), 403
+                flash(message, "error")
                 return render_template("admin_login.html")
             session.clear()
             session.permanent = request.form.get("remember_me") == "1"
@@ -3143,8 +3163,13 @@ def admin_login():
                     (admin["id"],),
                 )
             log_activity("admin", admin["id"], admin["username"], "admin_login")
+            if request.headers.get("X-Requested-With") == "fetch":
+                return jsonify(ok=True, redirect=url_for("admin_dashboard"))
             return redirect(url_for("admin_dashboard"))
-        flash("Invalid username or password.", "error")
+        message = "Invalid username or password."
+        if request.headers.get("X-Requested-With") == "fetch":
+            return jsonify(ok=False, message=message, fields=["username", "password"]), 401
+        flash(message, "error")
     return render_template("admin_login.html")
 
 

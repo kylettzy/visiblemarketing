@@ -4,49 +4,122 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Administrator Access | VTIC</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     {% include '_theme.html' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_login.css') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/admin_login.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/password-security.css') }}"
+    />
   </head>
   <body>
     <main class="access-shell">
       <section class="brand-panel" aria-labelledby="access-title">
         <a class="brand-mark" href="/" aria-label="Return to VTIC home">
-          <img src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" />
+          <img
+            src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+            alt="Visible Technologies International Corporation"
+          />
         </a>
         <div class="brand-message">
           <p class="eyebrow"><span></span> VTIC OPERATIONS NETWORK</p>
           <h1 id="access-title">Control your<br />technology operations.</h1>
-          <p class="brand-copy">A secure workspace for managing enterprise products, partner records, customer requests and commercial intelligence.</p>
+          <p class="brand-copy">
+            A secure workspace for managing enterprise products, partner
+            records, customer requests and commercial intelligence.
+          </p>
           <dl class="system-metrics" aria-label="Portal capabilities">
-            <div><dt>40+</dt><dd>Technology partners</dd></div>
-            <div><dt>Role</dt><dd>Controlled access</dd></div>
-            <div><dt>Live</dt><dd>Activity audit trail</dd></div>
+            <div>
+              <dt>40+</dt>
+              <dd>Technology partners</dd>
+            </div>
+            <div>
+              <dt>Role</dt>
+              <dd>Controlled access</dd>
+            </div>
+            <div>
+              <dt>Live</dt>
+              <dd>Activity audit trail</dd>
+            </div>
           </dl>
         </div>
-        <div class="system-status"><span class="status-dot"></span><span>SECURE GATEWAY</span><strong>ONLINE</strong></div>
+        <div class="system-status">
+          <span class="status-dot"></span><span>SECURE GATEWAY</span
+          ><strong>ONLINE</strong>
+        </div>
       </section>
       <section class="login-panel" aria-label="Administrator sign in">
         <div class="login-box">
           <header>
             <p class="portal-label">AUTHORIZED PERSONNEL / 01</p>
             <h2>Administrator access.</h2>
-            <span>Verify your credentials to enter the operations console.</span>
+            <span
+              >Verify your credentials to enter the operations console.</span
+            >
           </header>
-          {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, message in messages %}<div class="alert {{ category }}" role="alert">{{ message }}</div>{% endfor %}
-          {% endwith %}
-          <form method="post">
+          {% with messages = get_flashed_messages(with_categories=true) %} {%
+          for category, message in messages %}
+          <div class="alert {{ category }}" role="alert">{{ message }}</div>
+          {% endfor %} {% endwith %}
+          <form method="post" data-auth-ajax>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <label><span>Username</span><input name="username" autocomplete="username" placeholder="Enter administrator ID" required autofocus /></label>
-            <label><span>Password</span><div class="password-control"><input type="password" name="password" autocomplete="current-password" placeholder="Enter secure password" required /><button type="button" data-toggle-password aria-pressed="false">Show</button></div></label>
-            <label class="remember-session"><input type="checkbox" name="remember_me" value="1" /><span><b>Keep me signed in</b><small>Stay signed in on this device for 30 days.</small></span></label>
-            <button class="submit-button" type="submit">Enter operations portal <span>→</span></button>
+            <div
+              class="auth-inline-error"
+              data-auth-error
+              role="alert"
+              tabindex="-1"
+            ></div>
+            <label
+              ><span>Username</span
+              ><input
+                name="username"
+                autocomplete="username"
+                placeholder="Enter administrator ID"
+                required
+                autofocus
+            /></label>
+            <label
+              ><span>Password</span>
+              <div class="password-control">
+                <input
+                  type="password"
+                  name="password"
+                  autocomplete="current-password"
+                  placeholder="Enter secure password"
+                  required
+                /><button
+                  type="button"
+                  data-toggle-password
+                  aria-pressed="false"
+                >
+                  Show
+                </button>
+              </div></label
+            >
+            <label class="remember-session"
+              ><input type="checkbox" name="remember_me" value="1" /><span
+                ><b>Keep me signed in</b
+                ><small>Stay signed in on this device for 30 days.</small></span
+              ></label
+            >
+            <button class="submit-button" type="submit">
+              Enter operations portal <span>→</span>
+            </button>
           </form>
-          <footer class="login-footer"><a href="/">← Return to company website</a><span>Protected by role-based authentication</span></footer>
+          <footer class="login-footer">
+            <a href="/">← Return to company website</a
+            ><span>Protected by role-based authentication</span>
+          </footer>
         </div>
       </section>
     </main>
     <script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth-forms.js') }}"></script>
   </body>
 </html>

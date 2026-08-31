@@ -13,6 +13,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/customer_register.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/password-security.css') }}"
+    />
   </head>
   <body>
     <main class="access-shell customer-shell register-shell">
@@ -132,8 +136,14 @@
 
           <div class="auth-divider"><span>or use your company email</span></div>
 
-          <form method="post">
+          <form method="post" data-auth-ajax>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <div
+              class="auth-inline-error"
+              data-auth-error
+              role="alert"
+              tabindex="-1"
+            ></div>
             <div class="field-grid">
               <label
                 ><span>Full name</span
@@ -177,7 +187,13 @@
                 </button>
               </div></label
             >
-            <div class="password-requirements" aria-label="Password requirements"><span>12+ characters</span><span>Uppercase</span><span>Lowercase</span><span>Number</span><span>Symbol</span></div>
+            <div
+              class="password-requirements"
+              aria-label="Password requirements"
+            >
+              <span>12+ characters</span><span>Uppercase</span
+              ><span>Lowercase</span><span>Number</span><span>Symbol</span>
+            </div>
             <label
               ><span>Confirm password</span>
               <div class="password-control">
@@ -214,5 +230,6 @@
       </section>
     </main>
     <script src="{{ url_for('static', filename='js/password-toggle.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth-forms.js') }}"></script>
   </body>
 </html>

@@ -66,16 +66,22 @@ request.path.startswith('/admin/activity') %}
         ><span>Settings &amp; privacy</span><i aria-hidden="true"></i>
       </summary>
       <div class="admin-nav-children admin-settings-list">
-        <a href="/admin/account#credentials"
+        <a
+          class="{{ 'active' if request.path == '/admin/account' else '' }}"
+          href="/admin/account"
           ><span class="admin-settings-icon" aria-hidden="true">♙</span
           ><span>Credentials</span></a
         >
-        <a href="/admin/account#appearance"
+        <a
+          class="{{ 'active' if request.path == '/admin/account/appearance' else '' }}"
+          href="/admin/account/appearance"
           ><span class="admin-settings-icon" aria-hidden="true">◐</span
           ><span>Appearance</span></a
         >
         {% if session.admin_role == 'superadmin' %}
-        <a href="/admin/account#database"
+        <a
+          class="{{ 'active' if request.path == '/admin/account/database' else '' }}"
+          href="/admin/account/database"
           ><span class="admin-settings-icon" aria-hidden="true">⇅</span
           ><span>Backup &amp; restore</span></a
         >

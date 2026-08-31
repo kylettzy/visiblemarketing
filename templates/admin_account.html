@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin Account | VTIC Systems</title>
+    <title>
+      {% if account_section == 'appearance' %}Appearance{% elif account_section
+      == 'database' %}Backup &amp; Restore{% else %}Credentials{% endif %} | VTIC
+      Systems
+    </title>
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
@@ -28,20 +32,25 @@
       <header>
         <div>
           <p>ADMINISTRATION</p>
-          <h1>Account</h1>
+          <h1>
+            {% if account_section == 'appearance' %}Appearance{% elif
+            account_section == 'database' %}Backup &amp; restore{% else
+            %}Credentials{% endif %}
+          </h1>
         </div>
       </header>
       {% with messages = get_flashed_messages(with_categories=true) %}{% for
       category, message in messages %}
       <div class="alert {{ category }}">{{ message }}</div>
       {% endfor %}{% endwith %}
+      {% if account_section == 'credentials' %}
       <form class="product-form account-form" method="post">
         <input
           type="hidden"
           name="csrf_token"
           value="{{ session.csrf_token }}"
         />
-        <section id="credentials" class="settings-anchor-section">
+        <section id="credentials">
           <div class="account-intro">
             <span>{{ admin.username[:2]|upper }}</span>
             <div>
@@ -122,10 +131,12 @@
           <a href="/admin">Cancel</a><button>Update credentials</button>
         </div>
       </form>
+      {% endif %}
 
+      {% if account_section == 'appearance' %}
       <section
         id="appearance"
-        class="appearance-card settings-anchor-section"
+        class="appearance-card"
         aria-labelledby="appearance-title"
       >
         <div class="appearance-copy">
@@ -151,11 +162,12 @@
           </small>
         </label>
       </section>
+      {% endif %}
 
-      {% if session.admin_role == 'superadmin' %}
+      {% if account_section == 'database' and session.admin_role == 'superadmin' %}
       <section
         id="database"
-        class="database-card settings-anchor-section"
+        class="database-card"
         aria-labelledby="database-title"
       >
         <div class="database-heading">

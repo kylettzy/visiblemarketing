@@ -3328,7 +3328,21 @@ def admin_account():
             except sqlite3.IntegrityError:
                 flash("That username is already in use.", "error")
 
-    return render_template("admin_account.html", admin=dict(admin))
+    return render_template(
+        "admin_account.html", admin=dict(admin), account_section="credentials"
+    )
+
+
+@app.route("/admin/account/appearance")
+@login_required
+def admin_account_appearance():
+    return render_template("admin_account.html", account_section="appearance")
+
+
+@app.route("/admin/account/database")
+@superadmin_required
+def admin_account_database():
+    return render_template("admin_account.html", account_section="database")
 
 
 @app.route("/admin/database/backup")
@@ -3367,10 +3381,10 @@ def admin_database_restore():
     current_password = request.form.get("current_password", "")
     if not uploaded or not uploaded.filename:
         flash("Choose a VTIC database backup to restore.", "error")
-        return redirect(url_for("admin_account"))
+        return redirect(url_for("admin_account_database"))
     if Path(uploaded.filename).suffix.lower() not in {".db", ".sqlite", ".sqlite3"}:
         flash("The restore file must be a SQLite .db, .sqlite or .sqlite3 backup.", "error")
-        return redirect(url_for("admin_account"))
+        return redirect(url_for("admin_account_database"))
 
     with closing(get_db()) as database:
         admin = database.execute(
@@ -3378,7 +3392,7 @@ def admin_database_restore():
         ).fetchone()
     if not admin or not check_password_hash(admin["password_hash"], current_password):
         flash("The current superadmin password is incorrect.", "error")
-        return redirect(url_for("admin_account"))
+        return redirect(url_for("admin_account_database"))
 
     restore_path = RUNTIME_ROOT / f"restore-{secrets.token_hex(12)}.db"
     uploaded.save(restore_path)
@@ -3428,7 +3442,7 @@ def admin_database_restore():
     except (sqlite3.DatabaseError, OSError, ValueError) as error:
         restore_path.unlink(missing_ok=True)
         flash(f"Database restore stopped: {error}", "error")
-        return redirect(url_for("admin_account"))
+        return redirect(url_for("admin_account_database"))
 
     session.clear()
     flash("Database restored successfully. Sign in using an account from the backup.", "success")

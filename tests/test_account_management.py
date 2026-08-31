@@ -84,17 +84,27 @@ class AccountManagementTests(unittest.TestCase):
         with self.client.session_transaction() as session:
             session["admin_role"] = "admin"
         self.assertEqual(self.client.get("/admin/accounts").status_code, 403)
+        self.assertEqual(self.client.get("/admin/account/appearance").status_code, 200)
+        self.assertEqual(self.client.get("/admin/account/database").status_code, 403)
 
     def test_superadmin_settings_navigation_exposes_account_sections(self):
         response = self.client.get("/admin/account")
+        appearance = self.client.get("/admin/account/appearance")
+        database = self.client.get("/admin/account/database")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'href="/admin/account#credentials"', response.data)
-        self.assertIn(b'href="/admin/account#appearance"', response.data)
-        self.assertIn(b'href="/admin/account#database"', response.data)
+        self.assertEqual(appearance.status_code, 200)
+        self.assertEqual(database.status_code, 200)
+        self.assertIn(b'href="/admin/account"', response.data)
+        self.assertIn(b'href="/admin/account/appearance"', response.data)
+        self.assertIn(b'href="/admin/account/database"', response.data)
         self.assertIn(b'id="credentials"', response.data)
-        self.assertIn(b'id="appearance"', response.data)
-        self.assertIn(b'id="database"', response.data)
+        self.assertNotIn(b'id="appearance"', response.data)
+        self.assertNotIn(b'id="database"', response.data)
+        self.assertIn(b'id="appearance"', appearance.data)
+        self.assertNotIn(b'id="credentials"', appearance.data)
+        self.assertIn(b'id="database"', database.data)
+        self.assertNotIn(b'id="credentials"', database.data)
 
     def test_active_superadmin_cannot_demote_themselves(self):
         response = self.client.post(

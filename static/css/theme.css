@@ -36,29 +36,12 @@ body {
 
 :root:not([data-theme="dark"]) body {
   background-image:
-    radial-gradient(
-      circle at 88% 3%,
-      rgba(17, 186, 227, 0.055),
-      transparent 25%
-    ),
-    linear-gradient(rgba(255, 255, 255, 0.18), rgba(248, 252, 254, 0.3)),
-    url("../images/vtic-light-technology-bg-v3.png") !important;
-  background-position:
-    88% 3%,
-    center,
-    center;
-  background-size:
-    auto,
-    auto,
-    cover;
-  background-repeat:
-    no-repeat,
-    no-repeat,
-    no-repeat;
-  background-attachment:
-    fixed,
-    fixed,
-    fixed;
+    linear-gradient(rgba(255, 255, 255, 0.18), rgba(248, 252, 254, 0.2)),
+    url("../images/vtic-blue-blur-bg.jpg") !important;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 :root:not([data-theme="dark"]) :where(

@@ -29,7 +29,13 @@
     });
 
     menu.addEventListener("focusout", (event) => {
-      if (!menu.contains(event.relatedTarget)) menu.open = false;
+      if (menu.contains(event.relatedTarget)) return;
+      // Mobile Safari can report a null relatedTarget between touch focus and
+      // click. Closing immediately removes the tapped link before its default
+      // navigation runs, so wait until the interaction frame has completed.
+      window.requestAnimationFrame(() => {
+        if (!menu.contains(document.activeElement)) menu.open = false;
+      });
     });
   });
 
@@ -49,7 +55,10 @@
   });
 
   navigation.addEventListener("click", (event) => {
-    if (event.target.closest("a")) setMenuOpen(false);
+    if (!event.target.closest("a")) return;
+    // Let the anchor complete its native touch/click navigation before hiding
+    // the mobile panel. This also closes the menu for same-page hash links.
+    window.setTimeout(() => setMenuOpen(false), 120);
   });
 
   document.addEventListener("keydown", (event) => {

@@ -233,6 +233,13 @@ a {
   color: #f3f8fb;
   font-size: 11px;
   font-weight: 700;
+  text-decoration: none;
+}
+.sign-in:visited,
+.sign-in:hover,
+.sign-in:focus-visible {
+  color: #f3f8fb;
+  text-decoration: none;
 }
 .button {
   display: inline-flex;
@@ -247,6 +254,13 @@ a {
   color: #fff;
   border-radius: 999px;
   background: linear-gradient(90deg, #087fa8, #18b6d4);
+  text-decoration: none;
+}
+.button--solid:visited,
+.button--solid:hover,
+.button--solid:focus-visible {
+  color: #fff;
+  text-decoration: none;
 }
 .account-actions .button--solid::after {
   content: "→";

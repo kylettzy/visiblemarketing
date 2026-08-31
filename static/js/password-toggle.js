@@ -16,6 +16,8 @@ document.querySelectorAll("[data-toggle-password]").forEach((button) => {
 document
   .querySelectorAll('input[type="password"], input[data-password-input]')
   .forEach((input) => {
+    input.addEventListener("copy", (event) => event.preventDefault());
+    input.addEventListener("cut", (event) => event.preventDefault());
     input.addEventListener("paste", (event) => event.preventDefault());
     input.addEventListener("drop", (event) => event.preventDefault());
     input.setAttribute("data-password-input", "");

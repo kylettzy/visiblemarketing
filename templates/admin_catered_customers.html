@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Catered Customers | VTIC Systems</title>
+    <title>Catered Clients | VTIC Systems</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_catered_customers.css') }}" />
     {% include '_theme.html' %}
@@ -27,12 +27,12 @@
           <div><span>MARKETING ADMIN</span><h2>{{ group.admin_name }}</h2><small>@{{ group.username }} · {{ group.customers|length }} catered customer(s)</small></div>
         </header>
         <div class="customer-table">
-          <div class="customer-table-head"><span>Customer</span><span>Contact</span><span>Requests</span><span>Latest request</span><span>Progress</span></div>
+          <div class="customer-table-head"><span>Client</span><span>Contact</span><span>Requests</span><span>Latest request</span><span>Progress</span></div>
           {% for customer in group.customers %}
           <article>
             <div class="customer-identity">
               {% if customer.customer_avatar_url %}<img src="{{ customer.customer_avatar_url }}" alt="" />{% else %}<i>{{ customer.customer_name[:2]|upper }}</i>{% endif %}
-              <div><b>{{ customer.customer_name }}</b><small>Customer #{{ customer.customer_id }}</small></div>
+              <div><b>{{ customer.customer_name }}</b><small>Client #{{ customer.customer_id }}</small></div>
             </div>
             <a href="mailto:{{ customer.customer_email }}">{{ customer.customer_email }}</a>
             <b>{{ customer.request_count }}</b>

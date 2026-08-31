@@ -28,18 +28,18 @@
       <section class="audit-overview" aria-label="Activity log categories">
         <div><span>01</span><b>{{ log_groups.superadmin|length }}</b><small>Superadmin events</small></div>
         <div><span>02</span><b>{{ log_groups.admin|length }}</b><small>Administrator events</small></div>
-        <div><span>03</span><b>{{ log_groups.customer|length }}</b><small>Customer events</small></div>
+        <div><span>03</span><b>{{ log_groups.customer|length }}</b><small>Client events</small></div>
       </section>
       <nav class="audit-filters" aria-label="Filter activity logs">
         <button class="active" type="button" data-log-filter="all">All activity</button>
         <button type="button" data-log-filter="superadmin">Superadmins</button>
         <button type="button" data-log-filter="admin">Administrators</button>
-        <button type="button" data-log-filter="customer">Customers</button>
+        <button type="button" data-log-filter="customer">Clients</button>
       </nav>
       {% set group_labels = {
         'superadmin': ('01', 'Superadmin activity', 'Full access and security-sensitive events'),
-        'admin': ('02', 'Administrator activity', 'Catalog and customer-request operations'),
-        'customer': ('03', 'Customer activity', 'Storefront, advisor and review-request events')
+        'admin': ('02', 'Administrator activity', 'Catalog and client-request operations'),
+        'customer': ('03', 'Client activity', 'Storefront, advisor and review-request events')
       } %}
       {% for group_key in ['superadmin', 'admin', 'customer'] %}
       {% set group = group_labels[group_key] %}
@@ -55,7 +55,7 @@
           {% for log in log_groups[group_key] %}
           <article>
             <time>{{ log.created_at }}</time>
-            <div><b>{{ log.actor_name }}</b><small>{{ 'Superadmin' if group_key == 'superadmin' else 'Administrator' if group_key == 'admin' else 'Customer' }}</small></div>
+            <div><b>{{ log.actor_name }}</b><small>{{ 'Superadmin' if group_key == 'superadmin' else 'Administrator' if group_key == 'admin' else 'Client' }}</small></div>
             <code>{{ log.action }}</code><span>{{ log.details or '—' }}</span><span>{{ log.ip_address or '—' }}</span>
           </article>
           {% else %}

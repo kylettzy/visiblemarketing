@@ -115,7 +115,7 @@
             <b
               >{{ customers|selectattr('status', 'equalto',
               'active')|list|length }}</b
-            ><span>Active customers</span>
+            ><span>Active clients</span>
           </div>
         </div>
       </header>
@@ -132,7 +132,7 @@
             <h2 id="directory-title">Users and administrators</h2>
           </div>
           <div class="toolbar-actions">
-            <a href="/admin/accounts/new/customer">+ Customer</a>
+            <a href="/admin/accounts/new/customer">+ Client</a>
             <a class="primary" href="/admin/accounts/new/admin"
               >+ Administrator</a
             >
@@ -155,7 +155,7 @@
               <option value="all">All accounts</option>
               <option value="superadmin">Superadmins</option>
               <option value="admin">Administrators</option>
-              <option value="customer">Customers</option>
+              <option value="customer">Clients</option>
             </select>
           </label>
           <label>
@@ -274,7 +274,7 @@
             {% endfor %}
 
             <div class="account-group" data-account-group="customer">
-              <span>03</span><b>Customers</b><small>Consultation portal accounts</small>
+              <span>03</span><b>Clients</b><small>Consultation portal accounts</small>
             </div>
             {% for item in customers %}
             <article
@@ -292,7 +292,7 @@
                 <img src="{{ item.avatar_url or url_for('static', filename='images/default-avatar.svg') }}" alt="{{ item.full_name }} profile photo" />
                 <div>
                   <b>{{ item.full_name }}</b
-                  ><small>Customer #{{ item.id }}</small>
+                  ><small>Client #{{ item.id }}</small>
                 </div>
               </div>
               <span class="identifier">{{ item.email }}</span>
@@ -300,7 +300,7 @@
               <span
                 >{{ status_control(item, 'customer', item.full_name) }}</span
               >
-              <span><em class="role role--customer">Customer</em></span>
+              <span><em class="role role--customer">Client</em></span>
               <time>{{ item.created_at[:10] }}</time>
               <time
                 >{{ item.last_login_at[:16] if item.last_login_at else 'Never'

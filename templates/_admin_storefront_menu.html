@@ -8,19 +8,28 @@
     <header>
       <small>ADMINISTRATOR</small><b>{{ session.admin_username }}</b>
     </header>
-    <a href="/admin">Product management</a>
-    <a href="/admin/products/new">Add product</a>
-    <a href="/admin/manufacturers">Manufacturers</a>
-    <a href="/admin/review-requests">Review requests</a>
-    <a href="/admin/account">Settings &amp; privacy</a>
-    {% if session.admin_role == 'superadmin' %}<a href="/admin/accounts"
-      >Manage accounts</a
-    ><a href="/admin/activity">Activity logs</a>{% endif %}
-    <form action="/admin/logout" method="post" data-confirm-signout>
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>
-        Sign out
-      </button>
-    </form>
+    <section class="admin-menu-group">
+      <p><span aria-hidden="true">▦</span>Catalog</p>
+      <a href="/admin">Product management</a>
+      <a href="/admin/products/new">Add product</a>
+      <a href="/admin/manufacturers">Manufacturers</a>
+    </section>
+    <section class="admin-menu-group">
+      <p><span aria-hidden="true">◎</span>Client requests</p>
+      <a href="/admin/review-requests">Review requests</a>
+    </section>
+    <section class="admin-menu-group admin-menu-settings">
+      <p><span aria-hidden="true">⚙</span>Settings &amp; privacy</p>
+      <a href="/admin/account"><span aria-hidden="true">⚙</span>Settings</a>
+      {% if session.admin_role == 'superadmin' %}<a href="/admin/accounts"
+        ><span aria-hidden="true">◎</span>Account access</a
+      ><a href="/admin/activity"><span aria-hidden="true">☷</span>Activity log</a>{% endif %}
+      <form action="/admin/logout" method="post" data-confirm-signout>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>
+          <span aria-hidden="true">↪</span>Sign out
+        </button>
+      </form>
+    </section>
   </div>
 </details>
 {% endif %}
@@ -28,11 +37,14 @@
 <details class="admin-storefront-menu customer-storefront-menu">
   <summary><span>{{ session.customer_name[:1]|upper }}</span>My account</summary>
   <div class="admin-menu-panel">
-    <header><small>CUSTOMER ACCOUNT</small><b>{{ session.customer_name }}</b></header>
-    <a href="/account/reviews">My review requests</a>
-    <a href="/solution-advisor">Saved advisor consultations</a>
-    <a href="/cart">My review list</a>
-    <form action="/logout" method="post" data-confirm-signout><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button>Sign out</button></form>
+    <header><small>CLIENT ACCOUNT</small><b>{{ session.customer_name }}</b></header>
+    <section class="admin-menu-group admin-menu-settings">
+      <p><span aria-hidden="true">◎</span>Client workspace</p>
+      <a href="/account/reviews"><span aria-hidden="true">☷</span>My project requests</a>
+      <a href="/solution-advisor"><span aria-hidden="true">◇</span>Saved consultations</a>
+      <a href="/cart"><span aria-hidden="true">▦</span>My review list</a>
+      <form action="/logout" method="post" data-confirm-signout><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button><span aria-hidden="true">↪</span>Sign out</button></form>
+    </section>
   </div>
 </details>
 {% endif %}

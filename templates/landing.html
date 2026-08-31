@@ -68,32 +68,32 @@
           <div class="mobile-account-actions solution-mobile-account">
             {% if session.get('customer_id') %}
             <span>Welcome, {{ session.customer_name }}</span>
-            <a class="button button--solid" href="/storefront"
+            <a class="primary" href="/storefront"
               >Open solutions catalog</a
             >
             {% elif session.get('admin_id') %}
             <span>Welcome, {{ session.admin_username }}</span>
-            <a class="button button--solid" href="/admin"
+            <a class="primary" href="/admin"
               >Go to admin console</a
             >
             {% else %}
             <a class="sign-in" href="/login">Sign in</a>
-            <a class="button button--solid" href="/register">Create account</a>
+            <a class="primary" href="/register">Create account</a>
             {% endif %}
           </div>
         </nav>
         <div class="account-actions solution-account">
           {% if session.get('customer_id') %}
           <span>Welcome, {{ session.customer_name }}</span>
-          <a class="button button--solid" href="/storefront"
+          <a class="primary" href="/storefront"
             >Open solutions catalog</a
           >
           {% elif session.get('admin_id') %}
           <span>Welcome, {{ session.admin_username }}</span>
-          <a class="button button--solid" href="/admin">Go to admin console</a>
+          <a class="primary" href="/admin">Go to admin console</a>
           {% else %}
           <a class="sign-in" href="/login">Sign in</a>
-          <a class="button button--solid" href="/register">Create account</a>
+          <a class="primary" href="/register">Create account</a>
           {% endif %}
         </div>
       </div>

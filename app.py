@@ -3283,6 +3283,12 @@ def admin_logout():
 @app.route("/admin/account", methods=["GET", "POST"])
 @login_required
 def admin_account():
+    verified_at = session.get("credentials_verified_at")
+    if request.method == "GET" and (
+        not verified_at
+        or datetime.now(timezone.utc).timestamp() - float(verified_at) > 600
+    ):
+        return redirect(url_for("admin_account_verify"))
     with get_db() as database:
         admin = database.execute(
             "SELECT * FROM admins WHERE id = ?", (session["admin_id"],)
@@ -3333,6 +3339,23 @@ def admin_account():
     )
 
 
+@app.route("/admin/account/verify", methods=["GET", "POST"])
+@login_required
+def admin_account_verify():
+    if request.method == "POST":
+        validate_csrf()
+        password = request.form.get("password", "")
+        with closing(get_db()) as database:
+            admin = database.execute(
+                "SELECT password_hash FROM admins WHERE id = ?", (session["admin_id"],)
+            ).fetchone()
+        if admin and check_password_hash(admin["password_hash"], password):
+            session["credentials_verified_at"] = datetime.now(timezone.utc).timestamp()
+            return redirect(url_for("admin_account"))
+        flash("Enter your current password to access credential changes.", "error")
+    return render_template("admin_account_verify.html")
+
+
 @app.route("/admin/account/appearance")
 @login_required
 def admin_account_appearance():
@@ -3343,6 +3366,18 @@ def admin_account_appearance():
 @superadmin_required
 def admin_account_database():
     return render_template("admin_account.html", account_section="database")
+
+
+@app.route("/admin/account/notifications")
+@login_required
+def admin_account_notifications():
+    return render_template("admin_notifications.html")
+
+
+@app.route("/admin/help")
+@login_required
+def admin_help():
+    return render_template("admin_help.html")
 
 
 @app.route("/admin/database/backup")
@@ -4788,6 +4823,29 @@ def admin_calendar():
     month_weeks = calendar.Calendar(firstweekday=6).monthdatescalendar(
         month_date.year, month_date.month
     )
+
+
+@app.route("/admin/calendar/events/new", methods=["POST"])
+@login_required
+def admin_calendar_event_create():
+    validate_csrf()
+    title = request.form.get("title", "").strip()
+    starts_at = request.form.get("starts_at", "").strip()
+    if not title or not starts_at:
+        flash("Event title and date are required.", "error")
+        return redirect(url_for("admin_calendar"))
+    with get_db() as database:
+        cursor = database.execute(
+            """INSERT INTO calendar_events
+               (event_type, title, starts_at, location, notes, created_by)
+               VALUES ('meeting', ?, ?, ?, ?, ?)""",
+            (title, starts_at, request.form.get("location", "").strip(),
+             request.form.get("notes", "").strip(), session["admin_id"]),
+        )
+    log_activity("admin", session["admin_id"], session["admin_username"],
+                 "calendar_event_create", f"{title} (ID #{cursor.lastrowid})")
+    flash("Calendar event added.", "success")
+    return redirect(url_for("admin_calendar", month=starts_at[:7]))
     visible_start = month_weeks[0][0]
     visible_end = month_weeks[-1][-1] + timedelta(days=1)
     with get_db() as database:

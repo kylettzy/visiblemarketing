@@ -2,7 +2,6 @@
   const widget = document.querySelector("[data-message-notifications]");
   if (!widget) return;
   const badge = widget.querySelector("[data-message-notification-count]");
-  const permissionButton = widget.querySelector("[data-enable-browser-notifications]");
   const target = widget.dataset.target;
   const storageKey = `vtic-last-message-notification:${target}`;
   let serviceWorkerRegistration = null;
@@ -55,18 +54,6 @@
     }
   }
 
-  permissionButton.addEventListener("click", async () => {
-    if (!("Notification" in window)) {
-      permissionButton.title = "Notifications are not supported by this browser";
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    permissionButton.classList.toggle("enabled", permission === "granted");
-    permissionButton.title = permission === "granted" ? "Browser notifications enabled" : "Notifications were not enabled";
-    refresh();
-  });
-
-  if ("Notification" in window && Notification.permission === "granted") permissionButton.classList.add("enabled");
   if (location.pathname === target) markRead().then(refresh);
   else refresh();
   window.setInterval(refresh, 5000);

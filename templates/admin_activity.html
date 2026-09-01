@@ -56,7 +56,7 @@
           <article>
             <time>{{ log.created_at }}</time>
             <div><b>{{ log.actor_name }}</b><small>{{ 'Superadmin' if group_key == 'superadmin' else 'Administrator' if group_key == 'admin' else 'Client' }}</small></div>
-            <code>{{ log.action }}</code><span>{{ log.details or '—' }}</span><span>{{ log.ip_address or '—' }}</span>
+            <code>{{ log.action|replace('_', ' ')|title }}</code><span>{{ log.details or 'Completed successfully' }}</span><span>{{ log.ip_address or '—' }}</span>
           </article>
           {% else %}
           <p class="empty">No {{ group[1]|lower }} has been recorded.</p>

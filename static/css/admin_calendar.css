@@ -105,3 +105,10 @@ main > header > span {
   margin-top: 3px;
   color: var(--admin-muted, var(--theme-muted));
 }
+.calendar-create { margin: 0 0 18px; padding: 16px; border: 1px solid var(--admin-border, var(--line)); background: var(--admin-panel, #fff); }
+.calendar-create summary { cursor: pointer; font-weight: 700; }
+.calendar-create form { margin-top: 14px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.calendar-create label { display: grid; gap: 6px; font-size: 9px; font-weight: 700; }
+.calendar-create input,.calendar-create textarea { padding: 10px; border: 1px solid var(--admin-border,var(--line)); background: var(--admin-panel,#fff); color: inherit; }
+.calendar-create button { min-height: 40px; border: 0; color: #fff; background: linear-gradient(90deg,#2764ff,#11bae2); font-weight: 700; }
+@media(max-width:700px){.calendar-create form{grid-template-columns:1fr}}

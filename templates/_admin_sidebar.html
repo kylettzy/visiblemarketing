@@ -4,7 +4,7 @@ request.path.startswith('/admin/manufacturers') %} {% set requests_open =
 request.path.startswith('/admin/review-requests') or request.path.startswith('/admin/messages') or request.path.startswith('/admin/calendar') or request.path.startswith('/admin/catered-customers') %} {% set account_open =
 request.path.startswith('/admin/account') or
 request.path.startswith('/admin/accounts') or
-request.path.startswith('/admin/activity') %}
+request.path.startswith('/admin/activity') or request.path.startswith('/admin/help') %}
 
 <aside class="admin-sidebar">
   <a class="logo" href="/admin" aria-label="VTIC admin home">
@@ -78,6 +78,7 @@ request.path.startswith('/admin/activity') %}
           ><span class="admin-settings-icon" aria-hidden="true">◐</span
           ><span>Appearance</span></a
         >
+        <a class="{{ 'active' if request.path == '/admin/account/notifications' else '' }}" href="/admin/account/notifications"><span class="admin-settings-icon" aria-hidden="true">♪</span><span>Notifications &amp; sounds</span></a>
         {% if session.admin_role == 'superadmin' %}
         <a
           class="{{ 'active' if request.path == '/admin/account/database' else '' }}"
@@ -98,6 +99,7 @@ request.path.startswith('/admin/activity') %}
           ><span>Activity log</span></a
         >
         {% endif %}
+        <a class="{{ 'active' if request.path == '/admin/help' else '' }}" href="/admin/help"><span class="admin-settings-icon" aria-hidden="true">?</span><span>Help &amp; support</span></a>
         <form class="admin-nav-signout" action="/admin/logout" method="post" data-confirm-signout>
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
           <button type="submit"><span class="admin-settings-icon" aria-hidden="true">↪</span><span>Sign out</span></button>

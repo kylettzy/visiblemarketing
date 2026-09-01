@@ -124,6 +124,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   lightbox?.querySelector("[data-gallery-prev]")?.addEventListener("click", () => showPhoto(activeIndex - 1));
   lightbox?.querySelector("[data-gallery-next]")?.addEventListener("click", () => showPhoto(activeIndex + 1));
+  let wheelLocked = false;
+  lightbox?.addEventListener("wheel", (event) => {
+    if (!lightbox.open || activePhotos.length < 2 || wheelLocked) return;
+    const movement = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(movement) < 18) return;
+    event.preventDefault();
+    wheelLocked = true;
+    showPhoto(activeIndex + (movement > 0 ? 1 : -1));
+    window.setTimeout(() => { wheelLocked = false; }, 320);
+  }, { passive: false });
   lightbox?.querySelector("[data-gallery-close]")?.addEventListener("click", () => lightbox.close());
   lightbox?.addEventListener("click", (event) => {
     if (event.target === lightbox) lightbox.close();

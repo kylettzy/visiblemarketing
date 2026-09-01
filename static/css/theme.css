@@ -196,3 +196,19 @@ body > aside .theme-toggle {
   }
 
 }
+.network-status-alert {
+  position: fixed;
+  z-index: 10000;
+  right: 18px;
+  bottom: 18px;
+  max-width: min(420px, calc(100vw - 36px));
+  padding: 13px 16px;
+  border: 1px solid #f2b84b;
+  border-radius: 9px;
+  color: #4d3200;
+  background: #fff2cf;
+  box-shadow: 0 16px 42px rgba(20, 28, 34, 0.22);
+  font-size: 12px;
+  font-weight: 700;
+}
+.network-status-alert[hidden] { display: none; }

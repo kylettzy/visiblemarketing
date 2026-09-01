@@ -55,7 +55,7 @@
         >
           <a class="solution-nav-link" href="/#company">Company</a>
           <details class="solution-menu">
-            <summary>Solutions <i></i></summary>
+            <summary class="is-active">Solutions <i></i></summary>
             <div>
               {% for slug, item in solutions.items() %}<a
                 class="{{ 'active' if item.name == solution.name else '' }}"

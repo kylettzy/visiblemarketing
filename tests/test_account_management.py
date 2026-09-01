@@ -1,6 +1,7 @@
 import gc
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 import app as application
@@ -20,6 +21,7 @@ class AccountManagementTests(unittest.TestCase):
                     "admin_username": "superadmin-test",
                     "admin_role": "superadmin",
                     "csrf_token": "test-token",
+                    "credentials_verified_at": datetime.now(timezone.utc).timestamp(),
                 }
             )
 

@@ -3,7 +3,6 @@
   <a href="{{ '/account/reviews' if session.customer_id else '/admin/messages' }}" aria-label="Open message notifications">
     <span aria-hidden="true">✦</span><em>Messages</em><b data-message-notification-count hidden>0</b>
   </a>
-  <button type="button" data-enable-browser-notifications title="Enable browser and phone notifications" aria-label="Enable browser notifications">◌</button>
 </div>
 <script src="{{ url_for('static', filename='js/message-notifications.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/live-updates.js') }}" defer></script>

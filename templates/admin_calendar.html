@@ -18,6 +18,8 @@
         <div><b>Site surveys & meetings</b><small>Schedules created by Technical appear here for every administrator.</small></div>
         <nav><a href="?month={{ previous_month }}" aria-label="Previous month">←</a><a href="?month={{ next_month }}" aria-label="Next month">→</a></nav>
       </section>
+      {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+      <details class="calendar-create"><summary>Add calendar event</summary><form method="post" action="/admin/calendar/events/new"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>Title<input name="title" required></label><label>Date and time<input type="datetime-local" name="starts_at" required></label><label>Location<input name="location"></label><label>Notes<textarea name="notes"></textarea></label><button>Add event</button></form></details>
       <section class="calendar-grid" aria-label="{{ month_date.strftime('%B %Y') }} calendar">
         {% for weekday in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="calendar-weekday">{{ weekday }}</div>{% endfor %}
         {% for week in month_weeks %}{% for day in week %}

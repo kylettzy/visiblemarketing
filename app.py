@@ -363,8 +363,19 @@ class PostgresConnection:
 
 
 def get_db():
+    global USING_POSTGRES
     if USING_POSTGRES:
-        return PostgresConnection()
+        try:
+            return PostgresConnection()
+        except (RuntimeError, psycopg.Error if psycopg else RuntimeError) as error:
+            # Keep the storefront available when a newly configured remote
+            # database is unreachable. The fallback is intentionally loud in
+            # server logs because SQLite under /tmp is not durable on Vercel.
+            app.logger.error(
+                "PostgreSQL connection failed; using temporary SQLite fallback: %s",
+                error,
+            )
+            USING_POSTGRES = False
     connection = sqlite3.connect(DATABASE, timeout=10)
     connection.row_factory = sqlite3.Row
     return connection

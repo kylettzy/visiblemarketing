@@ -1,0 +1,8 @@
+.tmp-*
+.pytest-*
+.vercel-auth/
+.env
+.env.*
+!.env.example
+__pycache__/
+tests/

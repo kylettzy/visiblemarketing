@@ -129,15 +129,6 @@ class AccountManagementTests(unittest.TestCase):
             response.data,
         )
 
-    def test_missing_managed_account_returns_to_directory(self):
-        response = self.client.get(
-            "/admin/accounts/admin/99999/edit", follow_redirects=True
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"That account is no longer available", response.data)
-        self.assertIn(b"Users and administrators", response.data)
-
 
 if __name__ == "__main__":
     unittest.main()

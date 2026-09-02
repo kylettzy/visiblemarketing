@@ -42,17 +42,6 @@ try:
 except ImportError:
     OAuth = None
 
-try:
-    import psycopg
-except ImportError:
-    psycopg = None
-
-DB_INTEGRITY_ERRORS = (
-    (sqlite3.IntegrityError, psycopg.IntegrityError)
-    if psycopg
-    else (sqlite3.IntegrityError,)
-)
-
 APP_ROOT = Path(__file__).resolve().parent
 load_dotenv(APP_ROOT / ".env")
 
@@ -73,11 +62,6 @@ app.config["SECRET_KEY"] = os.environ.get(
     "VTIC_SECRET_KEY", "development-only-change-me"
 )
 DATABASE = Path(os.environ.get("VTIC_DATABASE_PATH", RUNTIME_ROOT / "vtic_store.db"))
-POSTGRES_URL = (
-    os.environ.get("POSTGRES_URL", "").strip()
-    or os.environ.get("DATABASE_URL", "").strip()
-)
-USING_POSTGRES = POSTGRES_URL.startswith(("postgresql://", "postgres://"))
 UPLOAD_ROOT = RUNTIME_ROOT / "uploads"
 MANUFACTURER_UPLOADS = UPLOAD_ROOT / "manufacturers"
 PRODUCT_UPLOADS = UPLOAD_ROOT / "products"
@@ -191,196 +175,10 @@ def uploaded_file(kind, filename):
     return send_from_directory(directory, filename)
 
 
-class CompatibleRow(dict):
-    """Mapping row that also preserves sqlite3.Row-style numeric access."""
-
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return tuple(self.values())[key]
-        return super().__getitem__(key)
-
-
-def postgres_row_factory(cursor):
-    columns = [column.name for column in cursor.description]
-
-    def make_row(values):
-        return CompatibleRow(zip(columns, values))
-
-    return make_row
-
-
-POSTGRES_ID_TABLES = {
-    "admins",
-    "customers",
-    "customer_identities",
-    "activity_logs",
-    "review_requests",
-    "review_request_items",
-    "review_request_messages",
-    "review_request_materials",
-    "calendar_events",
-    "ai_conversations",
-    "ai_messages",
-    "ai_solution_options",
-    "ai_solution_items",
-    "products",
-    "manufacturers",
-    "portfolio_clients",
-    "gallery_items",
-    "portfolio_partner_groups",
-    "portfolio_partners",
-}
-
-
-def postgres_sql(sql):
-    statement = re.sub(r"\s+COLLATE\s+NOCASE", "", sql, flags=re.IGNORECASE)
-    ignore_conflicts = bool(
-        re.match(r"\s*INSERT\s+OR\s+IGNORE\s+INTO\b", statement, re.IGNORECASE)
-    )
-    statement = re.sub(
-        r"\bINSERT\s+OR\s+IGNORE\s+INTO\b",
-        "INSERT INTO",
-        statement,
-        flags=re.IGNORECASE,
-    )
-    statement = statement.replace(
-        "GROUP_CONCAT(DISTINCT r.status)",
-        "STRING_AGG(DISTINCT r.status::text, ',')",
-    )
-    statement = statement.replace(
-        """GROUP_CONCAT(
-                         review.id || ':' || review.status || ':' ||
-                         COALESCE(review.service_scope, '') || ':' ||
-                         COALESCE(review.site_survey_at, '')
-                       )""",
-        """STRING_AGG(
-                         review.id::text || ':' || review.status || ':' ||
-                         COALESCE(review.service_scope, '') || ':' ||
-                         COALESCE(review.site_survey_at, ''), ','
-                       )""",
-    )
-    statement = statement.replace("?", "%s")
-    statement = re.sub(
-        r"\bCURRENT_TIMESTAMP\b",
-        "(CURRENT_TIMESTAMP::text)",
-        statement,
-        flags=re.IGNORECASE,
-    )
-    if ignore_conflicts and " ON CONFLICT " not in statement.upper():
-        statement = statement.rstrip().rstrip(";") + " ON CONFLICT DO NOTHING"
-    return statement
-
-
-def postgres_schema(script):
-    schema = re.sub(r"\s+COLLATE\s+NOCASE", "", script, flags=re.IGNORECASE)
-    schema = re.sub(
-        r"\bid\s+INTEGER\s+PRIMARY\s+KEY\b",
-        "id BIGSERIAL PRIMARY KEY",
-        schema,
-        flags=re.IGNORECASE,
-    )
-    # The legacy SQLite schema declares some references before their target
-    # tables. Application-level validation is retained; constraints can be
-    # introduced later through ordered migrations.
-    schema = re.sub(
-        r"^\s*FOREIGN KEY\s*\([^\n]+$", "", schema, flags=re.MULTILINE | re.IGNORECASE
-    )
-    schema = re.sub(r",\s*\)", "\n            )", schema)
-    schema = re.sub(
-        r"\bCURRENT_TIMESTAMP\b",
-        "(CURRENT_TIMESTAMP::text)",
-        schema,
-        flags=re.IGNORECASE,
-    )
-    return schema
-
-
-class PostgresCursor:
-    def __init__(self, cursor, lastrowid=None):
-        self.cursor = cursor
-        self.lastrowid = lastrowid
-
-    def fetchone(self):
-        return self.cursor.fetchone()
-
-    def fetchall(self):
-        return self.cursor.fetchall()
-
-    def __iter__(self):
-        return iter(self.cursor)
-
-
-class PostgresConnection:
-    def __init__(self):
-        if psycopg is None:
-            raise RuntimeError(
-                "PostgreSQL is configured but psycopg is not installed."
-            )
-        self.connection = psycopg.connect(
-            POSTGRES_URL, row_factory=postgres_row_factory, connect_timeout=10
-        )
-
-    def execute(self, sql, parameters=()):
-        statement = postgres_sql(sql)
-        insert_match = re.match(
-            r"\s*INSERT\s+INTO\s+([a-zA-Z_][a-zA-Z0-9_]*)\b",
-            statement,
-            re.IGNORECASE,
-        )
-        returns_id = bool(
-            insert_match
-            and insert_match.group(1).lower() in POSTGRES_ID_TABLES
-            and " RETURNING " not in statement.upper()
-        )
-        if returns_id:
-            statement = statement.rstrip().rstrip(";") + " RETURNING id"
-        cursor = self.connection.execute(statement, parameters)
-        returned_row = cursor.fetchone() if returns_id else None
-        lastrowid = returned_row["id"] if returned_row else None
-        return PostgresCursor(cursor, lastrowid)
-
-    def executemany(self, sql, parameters):
-        cursor = self.connection.cursor()
-        cursor.executemany(postgres_sql(sql), parameters)
-        return PostgresCursor(cursor)
-
-    def executescript(self, script):
-        for statement in postgres_schema(script).split(";"):
-            if statement.strip():
-                self.connection.execute(statement)
-
-    def __enter__(self):
-        self.connection.__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return self.connection.__exit__(exc_type, exc_value, traceback)
-
-    def close(self):
-        if not self.connection.closed:
-            self.connection.commit()
-            self.connection.close()
-
-
 def get_db():
-    if USING_POSTGRES:
-        return PostgresConnection()
     connection = sqlite3.connect(DATABASE, timeout=10)
     connection.row_factory = sqlite3.Row
     return connection
-
-
-def table_columns(database, table_name):
-    if USING_POSTGRES:
-        return {
-            row["column_name"]
-            for row in database.execute(
-                """SELECT column_name FROM information_schema.columns
-                   WHERE table_schema = 'public' AND table_name = ?""",
-                (table_name,),
-            )
-        }
-    return {row[1] for row in database.execute(f"PRAGMA table_info({table_name})")}
 
 
 def rows_to_dicts(rows):
@@ -1509,7 +1307,9 @@ def initialize_database():
             CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);
             """
         )
-        gallery_columns = table_columns(database, "gallery_items")
+        gallery_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(gallery_items)")
+        }
         if "album_name" not in gallery_columns:
             database.execute(
                 "ALTER TABLE gallery_items ADD COLUMN album_name TEXT NOT NULL DEFAULT ''"
@@ -1526,10 +1326,12 @@ def initialize_database():
             database.execute(
                 "ALTER TABLE gallery_items ADD COLUMN is_album_cover INTEGER NOT NULL DEFAULT 0"
             )
-        manufacturer_columns = table_columns(database, "manufacturers")
+        manufacturer_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(manufacturers)")
+        }
         if "logo_url" not in manufacturer_columns:
             database.execute("ALTER TABLE manufacturers ADD COLUMN logo_url TEXT")
-        admin_columns = table_columns(database, "admins")
+        admin_columns = {row[1] for row in database.execute("PRAGMA table_info(admins)")}
         if "role" not in admin_columns:
             database.execute(
                 "ALTER TABLE admins ADD COLUMN role TEXT NOT NULL DEFAULT 'superadmin'"
@@ -1551,7 +1353,9 @@ def initialize_database():
         if "avatar_url" not in admin_columns:
             database.execute("ALTER TABLE admins ADD COLUMN avatar_url TEXT")
         database.execute("UPDATE admins SET role = 'superadmin' WHERE role IS NULL")
-        customer_columns = table_columns(database, "customers")
+        customer_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(customers)")
+        }
         if "status" not in customer_columns:
             database.execute(
                 "ALTER TABLE customers ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"
@@ -1562,7 +1366,9 @@ def initialize_database():
             database.execute("ALTER TABLE customers ADD COLUMN status_expires_at TEXT")
         if "avatar_url" not in customer_columns:
             database.execute("ALTER TABLE customers ADD COLUMN avatar_url TEXT")
-        review_columns = table_columns(database, "review_requests")
+        review_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(review_requests)")
+        }
         if "ai_solution_option_id" not in review_columns:
             database.execute(
                 "ALTER TABLE review_requests ADD COLUMN ai_solution_option_id INTEGER"
@@ -1596,7 +1402,9 @@ def initialize_database():
         database.execute(
             "UPDATE review_requests SET status = 'submitted' WHERE status = 'pending'"
         )
-        conversation_columns = table_columns(database, "ai_conversations")
+        conversation_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(ai_conversations)")
+        }
         if "admin_id" not in conversation_columns:
             database.execute(
                 "ALTER TABLE ai_conversations ADD COLUMN admin_id INTEGER"
@@ -1609,7 +1417,9 @@ def initialize_database():
                 """UPDATE ai_conversations SET conversation_type = 'product'
                    WHERE title LIKE 'Product chat:%'"""
             )
-        message_columns = table_columns(database, "review_request_messages")
+        message_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(review_request_messages)")
+        }
         if "read_by_customer" not in message_columns:
             database.execute(
                 "ALTER TABLE review_request_messages ADD COLUMN read_by_customer INTEGER NOT NULL DEFAULT 0"
@@ -1624,7 +1434,9 @@ def initialize_database():
             database.execute(
                 "UPDATE review_request_messages SET read_by_admin = 1 WHERE sender_type = 'admin'"
             )
-        preference_columns = table_columns(database, "admin_conversation_preferences")
+        preference_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(admin_conversation_preferences)")
+        }
         if "muted_until" not in preference_columns:
             database.execute(
                 "ALTER TABLE admin_conversation_preferences ADD COLUMN muted_until TEXT"
@@ -1730,8 +1542,7 @@ def initialize_database():
                     bootstrap_admin["id"],
                 ),
             )
-        if not USING_POSTGRES:
-            database.execute("PRAGMA optimize")
+        database.execute("PRAGMA optimize")
 
 
 initialize_database()
@@ -1907,7 +1718,7 @@ def customer_register():
                     return jsonify(ok=True, redirect=url_for("customer_login"))
                 flash("Account created. You can now sign in.", "success")
                 return redirect(url_for("customer_login"))
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 message = "An account already uses that email address."
                 if request.headers.get("X-Requested-With") == "fetch":
                     return jsonify(ok=False, message=message, fields=["email"]), 409
@@ -3520,7 +3331,7 @@ def admin_account():
                 )
                 flash("Account credentials updated successfully.", "success")
                 return redirect(url_for("admin_account"))
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash("That username is already in use.", "error")
 
     return render_template(
@@ -3834,7 +3645,7 @@ def admin_account_create(account_type):
                 return redirect(url_for("admin_accounts"))
             except ValueError as error:
                 flash(str(error), "error")
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash(
                     "That username or email address is already in use.", "error"
                 )
@@ -3861,11 +3672,7 @@ def admin_account_edit(account_type, account_id):
             f"SELECT * FROM {table} WHERE id = ?", (account_id,)
         ).fetchone()
     if not row:
-        flash(
-            "That account is no longer available. Refresh the directory and try again.",
-            "error",
-        )
-        return redirect(url_for("admin_accounts"))
+        abort(404)
     account = dict(row)
 
     if request.method == "POST":
@@ -3937,7 +3744,7 @@ def admin_account_edit(account_type, account_id):
                 return redirect(url_for("admin_accounts"))
             except ValueError as error:
                 flash(str(error), "error")
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash(
                     "That username or email address is already in use.", "error"
                 )
@@ -4024,8 +3831,7 @@ def admin_review_requests():
                    LEFT JOIN ai_solution_options o ON o.id = r.ai_solution_option_id
                    LEFT JOIN ai_conversations c ON c.id = o.conversation_id
                    LEFT JOIN admins owner ON owner.id = r.assigned_marketing_admin_id
-                   GROUP BY r.id, o.name, c.requirements_summary,
-                            owner.username, owner.full_name
+                   GROUP BY r.id
                    ORDER BY r.id DESC"""
             )
         )
@@ -4137,8 +3943,7 @@ def admin_messages():
                     WHERE {access_sql}
                       AND pref.deleted_at IS NULL
                       AND COALESCE(pref.is_archived, 0) = ?
-                    GROUP BY r.id, pref.is_muted, pref.muted_until,
-                             pref.is_archived, pref.is_blocked
+                    GROUP BY r.id
                     ORDER BY COALESCE(MAX(message.id), 0) DESC, r.id DESC""",
                 (
                     session["admin_id"],
@@ -4993,9 +4798,7 @@ def admin_catered_customers():
                     JOIN admins a ON a.id = r.assigned_marketing_admin_id
                     LEFT JOIN customers c ON c.id = r.customer_id
                     {owner_filter}
-                    GROUP BY r.assigned_marketing_admin_id, a.username,
-                             a.full_name, a.avatar_url, r.customer_id,
-                             r.customer_name, r.customer_email, c.avatar_url
+                    GROUP BY r.assigned_marketing_admin_id, r.customer_id
                     ORDER BY admin_name, latest_request_at DESC""",
                 parameters,
             )
@@ -5020,6 +4823,29 @@ def admin_calendar():
     month_weeks = calendar.Calendar(firstweekday=6).monthdatescalendar(
         month_date.year, month_date.month
     )
+
+
+@app.route("/admin/calendar/events/new", methods=["POST"])
+@login_required
+def admin_calendar_event_create():
+    validate_csrf()
+    title = request.form.get("title", "").strip()
+    starts_at = request.form.get("starts_at", "").strip()
+    if not title or not starts_at:
+        flash("Event title and date are required.", "error")
+        return redirect(url_for("admin_calendar"))
+    with get_db() as database:
+        cursor = database.execute(
+            """INSERT INTO calendar_events
+               (event_type, title, starts_at, location, notes, created_by)
+               VALUES ('meeting', ?, ?, ?, ?, ?)""",
+            (title, starts_at, request.form.get("location", "").strip(),
+             request.form.get("notes", "").strip(), session["admin_id"]),
+        )
+    log_activity("admin", session["admin_id"], session["admin_username"],
+                 "calendar_event_create", f"{title} (ID #{cursor.lastrowid})")
+    flash("Calendar event added.", "success")
+    return redirect(url_for("admin_calendar", month=starts_at[:7]))
     visible_start = month_weeks[0][0]
     visible_end = month_weeks[-1][-1] + timedelta(days=1)
     with get_db() as database:
@@ -5044,29 +4870,6 @@ def admin_calendar():
         next_month=next_month.strftime("%Y-%m"),
         today=datetime.now().date().isoformat(),
     )
-
-
-@app.route("/admin/calendar/events/new", methods=["POST"])
-@login_required
-def admin_calendar_event_create():
-    validate_csrf()
-    title = request.form.get("title", "").strip()
-    starts_at = request.form.get("starts_at", "").strip()
-    if not title or not starts_at:
-        flash("Event title and date are required.", "error")
-        return redirect(url_for("admin_calendar"))
-    with get_db() as database:
-        cursor = database.execute(
-            """INSERT INTO calendar_events
-               (event_type, title, starts_at, location, notes, created_by)
-               VALUES ('meeting', ?, ?, ?, ?, ?)""",
-            (title, starts_at, request.form.get("location", "").strip(),
-             request.form.get("notes", "").strip(), session["admin_id"]),
-        )
-    log_activity("admin", session["admin_id"], session["admin_username"],
-                 "calendar_event_create", f"{title} (ID #{cursor.lastrowid})")
-    flash("Calendar event added.", "success")
-    return redirect(url_for("admin_calendar", month=starts_at[:7]))
 
 
 def product_form_values(existing_image_url=None):
@@ -5564,7 +5367,7 @@ def admin_portfolio_group_create():
                 )
             log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_group_create", name)
             flash("Partner category added.", "success")
-        except DB_INTEGRITY_ERRORS:
+        except sqlite3.IntegrityError:
             flash("That partner-category slug already exists.", "error")
     return redirect(url_for("admin_portfolio"))
 
@@ -5589,7 +5392,7 @@ def admin_portfolio_group_edit(item_id):
                 )
             log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_group_update", name)
             flash("Partner category updated.", "success")
-        except DB_INTEGRITY_ERRORS:
+        except sqlite3.IntegrityError:
             flash("That partner-category slug already exists.", "error")
     return redirect(url_for("admin_portfolio"))
 
@@ -5717,7 +5520,7 @@ def admin_manufacturers():
                     "manufacturer_create", name
                 )
                 flash(f"{name} was added to the manufacturer list.", "success")
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash("That manufacturer already exists.", "error")
         return redirect(url_for("admin_manufacturers"))
 
@@ -5776,7 +5579,7 @@ def admin_manufacturer_edit(manufacturer_id):
                 )
                 flash("Manufacturer updated successfully.", "success")
                 return redirect(url_for("admin_manufacturers"))
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash("Another manufacturer already uses that name.", "error")
     return render_manufacturer_workspace(row)
 

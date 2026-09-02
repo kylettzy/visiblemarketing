@@ -3672,7 +3672,11 @@ def admin_account_edit(account_type, account_id):
             f"SELECT * FROM {table} WHERE id = ?", (account_id,)
         ).fetchone()
     if not row:
-        abort(404)
+        flash(
+            "That account is no longer available. Refresh the directory and try again.",
+            "error",
+        )
+        return redirect(url_for("admin_accounts"))
     account = dict(row)
 
     if request.method == "POST":
@@ -4823,29 +4827,6 @@ def admin_calendar():
     month_weeks = calendar.Calendar(firstweekday=6).monthdatescalendar(
         month_date.year, month_date.month
     )
-
-
-@app.route("/admin/calendar/events/new", methods=["POST"])
-@login_required
-def admin_calendar_event_create():
-    validate_csrf()
-    title = request.form.get("title", "").strip()
-    starts_at = request.form.get("starts_at", "").strip()
-    if not title or not starts_at:
-        flash("Event title and date are required.", "error")
-        return redirect(url_for("admin_calendar"))
-    with get_db() as database:
-        cursor = database.execute(
-            """INSERT INTO calendar_events
-               (event_type, title, starts_at, location, notes, created_by)
-               VALUES ('meeting', ?, ?, ?, ?, ?)""",
-            (title, starts_at, request.form.get("location", "").strip(),
-             request.form.get("notes", "").strip(), session["admin_id"]),
-        )
-    log_activity("admin", session["admin_id"], session["admin_username"],
-                 "calendar_event_create", f"{title} (ID #{cursor.lastrowid})")
-    flash("Calendar event added.", "success")
-    return redirect(url_for("admin_calendar", month=starts_at[:7]))
     visible_start = month_weeks[0][0]
     visible_end = month_weeks[-1][-1] + timedelta(days=1)
     with get_db() as database:
@@ -4870,6 +4851,29 @@ def admin_calendar_event_create():
         next_month=next_month.strftime("%Y-%m"),
         today=datetime.now().date().isoformat(),
     )
+
+
+@app.route("/admin/calendar/events/new", methods=["POST"])
+@login_required
+def admin_calendar_event_create():
+    validate_csrf()
+    title = request.form.get("title", "").strip()
+    starts_at = request.form.get("starts_at", "").strip()
+    if not title or not starts_at:
+        flash("Event title and date are required.", "error")
+        return redirect(url_for("admin_calendar"))
+    with get_db() as database:
+        cursor = database.execute(
+            """INSERT INTO calendar_events
+               (event_type, title, starts_at, location, notes, created_by)
+               VALUES ('meeting', ?, ?, ?, ?, ?)""",
+            (title, starts_at, request.form.get("location", "").strip(),
+             request.form.get("notes", "").strip(), session["admin_id"]),
+        )
+    log_activity("admin", session["admin_id"], session["admin_username"],
+                 "calendar_event_create", f"{title} (ID #{cursor.lastrowid})")
+    flash("Calendar event added.", "success")
+    return redirect(url_for("admin_calendar", month=starts_at[:7]))
 
 
 def product_form_values(existing_image_url=None):

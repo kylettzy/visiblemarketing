@@ -178,6 +178,23 @@ def static_files(filename):
     return send_from_directory(STATIC_ROOT, filename)
 
 
+@app.route("/manifest.webmanifest")
+def web_app_manifest():
+    """Expose the installable app manifest at the site root."""
+    response = send_from_directory(STATIC_ROOT, "manifest.webmanifest")
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@app.route("/service-worker.js")
+def service_worker():
+    """Serve the worker at root scope so every storefront route is covered."""
+    response = send_from_directory(STATIC_ROOT, "service-worker.js")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
 @app.after_request
 def prevent_stale_authenticated_pages(response):
     """Keep session-aware HTML headers in sync with the current login state."""

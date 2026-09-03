@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include '_pwa.html' %}
     <meta
       name="description"
       content="Visible Technologies International Corporation delivers enterprise IT infrastructure, cybersecurity, communications and physical security solutions in the Philippines."
@@ -25,7 +26,11 @@
   <body>
     <header class="site-header solution-header">
       <div class="shell header-inner solution-header-inner">
-        <a class="brand solution-brand" href="/" aria-label="Visible Technologies home">
+        <a
+          class="brand solution-brand"
+          href="/"
+          aria-label="Visible Technologies home"
+        >
           <img
             src="{{ url_for('static', filename='images/vtic-logo.png') }}"
             alt="Visible Technologies International Corporation"
@@ -41,7 +46,11 @@
         >
           <span></span><span></span><span></span>
         </button>
-        <nav id="landing-navigation" data-mobile-navigation aria-label="Main navigation">
+        <nav
+          id="landing-navigation"
+          data-mobile-navigation
+          aria-label="Main navigation"
+        >
           <a class="solution-nav-link" href="#company">Company</a>
           <details class="landing-menu solution-menu">
             <summary>Solutions <i></i></summary>
@@ -57,25 +66,26 @@
             </div>
           </details>
           <details class="landing-menu landing-menu--compact solution-menu">
-            <summary>Our partners<br /> and clients <i></i></summary>
+            <summary>
+              Our partners<br />
+              and clients <i></i>
+            </summary>
             <div>
               <a href="/partners">Partners</a><a href="/clients">Clients</a>
             </div>
           </details>
           <a class="solution-nav-link" href="/gallery">Gallery</a>
           <a class="solution-nav-link" href="#approach">Our approach</a>
-          <a class="solution-nav-link" href="mailto:sales@vtic.com.ph">Contact</a>
+          <a class="solution-nav-link" href="mailto:sales@vtic.com.ph"
+            >Contact</a
+          >
           <div class="mobile-account-actions solution-mobile-account">
             {% if session.get('customer_id') %}
             <span>Welcome, {{ session.customer_name }}</span>
-            <a class="primary" href="/storefront"
-              >Open solutions catalog</a
-            >
+            <a class="primary" href="/storefront">Open solutions catalog</a>
             {% elif session.get('admin_id') %}
             <span>Welcome, {{ session.admin_username }}</span>
-            <a class="primary" href="/admin"
-              >Go to admin console</a
-            >
+            <a class="primary" href="/admin">Go to admin console</a>
             {% else %}
             <a class="sign-in" href="/login">Sign in</a>
             <a class="primary" href="/register">Create account</a>
@@ -85,9 +95,7 @@
         <div class="account-actions solution-account">
           {% if session.get('customer_id') %}
           <span>Welcome, {{ session.customer_name }}</span>
-          <a class="primary" href="/storefront"
-            >Open solutions catalog</a
-          >
+          <a class="primary" href="/storefront">Open solutions catalog</a>
           {% elif session.get('admin_id') %}
           <span>Welcome, {{ session.admin_username }}</span>
           <a class="primary" href="/admin">Go to admin console</a>
@@ -206,6 +214,14 @@
                 >Already registered? Sign in →</a
               >
               {% endif %}
+              <button
+                class="button button--install"
+                type="button"
+                data-install-app
+                hidden
+              >
+                <span aria-hidden="true">↓</span> Install VTIC app
+              </button>
             </div>
           </div>
         </div>
@@ -526,8 +542,7 @@
             >
             {% if session.get('customer_id') %}<a href="/storefront"
               >Open solutions catalog</a
-            >{% else %}<a href="/register">Create client account</a>{% endif
-            %}
+            >{% else %}<a href="/register">Create client account</a>{% endif %}
           </div>
         </div>
       </section>

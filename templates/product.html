@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include '_pwa.html' %}
     <title>{{ product.name }} | VTIC Systems</title>
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
@@ -74,8 +75,8 @@
             >{% endif %} {% else %} <span>Commercial review</span
             ><b>Pricing available after review</b
             ><small
-              >Add this product to your review list. VTIC will confirm configuration,
-              availability and commercial terms.</small
+              >Add this product to your review list. VTIC will confirm
+              configuration, availability and commercial terms.</small
             >
             {% endif %}
           </div>

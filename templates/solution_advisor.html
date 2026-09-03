@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include '_pwa.html' %}
     <meta name="csrf-token" content="{{ csrf_token }}" />
     <title>VTIC Advisor | VTIC Systems</title>
     <link
@@ -82,7 +83,10 @@
       </div>
       {% endif %}
       <div class="advisor-layout">
-        <aside class="conversation-history" aria-label="Past advisor consultations">
+        <aside
+          class="conversation-history"
+          aria-label="Past advisor consultations"
+        >
           <header>
             <div>
               <span>YOUR WORKSPACE</span>

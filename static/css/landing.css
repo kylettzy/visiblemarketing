@@ -319,6 +319,29 @@ a {
   align-items: center;
   gap: 22px;
 }
+[data-install-app][hidden] {
+  display: none !important;
+}
+.button--install {
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(5, 30, 46, 0.54);
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.button--install:hover,
+.button--install:focus-visible {
+  border-color: #55d9f3;
+  background: rgba(12, 68, 91, 0.78);
+}
+.button--install span {
+  font-size: 15px;
+  line-height: 1;
+}
 .text-link {
   color: #dce6eb;
   font-size: 10px;

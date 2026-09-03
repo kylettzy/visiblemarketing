@@ -6,7 +6,7 @@
     <title>Product Catalog | VTIC Systems</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -24,112 +24,113 @@
     {% include '_theme.html' %}
   </head>
   <body>
-    {% set storefront_section = 'products' %} {% include
+    {% set storefront_section = 'products' %}{% include
     '_storefront_header.html' %}
-
-    <main class="shell">
-      <div class="breadcrumb">
-        <a href="/storefront">Solutions catalog</a><span>/</span> Product catalog
-      </div>
-      <section class="page-heading">
-        <div>
-          <p>ENTERPRISE PRODUCT CATALOG</p>
-          <h1>Specify with confidence.</h1>
-          <span
-            >Commercial IT products and configurable solutions from trusted
-            global manufacturers.</span
-          >
+    <main class="catalog-page">
+      <section class="catalog-hero">
+        <div class="shell catalog-hero__inner">
+          <span class="catalog-hero__icon" aria-hidden="true">♙</span>
+          <div>
+            <h1>Commercial IT products and configurable solutions</h1>
+            <p>from trusted global manufacturers.</p>
+          </div>
+          <div class="catalog-hero__art" aria-hidden="true">
+            <span></span><i></i><b></b>
+          </div>
         </div>
       </section>
-
-      <div class="catalog-layout">
-        <aside>
+      <div class="shell catalog-layout">
+        <aside class="catalog-filters" id="catalog-filters">
           <div class="filter-head">
-            <b>FILTER CATALOG</b><a href="/products">Reset</a>
+            <b>FILTER CATALOG</b
+            ><a href="/products">Reset all <span>↻</span></a>
           </div>
-          <section>
+          <section class="filter-card">
             <h2>Solution category</h2>
-            {% for item in categories %}<a
-              class="{{ 'selected' if category == item }}"
+            {% for item in categories %}
+            <a
+              class="filter-link {{ 'selected' if category == item }}"
               href="/products?category={{ item|urlencode }}"
-              ><span>{{ item }}</span><i></i></a
-            >{% endfor %}
+            >
+              <span class="filter-icon">{{ '⊞' if loop.first else '⌁' }}</span
+              ><span>{{ 'All Categories' if item == 'All' else item }}</span>
+            </a>
+            {% endfor %}
           </section>
-          <section class="brands">
+          <section class="filter-card filter-card--brands">
             <h2>Manufacturer</h2>
-            {% for brand in brands %}<a
-              href="/products?brand={{ brand|urlencode }}"
-              >{{ brand }}</a
+            {% for brand_item in brands %}<a
+              class="filter-link {{ 'selected' if brand == brand_item }}"
+              href="/products?brand={{ brand_item|urlencode }}"
+              ><span class="filter-icon">◇</span
+              ><span>{{ brand_item }}</span></a
             >{% endfor %}
           </section>
-          <div class="help">
-            <b>Need help specifying?</b>
-            <p>Send your requirements to our solutions team.</p>
-            <a href="mailto:support@vtic.com.ph">Contact project desk →</a>
-          </div>
         </aside>
-
-        <section class="results">
+        <section class="catalog-results">
           <div class="result-bar">
             <span
               >Showing <b>{{ products|length }}</b> of {{ total_results }}
               products</span
             >
+            <button class="mobile-filter" type="button" data-filter-toggle>
+              Filters
+            </button>
+            <div class="view-switch">
+              <button class="active" type="button" data-view="grid">
+                <span>⊞</span> Grid view</button
+              ><button type="button" data-view="list">
+                <span>☷</span> List view
+              </button>
+            </div>
           </div>
-          <div class="grid">
+          <div class="grid" data-product-grid>
             {% for product in products %}
             <article class="product-card">
               <a class="product-media" href="/product/{{ product.id }}">
-                {% if product.image_url %}
-                <img
+                <span class="category-pill">{{ product.category }}</span>
+                {% if product.image_url %}<img
                   class="product-image"
                   src="{{ product.image_url }}"
                   alt="{{ product.name }}"
                 />
-                {% elif product.manufacturer_logo %}
-                <img
+                {% elif product.manufacturer_logo %}<img
                   class="product-image product-image--brand-fallback"
                   src="{{ product.manufacturer_logo }}"
-                  alt="{{ product.brand }} logo — product image not available"
+                  alt="{{ product.brand }} logo"
                 />
-                {% else %}
-                <span class="product-initials"
+                {% else %}<span class="product-initials"
                   >{{ product.brand[:2]|upper }}</span
-                >
-                {% endif %}
-                <small>{{ product.brand }}</small>
-                {% if product.manufacturer_logo and product.image_url %}
-                <span class="manufacturer-mark"
+                >{% endif %} {% if product.manufacturer_logo and
+                product.image_url %}<span class="manufacturer-mark"
                   ><img
                     src="{{ product.manufacturer_logo }}"
-                    alt="{{ product.brand }} logo"
-                /></span>
-                {% endif %}
-                <i>{{ product.category }}</i>
+                    alt="{{ product.brand }} logo" /></span
+                >{% endif %}
               </a>
               <div class="product-copy">
+                <strong class="product-brand">{{ product.brand }}</strong>
+                <div class="product-divider"></div>
                 <p>{{ product.category }}</p>
                 <a href="/product/{{ product.id }}"
                   ><h2>{{ product.name }}</h2></a
                 >
                 <span class="availability"><i></i> Available through VTIC</span>
-                <div class="price">
-                  {% if can_view_prices %} {% if product.price is not none %}<b
-                    >₱{{ "{:,.2f}".format(product.price) }}</b
-                  ><small>{{ product.source }}</small>{% else %}<b
-                    >No internal price set</b
-                  ><small
-                    ><a
-                      href="{{ url_for('admin_product_edit', product_id=product.id) }}"
-                      >Add internal price →</a
-                    ></small
-                  >{% endif %} {% else %} <b>Pricing upon review</b
-                  ><small>Add products to your review list</small>
-                  {% endif %}
+                <div class="product-divider"></div>
+                <div class="review-line">
+                  <span>Add to review list</span
+                  ><button type="button" aria-label="Save product">☆</button>
                 </div>
-                <button class="add" data-add="{{ product|tojson|forceescape }}">
-                  Add to review list
-                </button>
+                <div class="product-actions">
+                  <button
+                    class="add"
+                    data-add="{{ product|tojson|forceescape }}"
+                  >
+                    Add to review list</button
+                  ><a href="/product/{{ product.id }}" aria-label="More details"
+                    >•••</a
+                  >
+                </div>
               </div>
             </article>
             {% else %}
@@ -143,42 +144,22 @@
           </div>
           {% if total_pages > 1 %}
           <nav class="pagination" aria-label="Product catalog pages">
-            {% set page_start = [1, page - 2]|max %} {% set page_end =
-            [total_pages, page + 2]|min %} {% if page > 1 %}
-            <a
-              class="pagination__direction"
+            {% set page_start = [1, page - 2]|max %}{% set page_end =
+            [total_pages, page + 2]|min %} {% if page > 1 %}<a
               href="{{ url_for('products', page=page-1, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
               >← Previous</a
-            >
-            {% else %}<span class="pagination__direction disabled"
-              >← Previous</span
-            >{% endif %}
-            <div class="pagination__pages">
-              {% if page_start > 1 %}<a
-                href="{{ url_for('products', page=1, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
-                >1</a
-              >{% if page_start > 2 %}<span>…</span>{% endif %}{% endif %} {%
-              for number in range(page_start, page_end + 1) %}
-              <a
+            >{% else %}<span>← Previous</span>{% endif %}
+            <div>
+              {% for number in range(page_start, page_end + 1) %}<a
                 class="{{ 'active' if number == page }}"
                 href="{{ url_for('products', page=number, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
-                {% if number == page %}aria-current="page"{% endif %}
                 >{{ number }}</a
-              >
-              {% endfor %} {% if page_end < total_pages %}{% if page_end <
-              total_pages - 1 %}<span>…</span>{% endif %}<a
-                href="{{ url_for('products', page=total_pages, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
-                >{{ total_pages }}</a
-              >{% endif %}
+              >{% endfor %}
             </div>
-            {% if page < total_pages %}
-            <a
-              class="pagination__direction"
+            {% if page < total_pages %}<a
               href="{{ url_for('products', page=page+1, category=category if category != 'All' else none, brand=brand or none, q=query or none) }}"
               >Next →</a
-            >
-            {% else %}<span class="pagination__direction disabled">Next →</span
-            >{% endif %}
+            >{% else %}<span>Next →</span>{% endif %}
           </nav>
           {% endif %}
         </section>
@@ -189,5 +170,6 @@
     {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/products-view.js') }}"></script>
   </body>
 </html>

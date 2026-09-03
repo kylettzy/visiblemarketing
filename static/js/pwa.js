@@ -6,6 +6,24 @@
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
   let installPrompt = null;
 
+  const reportInstallation = (source) => {
+    const storageKey = "vtic-app-install-id";
+    let deviceId = localStorage.getItem(storageKey);
+    if (!deviceId) {
+      deviceId = crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(storageKey, deviceId);
+    }
+    fetch("/api/app-installations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_id: deviceId, source }),
+      credentials: "same-origin",
+      keepalive: true,
+    }).catch(() => {});
+  };
+
   const showInstallButtons = () => {
     if (isStandalone) return;
     installButtons.forEach((button) => {
@@ -39,11 +57,14 @@
   });
 
   window.addEventListener("appinstalled", () => {
+    reportInstallation("appinstalled");
     installPrompt = null;
     installButtons.forEach((button) => {
       button.hidden = true;
     });
   });
+
+  if (isStandalone) reportInstallation("standalone_launch");
 
   if (!("serviceWorker" in navigator)) return;
 

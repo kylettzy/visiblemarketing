@@ -14,6 +14,7 @@ import smtplib
 import re
 import click
 import tempfile
+import hashlib
 from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
 from contextlib import closing
@@ -1373,6 +1374,18 @@ def initialize_database():
                 UNIQUE (provider, provider_subject),
                 FOREIGN KEY (customer_id) REFERENCES customers(id)
             );
+            CREATE TABLE IF NOT EXISTS app_installations (
+                id INTEGER PRIMARY KEY,
+                device_hash TEXT NOT NULL UNIQUE,
+                customer_id INTEGER,
+                install_source TEXT NOT NULL DEFAULT 'standalone_launch',
+                installed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                launch_count INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY (customer_id) REFERENCES customers(id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_app_installations_installed_at
+                ON app_installations(installed_at);
             CREATE TABLE IF NOT EXISTS activity_logs (
                 id INTEGER PRIMARY KEY,
                 actor_type TEXT NOT NULL,
@@ -4094,6 +4107,7 @@ def admin_account_edit(account_type, account_id):
 @login_required
 def admin_dashboard():
     query = request.args.get("q", "").strip()
+    app_install_stats = None
     with get_db() as database:
         if query:
             catalog = rows_to_dicts(
@@ -4106,7 +4120,51 @@ def admin_dashboard():
             catalog = rows_to_dicts(
                 database.execute("SELECT * FROM products ORDER BY updated_at DESC")
             )
-    return render_template("admin_dashboard.html", products=catalog, query=query)
+        if session.get("admin_role") == "superadmin":
+            app_install_stats = dict(
+                database.execute(
+                    """SELECT
+                           COUNT(*) AS total,
+                           SUM(CASE WHEN installed_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) AS recent,
+                           SUM(CASE WHEN last_seen_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) AS active
+                       FROM app_installations"""
+                ).fetchone()
+            )
+    return render_template(
+        "admin_dashboard.html",
+        products=catalog,
+        query=query,
+        app_install_stats=app_install_stats,
+    )
+
+
+@app.post("/api/app-installations")
+def record_app_installation():
+    """Count a browser installation once without storing device identifiers."""
+    payload = request.get_json(silent=True) or {}
+    device_id = str(payload.get("device_id", "")).strip().lower()
+    source = str(payload.get("source", "standalone_launch")).strip().lower()
+    if not re.fullmatch(r"[a-z0-9-]{16,80}", device_id):
+        return jsonify(ok=False, error="invalid_device_id"), 400
+    if source not in {"appinstalled", "standalone_launch"}:
+        source = "standalone_launch"
+
+    device_hash = hashlib.sha256(
+        f"{app.config['SECRET_KEY']}:{device_id}".encode("utf-8")
+    ).hexdigest()
+    customer_id = session.get("customer_id")
+    with get_db() as database:
+        database.execute(
+            """INSERT INTO app_installations
+                   (device_hash, customer_id, install_source)
+               VALUES (?, ?, ?)
+               ON CONFLICT(device_hash) DO UPDATE SET
+                   customer_id = COALESCE(excluded.customer_id, app_installations.customer_id),
+                   last_seen_at = CURRENT_TIMESTAMP,
+                   launch_count = app_installations.launch_count + 1""",
+            (device_hash, customer_id, source),
+        )
+    return jsonify(ok=True), 201
 
 
 @app.route("/admin/activity")

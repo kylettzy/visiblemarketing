@@ -18,7 +18,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}"
     />
-    {% include '_theme.html' %}
+    {% include '_theme.html' %} {% include '_mobile_storefront_styles.html' %}
   </head>
   <body data-ai-configured="{{ 'true' if ai_configured else 'false' }}">
     {% set storefront_section = 'advisor' %} {% include

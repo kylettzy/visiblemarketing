@@ -22,7 +22,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
     />
-    {% include '_theme.html' %}
+    {% include '_theme.html' %} {% include '_mobile_storefront_styles.html' %}
   </head>
   <body>
     {% set storefront_section = 'cart' %} {% include '_storefront_header.html'

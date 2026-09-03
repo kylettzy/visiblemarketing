@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include '_pwa.html' %}
     <title>Product Catalog | VTIC Systems</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
@@ -21,7 +22,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
     />
-    {% include '_theme.html' %}
+    {% include '_theme.html' %} {% include '_mobile_storefront_styles.html' %}
   </head>
   <body>
     {% set storefront_section = 'products' %}{% include

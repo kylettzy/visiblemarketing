@@ -69,7 +69,16 @@ aside nav a.active {
   color: #fff;
   border-left: 2px solid var(--green);
 }
-.admin-nav-count { float: right; min-width: 19px; padding: 2px 5px; border-radius: 10px; color: #071a2b; background: var(--green); text-align: center; font: 8px "DM Mono"; }
+.admin-nav-count {
+  float: right;
+  min-width: 19px;
+  padding: 2px 5px;
+  border-radius: 10px;
+  color: #071a2b;
+  background: var(--green);
+  text-align: center;
+  font: 8px "DM Mono";
+}
 .admin-user {
   margin-top: auto;
   padding: 15px;
@@ -573,10 +582,19 @@ body > aside {
     ),
     linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    url("../images/vtic-technology-access-bg.png"),
-    var(--admin-sidebar);
-  background-position: center, 0 0, 0 0, 50% center, center;
-  background-size: auto, 32px 32px, 32px 32px, cover, auto;
+    url("../images/vtic-technology-access-bg.png"), var(--admin-sidebar);
+  background-position:
+    center,
+    0 0,
+    0 0,
+    50% center,
+    center;
+  background-size:
+    auto,
+    32px 32px,
+    32px 32px,
+    cover,
+    auto;
   background-repeat: no-repeat, repeat, repeat, no-repeat, no-repeat;
 }
 
@@ -755,6 +773,79 @@ main > header > a {
   border-radius: 7px;
   color: var(--admin-text);
   background: color-mix(in srgb, #2ccf91 7%, var(--admin-panel));
+}
+
+.app-install-summary {
+  margin-bottom: 20px;
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(420px, 1.2fr);
+  align-items: center;
+  gap: 34px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  color: var(--admin-text);
+  background: var(--admin-panel);
+  box-shadow: 0 14px 36px rgba(7, 31, 48, 0.055);
+}
+.app-install-summary p {
+  margin: 0 0 8px;
+  color: var(--admin-accent);
+  font:
+    0.56rem "DM Mono",
+    monospace;
+  letter-spacing: 0.12em;
+}
+.app-install-summary h2 {
+  margin: 0 0 7px;
+  font:
+    700 1.35rem Poppins,
+    Inter,
+    sans-serif;
+}
+.app-install-summary > div > span,
+.app-install-summary dt {
+  color: var(--admin-muted);
+  font-size: 0.68rem;
+}
+.app-install-summary dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.app-install-summary dl div {
+  padding: 15px;
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--admin-accent) 4%, var(--admin-panel));
+}
+.app-install-summary dt,
+.app-install-summary dd {
+  margin: 0;
+}
+.app-install-summary dd {
+  margin-top: 8px;
+  color: var(--admin-text);
+  font:
+    700 1.55rem Poppins,
+    Inter,
+    sans-serif;
+}
+
+@media (max-width: 900px) {
+  .app-install-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-install-summary {
+    padding: 20px;
+  }
+  .app-install-summary dl {
+    grid-template-columns: 1fr;
+  }
 }
 
 .toolbar,

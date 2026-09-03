@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% include '_pwa.html' %}
     <meta
       name="description"
       content="Enterprise networking, cybersecurity, cloud and infrastructure solutions in the Philippines."
@@ -26,13 +27,59 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
     />
-    {% include '_theme.html' %}
+    {% include '_theme.html' %} {% include '_mobile_storefront_styles.html' %}
   </head>
   <body>
     {% set storefront_section = 'home' %} {% include '_storefront_header.html'
     %}
 
     <main>
+      <section class="mobile-storefront-home">
+        <article class="mobile-procurement-card">
+          <div>
+            <small>VTIC SOLUTIONS</small>
+            <h1>Enterprise Technology Procurement</h1>
+            <p>
+              Commercial IT products and configurable solutions from trusted
+              global manufacturers.
+            </p>
+            <a href="/products">Explore solutions <span>→</span></a>
+          </div>
+          <div class="mobile-procurement-art" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </div>
+        </article>
+        <div class="mobile-section-title"><h2>Quick access</h2></div>
+        <nav class="mobile-quick-access" aria-label="Quick access">
+          <a href="/products"><i>⊞</i><span>Catalog</span></a>
+          <a href="/account/reviews#messages"><i>✉</i><span>Messages</span></a>
+          <a href="/solution-advisor"><i>⌘</i><span>VTIC Advisor</span></a>
+          <a href="/account/reviews"><i>▤</i><span>Review requests</span></a>
+        </nav>
+        <div class="mobile-section-title">
+          <h2>Featured categories</h2>
+          <a href="/products">View all</a>
+        </div>
+        <div class="mobile-category-list">
+          {% for category in categories[1:7] %}<a
+            href="/products?category={{ category|urlencode }}"
+            ><i>⌘</i><span>{{ category }}</span><b>›</b></a
+          >{% endfor %}
+        </div>
+        <div class="mobile-section-title">
+          <h2>Top brands</h2>
+          <a href="/partners">View all</a>
+        </div>
+        <div class="mobile-brand-strip">
+          {% for partner in partners[:5] %}<a
+            href="/products?brand={{ partner.name|urlencode }}"
+            >{% if partner.logo_url %}<img
+              src="{{ partner.logo_url }}"
+              alt="{{ partner.name }}"
+            />{% else %}<b>{{ partner.name }}</b>{% endif %}</a
+          >{% endfor %}
+        </div>
+      </section>
       <section class="hero shell">
         <div class="hero-copy">
           <p class="kicker">IT INFRASTRUCTURE / CYBERSECURITY / CLOUD</p>
@@ -178,7 +225,8 @@
                 src="{{ product.manufacturer_logo }}"
                 alt="{{ product.brand }} logo — product image not available"
               />{% else %}<span>{{ product.brand[:2]|upper }}</span>{% endif %}
-              {% if product.manufacturer_logo and product.image_url %}<span class="manufacturer-mark"
+              {% if product.manufacturer_logo and product.image_url %}<span
+                class="manufacturer-mark"
                 ><img
                   src="{{ product.manufacturer_logo }}"
                   alt="{{ product.brand }} logo" /></span
@@ -214,7 +262,6 @@
           {% endif %} {% endfor %}
         </div>
       </section>
-
     </main>
     {% include '_storefront_footer.html' %}
     <div id="toast" role="status">Added to review list</div>

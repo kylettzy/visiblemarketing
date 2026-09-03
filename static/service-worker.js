@@ -1,8 +1,9 @@
-const CACHE_VERSION = "vtic-storefront-v1";
+const CACHE_VERSION = "vtic-storefront-v3";
 const APP_SHELL = [
   "/static/css/products.css",
   "/static/css/admin_storefront_menu.css",
   "/static/css/storefront_chatbot.css",
+  "/static/css/mobile_storefront.css",
   "/static/js/app.js",
   "/static/js/products-view.js",
   "/static/js/pwa.js",

@@ -32,12 +32,14 @@
     align-items: center;
   }
   .mobile-app-menu {
-    position: relative;
+    position: static;
     display: block;
     grid-column: 1;
     grid-row: 1;
   }
   .mobile-app-menu summary {
+    position: relative;
+    z-index: 1202;
     width: 42px;
     height: 42px;
     display: grid;
@@ -57,17 +59,34 @@
   }
   .mobile-app-menu nav {
     position: fixed;
-    inset: 72px 16px auto;
-    padding: 12px;
+    inset: 0 auto 0 0;
+    z-index: 1201;
+    width: min(86vw, 340px);
+    padding: calc(88px + env(safe-area-inset-top)) 18px 24px;
     display: grid;
+    align-content: start;
     gap: 3px;
-    border: 1px solid #dce6f4;
-    border-radius: 16px;
+    border: 0;
+    border-right: 1px solid #dce6f4;
+    border-radius: 0 20px 20px 0;
     background: #fff;
     box-shadow: 0 20px 45px rgba(8, 42, 82, 0.18);
+    overflow-y: auto;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+  }
+  .mobile-app-menu[open] nav {
+    transform: translateX(0);
+  }
+  .mobile-app-menu[open]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    background: rgba(5, 24, 48, 0.46);
   }
   .mobile-app-menu nav a {
-    min-height: 46px;
+    min-height: 52px;
     padding: 0 14px;
     display: flex;
     align-items: center;
@@ -79,6 +98,20 @@
   }
   .mobile-app-menu nav a:active {
     background: #eef4ff;
+  }
+  .mobile-app-menu[open] summary span:first-child {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .mobile-app-menu[open] summary span:nth-child(2) {
+    opacity: 0;
+  }
+  .mobile-app-menu[open] summary span:last-child {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+  .mobile-app-menu summary span {
+    transition:
+      transform 160ms ease,
+      opacity 160ms ease;
   }
   .vtic-nav__brand {
     grid-column: 2;

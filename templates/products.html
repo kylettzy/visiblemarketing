@@ -42,6 +42,15 @@
       </section>
       <div class="shell catalog-layout">
         <aside class="catalog-filters" id="catalog-filters">
+          <div class="mobile-filter-heading">
+            <div>
+              <small>FILTER CATALOG</small>
+              <h2>Refine products</h2>
+            </div>
+            <button type="button" data-filter-close aria-label="Close filters">
+              ×
+            </button>
+          </div>
           <div class="filter-head">
             <b>FILTER CATALOG</b
             ><a href="/products">Reset all <span>↻</span></a>
@@ -68,14 +77,27 @@
             >{% endfor %}
           </section>
         </aside>
+        <button
+          class="catalog-filter-backdrop"
+          type="button"
+          data-filter-close
+          aria-label="Close filters"
+          hidden
+        ></button>
         <section class="catalog-results">
           <div class="result-bar">
             <span
               >Showing <b>{{ products|length }}</b> of {{ total_results }}
               products</span
             >
-            <button class="mobile-filter" type="button" data-filter-toggle>
-              Filters
+            <button
+              class="mobile-filter"
+              type="button"
+              data-filter-toggle
+              aria-controls="catalog-filters"
+              aria-expanded="false"
+            >
+              <span aria-hidden="true">☷</span> Filters
             </button>
             <div class="view-switch">
               <button class="active" type="button" data-view="grid">

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "vtic-storefront-v3";
+const CACHE_VERSION = "vtic-storefront-v4";
 const APP_SHELL = [
   "/static/css/products.css",
   "/static/css/admin_storefront_menu.css",

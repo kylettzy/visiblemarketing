@@ -15,10 +15,26 @@ if (localStorage.getItem("vtic-catalog-view") === "list") {
   document.querySelector('[data-view="list"]')?.click();
 }
 
-document
-  .querySelector("[data-filter-toggle]")
-  ?.addEventListener("click", (event) => {
-    const filters = document.getElementById("catalog-filters");
-    const expanded = filters?.classList.toggle("open") || false;
-    event.currentTarget.textContent = expanded ? "Close filters" : "Filters";
-  });
+const filters = document.getElementById("catalog-filters");
+const filterToggle = document.querySelector("[data-filter-toggle]");
+const filterBackdrop = document.querySelector(".catalog-filter-backdrop");
+
+function setFilterDrawer(open) {
+  if (!filters || !filterToggle || !filterBackdrop) return;
+  filters.classList.toggle("open", open);
+  filterToggle.setAttribute("aria-expanded", String(open));
+  filterBackdrop.hidden = !open;
+  document.body.classList.toggle("filter-drawer-open", open);
+  if (open) filters.querySelector("[data-filter-close]")?.focus();
+  else filterToggle.focus();
+}
+
+filterToggle?.addEventListener("click", () => setFilterDrawer(true));
+document.querySelectorAll("[data-filter-close]").forEach((button) => {
+  button.addEventListener("click", () => setFilterDrawer(false));
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && filters?.classList.contains("open")) {
+    setFilterDrawer(false);
+  }
+});

@@ -1,10 +1,14 @@
 {% set catalog_open = request.path == '/admin' or
 request.path.startswith('/admin/products') or
 request.path.startswith('/admin/manufacturers') %} {% set requests_open =
-request.path.startswith('/admin/review-requests') or request.path.startswith('/admin/messages') or request.path.startswith('/admin/calendar') or request.path.startswith('/admin/catered-customers') %} {% set account_open =
+request.path.startswith('/admin/review-requests') or
+request.path.startswith('/admin/messages') or
+request.path.startswith('/admin/calendar') or
+request.path.startswith('/admin/catered-customers') %} {% set account_open =
 request.path.startswith('/admin/account') or
 request.path.startswith('/admin/accounts') or
-request.path.startswith('/admin/activity') or request.path.startswith('/admin/help') %}
+request.path.startswith('/admin/activity') or
+request.path.startswith('/admin/help') %}
 
 <aside class="admin-sidebar">
   <a class="logo" href="/admin" aria-label="VTIC admin home">
@@ -32,8 +36,12 @@ request.path.startswith('/admin/activity') or request.path.startswith('/admin/he
         >
       </div>
     </details>
-    <a class="admin-nav-home {{ 'active' if request.path.startswith('/admin/messages') else '' }}" href="/admin/messages">
-      <span class="admin-nav-icon" aria-hidden="true">✉</span><span>Messages</span>
+    <a
+      class="admin-nav-home {{ 'active' if request.path.startswith('/admin/messages') else '' }}"
+      href="/admin/messages"
+    >
+      <span class="admin-nav-icon" aria-hidden="true">✉</span
+      ><span>Messages</span>
     </a>
     <details class="admin-nav-group" {% if requests_open %}open{% endif %}>
       <summary>
@@ -55,14 +63,17 @@ request.path.startswith('/admin/activity') or request.path.startswith('/admin/he
         <a
           class="{{ 'active' if request.path.startswith('/admin/catered-customers') else '' }}"
           href="/admin/catered-customers"
-          >Catered clients<b class="admin-nav-count">{{ catered_customer_count }}</b></a
+          >Catered clients<b class="admin-nav-count"
+            >{{ catered_customer_count }}</b
+          ></a
         >
         {% endif %}
       </div>
     </details>
     <details class="admin-nav-group" {% if account_open %}open{% endif %}>
       <summary>
-        <span class="admin-nav-icon admin-nav-icon--settings" aria-hidden="true">⚙</span
+        <span class="admin-nav-icon admin-nav-icon--settings" aria-hidden="true"
+          >⚙</span
         ><span>Settings &amp; privacy</span><i aria-hidden="true"></i>
       </summary>
       <div class="admin-nav-children admin-settings-list">
@@ -78,7 +89,12 @@ request.path.startswith('/admin/activity') or request.path.startswith('/admin/he
           ><span class="admin-settings-icon" aria-hidden="true">◐</span
           ><span>Appearance</span></a
         >
-        <a class="{{ 'active' if request.path == '/admin/account/notifications' else '' }}" href="/admin/account/notifications"><span class="admin-settings-icon" aria-hidden="true">♪</span><span>Notifications &amp; sounds</span></a>
+        <a
+          class="{{ 'active' if request.path == '/admin/account/notifications' else '' }}"
+          href="/admin/account/notifications"
+          ><span class="admin-settings-icon" aria-hidden="true">♪</span
+          ><span>Notifications &amp; sounds</span></a
+        >
         {% if session.admin_role == 'superadmin' %}
         <a
           class="{{ 'active' if request.path == '/admin/account/database' else '' }}"
@@ -99,19 +115,44 @@ request.path.startswith('/admin/activity') or request.path.startswith('/admin/he
           ><span>Activity log</span></a
         >
         {% endif %}
-        <a class="{{ 'active' if request.path == '/admin/help' else '' }}" href="/admin/help"><span class="admin-settings-icon" aria-hidden="true">?</span><span>Help &amp; support</span></a>
-        <form class="admin-nav-signout" action="/admin/logout" method="post" data-confirm-signout>
+        <a
+          class="{{ 'active' if request.path == '/admin/help' else '' }}"
+          href="/admin/help"
+          ><span class="admin-settings-icon" aria-hidden="true">?</span
+          ><span>Help &amp; support</span></a
+        >
+        <form
+          class="admin-nav-signout"
+          action="/admin/logout"
+          method="post"
+          data-confirm-signout
+        >
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-          <button type="submit"><span class="admin-settings-icon" aria-hidden="true">↪</span><span>Sign out</span></button>
+          <button type="submit">
+            <span class="admin-settings-icon" aria-hidden="true">↪</span
+            ><span>Sign out</span>
+          </button>
         </form>
       </div>
     </details>
     {% if session.admin_role == 'superadmin' %}
-    <a class="admin-nav-home {{ 'active' if request.path.startswith('/admin/portfolio') else '' }}" href="/admin/portfolio">
-      <span class="admin-nav-icon" aria-hidden="true">▧</span><span>Clients &amp; partners</span>
+    <a class="admin-nav-home" href="/admin#app-installations">
+      <span class="admin-nav-icon" aria-hidden="true">⇩</span
+      ><span>App installations</span>
     </a>
-    <a class="admin-nav-home {{ 'active' if request.path.startswith('/admin/gallery') else '' }}" href="/admin/gallery">
-      <span class="admin-nav-icon" aria-hidden="true">▦</span><span>Gallery</span>
+    <a
+      class="admin-nav-home {{ 'active' if request.path.startswith('/admin/portfolio') else '' }}"
+      href="/admin/portfolio"
+    >
+      <span class="admin-nav-icon" aria-hidden="true">▧</span
+      ><span>Clients &amp; partners</span>
+    </a>
+    <a
+      class="admin-nav-home {{ 'active' if request.path.startswith('/admin/gallery') else '' }}"
+      href="/admin/gallery"
+    >
+      <span class="admin-nav-icon" aria-hidden="true">▦</span
+      ><span>Gallery</span>
     </a>
     {% endif %}
     <a class="admin-nav-home" href="/storefront" target="_blank">
@@ -125,5 +166,8 @@ request.path.startswith('/admin/activity') or request.path.startswith('/admin/he
     <small>{{ session.admin_role }}</small>
   </div>
   {% include '_message_notifications.html' %}
-  <script src="{{ url_for('static', filename='js/signout-confirm.js') }}" defer></script>
+  <script
+    src="{{ url_for('static', filename='js/signout-confirm.js') }}"
+    defer
+  ></script>
 </aside>

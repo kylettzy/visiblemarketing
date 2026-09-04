@@ -1,6 +1,7 @@
 .mobile-app-menu,
 .mobile-app-tabs,
-.mobile-storefront-home {
+.mobile-storefront-home,
+.mobile-filter-heading {
   display: none;
 }
 
@@ -433,6 +434,97 @@
     border-radius: 8px;
     color: #18518c;
     background: #fff;
+  }
+  body.filter-drawer-open {
+    overflow: hidden;
+  }
+  .catalog-page .catalog-filters {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1300;
+    width: min(88vw, 350px);
+    height: 100dvh;
+    padding: 0 18px 30px;
+    display: block;
+    overflow-y: auto;
+    border: 0;
+    background: #f8faff;
+    box-shadow: 16px 0 45px rgba(7, 35, 72, 0.2);
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition:
+      transform 220ms ease,
+      visibility 220ms ease;
+  }
+  .catalog-page .catalog-filters.open {
+    display: block;
+    transform: translateX(0);
+    visibility: visible;
+  }
+  .mobile-filter-heading {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: 0 -18px 16px;
+    padding: calc(18px + env(safe-area-inset-top)) 18px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e1e9f4;
+    background: rgba(255, 255, 255, 0.97);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  .mobile-filter-heading small {
+    color: #0a68e8;
+    font:
+      600 8px "DM Mono",
+      monospace;
+    letter-spacing: 0.1em;
+  }
+  .mobile-filter-heading h2 {
+    margin: 4px 0 0;
+    color: #102d55;
+    font-size: 19px;
+  }
+  .mobile-filter-heading button {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #dce6f2;
+    border-radius: 50%;
+    color: #17385f;
+    background: #fff;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .catalog-page .catalog-filters > .filter-head {
+    padding: 0 2px 12px;
+  }
+  .catalog-page .filter-card {
+    margin-bottom: 13px;
+    display: block;
+    border: 1px solid #e2eaf5;
+    border-radius: 12px;
+    background: #fff;
+  }
+  .catalog-page .filter-card--brands {
+    display: block !important;
+  }
+  .catalog-page .filter-link {
+    min-height: 45px;
+    border-radius: 8px;
+  }
+  .catalog-filter-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1290;
+    border: 0;
+    background: rgba(3, 20, 40, 0.48);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+  .catalog-filter-backdrop[hidden] {
+    display: none;
   }
   .catalog-page .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

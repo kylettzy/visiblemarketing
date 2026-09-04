@@ -21,6 +21,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/solution_header.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_dark_ui.css') }}" />
     {% include '_theme.html' %}
   </head>
   <body>
@@ -108,6 +109,25 @@
     </header>
 
     <main>
+      <section class="mobile-access-landing" aria-label="VTIC client network">
+        <img class="mobile-access-landing__logo" src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" />
+        <div class="mobile-access-landing__copy">
+          <p class="mobile-access-landing__eyebrow">VTIC CLIENT NETWORK</p>
+          <h1>Technology selected with confidence.</h1>
+          <div class="mobile-access-landing__rule"></div>
+          <p class="mobile-access-landing__intro">Explore enterprise technology, build a procurement shortlist and submit one clear request to the VTIC solutions team.</p>
+          <div class="mobile-access-landing__metrics">
+            <article><i>◇</i><b>1K+</b><span>Catalog products</span></article>
+            <article><i>♧</i><b>40+</b><span>Technology partners</span></article>
+            <article><i>♢</i><b>VTIC</b><span>Guided solutions</span></article>
+          </div>
+          <div class="mobile-access-landing__actions">
+            <a href="/login">Continue to VTIC →</a>
+            <a href="/register">Create an account</a>
+          </div>
+          <p class="mobile-access-landing__status">● &nbsp; SOLUTIONS CONSULTATION PORTAL&nbsp; <b>AVAILABLE</b></p>
+        </div>
+      </section>
       <section class="hero">
         <div class="hero-solution-reel" data-solution-reel>
           <video

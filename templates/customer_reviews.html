@@ -23,10 +23,29 @@
       href="{{ url_for('static', filename='css/customer_reviews.css') }}"
     />
     {% include '_mobile_storefront_styles.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_dark_ui.css') }}" />
   </head>
   <body>
     {% set storefront_section = 'reviews' %}{% include '_storefront_header.html'
     %}
+    <section class="mobile-message-center" id="messages">
+      <header class="mobile-message-center__head"><h1>Messages <b>{{ reviews|length }}</b></h1><span>⌕ &nbsp;☷</span></header>
+      <nav class="mobile-message-center__tabs"><span class="active">Inbox</span><span>Archived</span></nav>
+      <input class="mobile-message-search" type="search" placeholder="Search requests or messages…" aria-label="Search messages" />
+      <div class="mobile-conversation-list">
+        {% for review in reviews %}{% set mobile_messages = messages_by_request.get(review.id, []) %}
+        <article class="mobile-conversation-card"><i>{{ session.customer_name[:1]|upper }}</i><span><b>VTIC request #{{ "%05d"|format(review.id) }}</b><small>{{ mobile_messages[-1].message if mobile_messages else 'No messages yet. Open this request to contact VTIC.' }}</small></span><time>{{ (mobile_messages[-1].created_at if mobile_messages else review.created_at)[:10] }}</time></article>
+        {% endfor %}
+      </div>
+      {% if reviews %}{% set mobile_review = reviews[0] %}{% set mobile_messages = messages_by_request.get(mobile_review.id, []) %}
+      <section class="mobile-thread">
+        <header class="mobile-thread__head"><i>V</i><span><b>VTIC Solutions Team</b><small>Request #{{ "%05d"|format(mobile_review.id) }}</small></span></header>
+        <a class="mobile-thread__request" href="#request-{{ mobile_review.id }}">Open request #{{ "%05d"|format(mobile_review.id) }} →</a>
+        <div class="mobile-thread__messages">{% for message in mobile_messages %}<article class="{{ message.sender_type }}"><header><b>{{ message.sender_name }}</b><time>{{ message.created_at[:16] }}</time></header><p>{{ message.message }}</p></article>{% else %}<p>No messages yet. Ask the VTIC team about this request.</p>{% endfor %}</div>
+        <form class="mobile-thread__composer" method="post" action="/account/reviews/{{ mobile_review.id }}/message"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><label for="mobile-message-body">Reply to the VTIC team</label><textarea id="mobile-message-body" name="message" maxlength="3000" placeholder="Write a message…" required></textarea><button type="submit" aria-label="Send message">➤</button></form>
+      </section>
+      {% else %}<div class="reviews-empty"><h2>No messages yet</h2><p>Submit a product review request to start a conversation with VTIC.</p><a href="/products">Browse products →</a></div>{% endif %}
+    </section>
     <main class="reviews-shell shell">
       <header class="reviews-heading">
         <div>

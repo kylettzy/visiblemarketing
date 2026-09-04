@@ -22,3 +22,13 @@ activateReviewFilter(
   reviewFilterButtons.find((button) => button.dataset.reviewFilter === savedReviewFilter) ||
     reviewFilterButtons[0],
 );
+
+const mobileMessageSearch = document.querySelector(".mobile-message-search");
+if (mobileMessageSearch) {
+  mobileMessageSearch.addEventListener("input", () => {
+    const query = mobileMessageSearch.value.trim().toLowerCase();
+    document.querySelectorAll(".mobile-conversation-card").forEach((card) => {
+      card.hidden = query && !card.textContent.toLowerCase().includes(query);
+    });
+  });
+}

@@ -21,6 +21,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/password-security.css') }}"
     />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_dark_ui.css') }}" />
   </head>
   <body>
     <main class="access-shell customer-shell">
@@ -59,6 +60,7 @@
       </section>
       <section class="login-panel" aria-label="Client sign in">
         <div class="login-box">
+          <img class="mobile-login-logo" src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" />
           <header>
             <p class="portal-label">CLIENT ACCESS / 02</p>
             <h2>Continue to VTIC.</h2>

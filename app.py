@@ -300,8 +300,19 @@ class PostgresConnection:
     def __init__(self):
         if psycopg is None:
             raise RuntimeError("PostgreSQL is configured but psycopg is not installed.")
+        parsed_url = urllib.parse.urlsplit(POSTGRES_URL)
+        supported_query = urllib.parse.urlencode(
+            [
+                (key, value)
+                for key, value in urllib.parse.parse_qsl(
+                    parsed_url.query, keep_blank_values=True
+                )
+                if key.casefold() != "supa"
+            ]
+        )
+        connection_url = urllib.parse.urlunsplit(parsed_url._replace(query=supported_query))
         self.connection = psycopg.connect(
-            POSTGRES_URL, row_factory=postgres_row_factory, connect_timeout=10
+            connection_url, row_factory=postgres_row_factory, connect_timeout=10
         )
 
     def execute(self, sql, parameters=()):

@@ -34,6 +34,19 @@ class PostgresCompatibilityTests(unittest.TestCase):
         finally:
             application.SUPABASE_GOOGLE_AUTH = original
 
+    def test_vercel_supabase_marker_can_be_removed_from_connection_url(self):
+        parsed = application.urllib.parse.urlsplit(
+            "postgresql://user:pass@host/db?sslmode=require&supa=base-pooler.x"
+        )
+        supported = application.urllib.parse.urlencode(
+            [
+                (key, value)
+                for key, value in application.urllib.parse.parse_qsl(parsed.query)
+                if key.casefold() != "supa"
+            ]
+        )
+        self.assertEqual(supported, "sslmode=require")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -20,6 +20,14 @@ class PostgresCompatibilityTests(unittest.TestCase):
         self.assertEqual(row["id"], 7)
         self.assertEqual(row[0], 7)
 
+    def test_schema_script_remains_a_single_multi_statement_query(self):
+        schema = application.postgres_schema(
+            "CREATE TABLE one (id INTEGER PRIMARY KEY);"
+            "CREATE TABLE two (id INTEGER PRIMARY KEY);"
+        )
+        self.assertEqual(schema.count("CREATE TABLE"), 2)
+        self.assertIn(";", schema)
+
     def test_translates_sqlite_placeholders_and_conflict_syntax(self):
         statement = application.postgres_sql(
             "INSERT OR IGNORE INTO manufacturers (name) VALUES (?)"

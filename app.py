@@ -349,9 +349,10 @@ class PostgresConnection:
         return PostgresCursor(cursor)
 
     def executescript(self, script):
-        for statement in postgres_schema(script).split(";"):
-            if statement.strip():
-                self.connection.execute(statement)
+        # Use PostgreSQL's simple-query protocol for the complete schema. A
+        # single round trip is important on serverless cold starts and remains
+        # transactional under the surrounding connection context.
+        self.connection.execute(postgres_schema(script), prepare=False)
 
     def __enter__(self):
         self.connection.__enter__()

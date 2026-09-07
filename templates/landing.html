@@ -21,7 +21,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/solution_header.css') }}"
     />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_dark_ui.css') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/mobile_dark_ui.css') }}"
+    />
     {% include '_theme.html' %}
   </head>
   <body>
@@ -110,22 +113,33 @@
 
     <main>
       <section class="mobile-access-landing" aria-label="VTIC client network">
-        <img class="mobile-access-landing__logo" src="{{ url_for('static', filename='images/vtic-logo.png') }}" alt="Visible Technologies International Corporation" />
+        <img
+          class="mobile-access-landing__logo"
+          src="{{ url_for('static', filename='images/vtic-logo.png') }}"
+          alt="Visible Technologies International Corporation"
+        />
         <div class="mobile-access-landing__copy">
           <p class="mobile-access-landing__eyebrow">VTIC CLIENT NETWORK</p>
           <h1>Technology selected with confidence.</h1>
           <div class="mobile-access-landing__rule"></div>
-          <p class="mobile-access-landing__intro">Explore enterprise technology, build a procurement shortlist and submit one clear request to the VTIC solutions team.</p>
+          <p class="mobile-access-landing__intro">
+            Explore enterprise technology, build a procurement shortlist and
+            submit one clear request to the VTIC solutions team.
+          </p>
           <div class="mobile-access-landing__metrics">
             <article><i>◇</i><b>1K+</b><span>Catalog products</span></article>
-            <article><i>♧</i><b>40+</b><span>Technology partners</span></article>
+            <article>
+              <i>♧</i><b>40+</b><span>Technology partners</span>
+            </article>
             <article><i>♢</i><b>VTIC</b><span>Guided solutions</span></article>
           </div>
           <div class="mobile-access-landing__actions">
             <a href="/login">Continue to VTIC →</a>
             <a href="/register">Create an account</a>
           </div>
-          <p class="mobile-access-landing__status">● &nbsp; SOLUTIONS CONSULTATION PORTAL&nbsp; <b>AVAILABLE</b></p>
+          <p class="mobile-access-landing__status">
+            ● &nbsp; SOLUTIONS CONSULTATION PORTAL&nbsp; <b>AVAILABLE</b>
+          </p>
         </div>
       </section>
       <section class="hero">
@@ -247,62 +261,96 @@
         </div>
       </section>
 
-      <section class="company shell" id="company">
-        <div class="section-index">
-          <span>01 / WHO WE ARE</span>
-          <div></div>
-        </div>
-        <div class="company-grid">
-          <h2>A solutions company built around real operational needs.</h2>
-          <div class="company-copy">
-            <p>
-              Visible is an IT solutions company and your trusted partner in
-              navigating the digital landscape. From tailored software
-              development to cutting-edge cybersecurity and transformative cloud
-              services, we deliver seamless technology solutions that drive
-              efficiency, productivity and growth for your organization.
-            </p>
-            <a href="mailto:sales@vtic.com.ph"
-              >Start a conversation with VTIC →</a
-            >
+      <section class="company" id="company">
+        <div class="company-building" aria-hidden="true"></div>
+        <div class="shell company-shell">
+          <div class="section-index company-index">
+            <span>01 / WHO WE ARE</span>
+            <div></div>
+            <span>PEOPLE • TECHNOLOGY • A BRIGHTER TOMORROW</span>
           </div>
-        </div>
-        <div class="vision-mission">
-          <article>
-            <div
-              class="statement-icon statement-icon--vision"
-              aria-hidden="true"
-            >
-              <span></span>
+          <div class="company-grid">
+            <div class="company-heading">
+              <p class="company-kicker">MORE THAN SOLUTIONS</p>
+              <h2>
+                A solutions company built around real
+                <span>operational needs.</span>
+              </h2>
+              <p class="company-intro">
+                We translate complex technology into practical, reliable and
+                future-ready solutions — so you can focus on what matters most.
+              </p>
             </div>
-            <p class="statement-label">OUR DIRECTION / 01</p>
-            <h3>Our Vision</h3>
-            <p>
-              Our vision is to be globally present in providing competitive IT
-              solutions and systems integration that support our clients,
-              partners and employees. We strive to achieve this through
-              innovation, quality and a commitment to first-class service.
-            </p>
-          </article>
-          <article>
-            <div
-              class="statement-icon statement-icon--mission"
-              aria-hidden="true"
-            >
-              <span></span>
+            <div class="company-copy">
+              <p>
+                Visible is an IT solutions company and your trusted partner in
+                navigating the digital landscape. From tailored software
+                development to cutting-edge cybersecurity and transformative
+                cloud services, we deliver seamless technology solutions that
+                drive efficiency, productivity and growth for your organization.
+              </p>
+              <a href="mailto:sales@vtic.com.ph"
+                >Start a conversation with VTIC
+                <span aria-hidden="true">→</span></a
+              >
             </div>
-            <p class="statement-label">OUR PURPOSE / 02</p>
-            <h3>Our Mission</h3>
-            <p>
-              Our mission is to be the leading provider of Information and
-              Communications Technology (ICT) strategies and services that
-              deliver long-term commercial benefits based on our clients’ key
-              business requirements. In addition, Visible aims to be your
-              partner in ensuring the application of economical, efficient,
-              durable and flexible solutions that allow your organization to
-              respond rapidly to both market and client needs.
-            </p>
-          </article>
+          </div>
+          <div class="vision-mission">
+            <article class="statement-card statement-card--vision">
+              <div class="statement-content">
+                <div class="statement-heading-row">
+                  <div class="statement-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" role="img">
+                      <path
+                        d="M4 24s7-11 20-11 20 11 20 11-7 11-20 11S4 24 4 24Z"
+                      />
+                      <circle cx="24" cy="24" r="6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="statement-label">OUR DIRECTION / 01</p>
+                    <h3>Our Vision</h3>
+                  </div>
+                </div>
+                <p>
+                  Our vision is to be globally present in providing competitive
+                  IT solutions and systems integration that support our clients,
+                  partners and employees. We strive to achieve this through
+                  innovation, quality and a commitment to first-class service.
+                </p>
+                <small>A MORE CONNECTED TOMORROW</small>
+              </div>
+              <div class="statement-photo" aria-hidden="true"></div>
+            </article>
+            <article class="statement-card statement-card--mission">
+              <div class="statement-content">
+                <div class="statement-heading-row">
+                  <div class="statement-icon" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" role="img">
+                      <circle cx="22" cy="26" r="15" />
+                      <circle cx="22" cy="26" r="9" />
+                      <circle cx="22" cy="26" r="3" />
+                      <path d="M22 26 39 9M31 9h8v8" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="statement-label">OUR PURPOSE / 02</p>
+                    <h3>Our Mission</h3>
+                  </div>
+                </div>
+                <p>
+                  Our mission is to be the leading provider of Information and
+                  Communications Technology (ICT) strategies and services that
+                  deliver long-term commercial benefits based on our clients’
+                  key business requirements. Visible aims to be your partner in
+                  applying economical, efficient, durable and flexible solutions
+                  that respond rapidly to market and client needs.
+                </p>
+                <small>SOLUTIONS FOR REAL IMPACT</small>
+              </div>
+              <div class="statement-photo" aria-hidden="true"></div>
+            </article>
+          </div>
         </div>
       </section>
 

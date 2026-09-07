@@ -10,6 +10,405 @@
   --shell: 1240px;
 }
 
+/* Who we are — editorial corporate composition */
+.company {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 30px 0 78px;
+  background:
+    linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0.98) 0 47%,
+      rgba(247, 252, 255, 0.82) 68%,
+      rgba(224, 244, 255, 0.46) 100%
+    ),
+    #f7fbfe;
+}
+
+.company::before {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: auto;
+  height: auto;
+  background:
+    linear-gradient(
+      38deg,
+      transparent 0 11%,
+      rgba(31, 139, 211, 0.055) 11.2% 12.3%,
+      transparent 12.5%
+    ),
+    linear-gradient(
+      38deg,
+      transparent 0 15%,
+      rgba(31, 139, 211, 0.035) 15.2% 16.3%,
+      transparent 16.5%
+    );
+  content: "";
+}
+
+.company-building {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  width: min(43vw, 740px);
+  height: 52%;
+  background:
+    linear-gradient(
+      90deg,
+      #f7fbfe 0,
+      rgba(247, 251, 254, 0.64) 16%,
+      transparent 44%
+    ),
+    linear-gradient(0deg, #f7fbfe 0, transparent 34%),
+    url("../images/who-we-are-hero.jpg") center top / cover no-repeat;
+  opacity: 0.94;
+}
+
+.company-shell {
+  position: relative;
+}
+
+.company-index {
+  grid-template-columns: auto minmax(90px, 1fr) auto;
+  gap: 28px;
+  margin-bottom: 43px;
+}
+
+.company-index span:last-child {
+  color: #1682bd;
+  text-align: right;
+}
+
+.company-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.7fr);
+  align-items: center;
+  gap: clamp(60px, 8vw, 130px);
+}
+
+.company-heading {
+  max-width: 720px;
+}
+
+.company-kicker {
+  margin: 0 0 12px;
+  color: #087fc0;
+  font:
+    700 13px/1.2 "DM Mono",
+    monospace;
+  letter-spacing: 0.22em;
+}
+
+.company h2 {
+  max-width: none;
+  margin: 0;
+  color: #0a2639;
+  font-size: clamp(44px, 5.15vw, 76px);
+  line-height: 0.93;
+  letter-spacing: -0.064em;
+}
+
+.company h2 span {
+  display: block;
+  padding-bottom: 0.08em;
+  background: linear-gradient(90deg, #00aeda 0%, #167fd9 52%, #6f79db 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.company-intro {
+  max-width: 650px;
+  margin: 14px 0 0;
+  color: #4b6578;
+  font-size: clamp(14px, 1.15vw, 18px);
+  line-height: 1.45;
+}
+
+.company-copy {
+  padding: 0 0 0 38px;
+  border-left: 1px solid rgba(68, 125, 157, 0.28);
+}
+
+.company-copy p {
+  margin: 0 0 22px;
+  color: #4c6576;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.company-copy a {
+  display: inline-flex;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 25px;
+  border-radius: 999px;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(105deg, #1287ef, #00b8d9);
+  box-shadow: 0 12px 24px rgba(0, 142, 211, 0.18);
+  color: #fff;
+  font-size: 12px;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.company-copy a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(0, 142, 211, 0.27);
+}
+
+.vision-mission {
+  display: grid;
+  margin-top: 34px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  border: 0;
+}
+
+.vision-mission .statement-card {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  min-height: 335px;
+  padding: 0;
+  grid-template-columns: minmax(0, 1.22fr) minmax(200px, 0.78fr);
+  border: 1px solid rgba(90, 151, 185, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 20px 44px rgba(67, 122, 151, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.vision-mission .statement-card::after {
+  display: none;
+}
+
+.statement-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  padding: 34px 20px 27px 38px;
+  flex-direction: column;
+}
+
+.statement-heading-row {
+  display: grid;
+  margin-bottom: 20px;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 18px;
+}
+
+.statement-icon {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  border-radius: 50%;
+  place-items: center;
+  background: rgba(2, 170, 220, 0.08);
+  color: #00a4dc;
+}
+
+.statement-icon svg {
+  width: 43px;
+  height: 43px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.statement-label {
+  margin: 0 0 8px;
+  color: #098ac8;
+  font:
+    700 9px/1.3 "DM Mono",
+    monospace !important;
+  letter-spacing: 0.17em;
+}
+
+.vision-mission h3 {
+  margin: 0;
+  color: #0a2639;
+  font-size: clamp(25px, 2vw, 34px);
+  line-height: 1;
+}
+
+.vision-mission .statement-content > p {
+  max-width: 440px;
+  margin: 0;
+  color: #4b6577;
+  font-size: 12px;
+  line-height: 1.58;
+}
+
+.statement-content small {
+  display: flex;
+  margin-top: auto;
+  padding-top: 20px;
+  align-items: center;
+  gap: 13px;
+  color: #547081;
+  font:
+    500 8px/1.2 "DM Mono",
+    monospace;
+  letter-spacing: 0.22em;
+}
+
+.statement-content small::before {
+  width: 24px;
+  height: 1px;
+  background: #547081;
+  content: "";
+}
+
+.statement-photo {
+  min-width: 0;
+  height: 100%;
+  clip-path: polygon(27% 0, 100% 0, 100% 100%, 0 100%);
+  background-position: center;
+  background-size: cover;
+}
+
+.statement-card--vision .statement-photo {
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent 30%),
+    url("../images/who-we-are-vision.jpg");
+}
+
+.statement-card--mission .statement-photo {
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 30%),
+    url("../images/who-we-are-mission.jpg");
+}
+
+:root[data-theme="dark"] .company {
+  background: linear-gradient(
+    118deg,
+    #071b29 0 48%,
+    rgba(7, 27, 41, 0.9) 70%,
+    rgba(5, 40, 57, 0.76) 100%
+  );
+}
+
+:root[data-theme="dark"] .company-building {
+  background:
+    linear-gradient(
+      90deg,
+      #071b29 0,
+      rgba(7, 27, 41, 0.64) 18%,
+      transparent 48%
+    ),
+    linear-gradient(0deg, #071b29 0, transparent 36%),
+    url("../images/who-we-are-hero.jpg") center top / cover no-repeat;
+  opacity: 0.5;
+}
+
+:root[data-theme="dark"] .company h2,
+:root[data-theme="dark"] .vision-mission h3 {
+  color: #f4fbff;
+}
+
+:root[data-theme="dark"] .company-intro,
+:root[data-theme="dark"] .company-copy p,
+:root[data-theme="dark"] .vision-mission .statement-content > p {
+  color: #aebfca;
+}
+
+:root[data-theme="dark"] .vision-mission .statement-card {
+  border-color: rgba(91, 167, 198, 0.25);
+  background: rgba(8, 31, 45, 0.86);
+}
+
+@media (max-width: 1050px) {
+  .company-building {
+    width: 56vw;
+    opacity: 0.48;
+  }
+
+  .company-grid {
+    grid-template-columns: 1fr 0.75fr;
+    gap: 45px;
+  }
+
+  .vision-mission .statement-card {
+    grid-template-columns: 1fr;
+  }
+
+  .statement-photo {
+    min-height: 210px;
+    clip-path: polygon(0 22%, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@media (max-width: 760px) {
+  .company {
+    padding: 48px 0 58px;
+  }
+
+  .company-building {
+    width: 100%;
+    height: 330px;
+    opacity: 0.22;
+  }
+
+  .company-index {
+    grid-template-columns: auto 1fr;
+    margin-bottom: 32px;
+  }
+
+  .company-index span:last-child {
+    display: none;
+  }
+
+  .company-grid,
+  .vision-mission {
+    grid-template-columns: 1fr;
+  }
+
+  .company-grid {
+    gap: 30px;
+  }
+
+  .company h2 {
+    font-size: clamp(42px, 12vw, 60px);
+  }
+
+  .company-copy {
+    padding: 24px 0 0;
+    border-top: 1px solid rgba(68, 125, 157, 0.28);
+    border-left: 0;
+  }
+
+  .vision-mission {
+    margin-top: 42px;
+  }
+
+  .statement-content {
+    padding: 28px 24px;
+  }
+
+  .statement-heading-row {
+    grid-template-columns: 60px 1fr;
+    gap: 14px;
+  }
+
+  .statement-icon {
+    width: 60px;
+    height: 60px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -2234,5 +2633,138 @@ footer {
   }
   footer {
     padding-top: 0;
+  }
+}
+
+/* Keep the Who We Are composition above the legacy section rules in the cascade. */
+body .company {
+  padding: 30px 0 78px;
+}
+
+body .company::before {
+  inset: 0;
+  width: auto;
+  height: auto;
+  background:
+    linear-gradient(
+      38deg,
+      transparent 0 11%,
+      rgba(31, 139, 211, 0.055) 11.2% 12.3%,
+      transparent 12.5%
+    ),
+    linear-gradient(
+      38deg,
+      transparent 0 15%,
+      rgba(31, 139, 211, 0.035) 15.2% 16.3%,
+      transparent 16.5%
+    );
+}
+
+body .company-grid {
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.7fr);
+  align-items: center;
+  gap: clamp(60px, 8vw, 130px);
+}
+
+body .company h2 {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(44px, 5.15vw, 76px);
+  line-height: 0.93;
+  letter-spacing: -0.064em;
+}
+
+body .company-copy {
+  padding: 0 0 0 38px;
+  border-top: 0;
+  border-left: 1px solid rgba(68, 125, 157, 0.28);
+}
+
+body .company-copy p {
+  margin: 0 0 22px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+body .company-copy a {
+  display: inline-flex;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 25px;
+  border-radius: 999px;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-size: 12px;
+}
+
+body .vision-mission {
+  margin-top: 34px;
+  gap: 22px;
+  border: 0;
+}
+
+body .vision-mission .statement-card {
+  min-height: 335px;
+  padding: 0;
+  border: 1px solid rgba(90, 151, 185, 0.28);
+  border-radius: 14px;
+}
+
+body .statement-icon {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  border-radius: 50%;
+  place-items: center;
+}
+
+body .vision-mission h3 {
+  margin: 0;
+  font-size: clamp(25px, 2vw, 34px);
+  line-height: 1;
+}
+
+body .vision-mission .statement-content > p {
+  max-width: 440px;
+  margin: 0;
+  font-size: 12px;
+}
+
+@media (max-width: 1050px) {
+  body .company-grid {
+    grid-template-columns: 1fr 0.75fr;
+    gap: 45px;
+  }
+
+  body .vision-mission .statement-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  body .company {
+    padding: 48px 0 58px;
+  }
+
+  body .company-grid,
+  body .vision-mission {
+    grid-template-columns: 1fr;
+  }
+
+  body .company-grid {
+    gap: 30px;
+  }
+
+  body .company-copy {
+    padding: 24px 0 0;
+    border-top: 1px solid rgba(68, 125, 157, 0.28);
+    border-left: 0;
+  }
+
+  body .statement-icon {
+    width: 60px;
+    height: 60px;
   }
 }

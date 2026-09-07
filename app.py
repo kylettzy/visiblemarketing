@@ -1274,6 +1274,38 @@ def get_catalog_categories(include_all=True):
 
 def initialize_database():
     with get_db() as database:
+        if USING_POSTGRES:
+            schema_ready = database.execute(
+                "SELECT to_regclass('public.admins') AS table_name"
+            ).fetchone()
+            if schema_ready and schema_ready["table_name"]:
+                admin_username = os.environ.get("VTIC_ADMIN_USERNAME", "admin")
+                configured_admin_password = os.environ.get("VTIC_ADMIN_PASSWORD")
+                bootstrap_admin = database.execute(
+                    "SELECT id FROM admins WHERE username = ?",
+                    (admin_username,),
+                ).fetchone()
+                if not bootstrap_admin:
+                    database.execute(
+                        "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
+                        (
+                            admin_username,
+                            generate_password_hash(
+                                configured_admin_password or "ChangeMe-VTIC-2026!"
+                            ),
+                        ),
+                    )
+                elif configured_admin_password:
+                    database.execute(
+                        """UPDATE admins
+                           SET password_hash = ?, status = 'active', status_expires_at = NULL
+                           WHERE id = ?""",
+                        (
+                            generate_password_hash(configured_admin_password),
+                            bootstrap_admin["id"],
+                        ),
+                    )
+                return
         database.executescript(
             """
             CREATE TABLE IF NOT EXISTS admins (

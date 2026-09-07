@@ -32,3 +32,5 @@ vtic_store.db
 # (Optional) Log Files
 # ==========================================
 # *.log
+.vercel
+.env*

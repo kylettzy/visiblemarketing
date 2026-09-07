@@ -4,6 +4,11 @@ import app as application
 
 
 class PostgresCompatibilityTests(unittest.TestCase):
+    def test_row_factory_accepts_commands_without_result_columns(self):
+        cursor = type("Cursor", (), {"description": None})()
+        make_row = application.postgres_row_factory(cursor)
+        self.assertEqual(make_row(()), ())
+
     def test_translates_sqlite_placeholders_and_conflict_syntax(self):
         statement = application.postgres_sql(
             "INSERT OR IGNORE INTO manufacturers (name) VALUES (?)"

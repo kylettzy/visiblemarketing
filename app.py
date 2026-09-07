@@ -2152,6 +2152,16 @@ def home():
     return render_template("landing.html")
 
 
+@app.route("/privacy")
+def privacy_policy():
+    return render_template("privacy.html")
+
+
+@app.route("/terms")
+def terms_of_service():
+    return render_template("terms.html")
+
+
 SOLUTION_PAGES = {
     "physical-security": {
         "index": "01",

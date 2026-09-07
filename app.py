@@ -131,8 +131,16 @@ OAUTH_PROVIDERS = {
 }
 
 PUBLIC_BASE_URL = os.environ.get("VTIC_PUBLIC_URL", "").strip().rstrip("/")
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+# Vercel's Supabase storage integration may point at a different project than
+# the one used for customer authentication. Explicit VTIC_* overrides keep
+# Auth independent without disturbing the working PostgreSQL connection.
+SUPABASE_URL = (
+    os.environ.get("VTIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL", "")
+).strip().rstrip("/")
+SUPABASE_ANON_KEY = (
+    os.environ.get("VTIC_SUPABASE_ANON_KEY")
+    or os.environ.get("SUPABASE_ANON_KEY", "")
+).strip()
 SUPABASE_GOOGLE_AUTH = bool(SUPABASE_URL and SUPABASE_ANON_KEY)
 if PUBLIC_BASE_URL and not PUBLIC_BASE_URL.startswith(("https://", "http://")):
     raise RuntimeError("VTIC_PUBLIC_URL must start with https:// or http://")

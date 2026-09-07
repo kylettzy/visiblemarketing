@@ -15,7 +15,7 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/landing.css') }}?v=20260907-2"
+      href="{{ url_for('static', filename='css/landing.css') }}?v=20260907-8"
     />
     <link
       rel="stylesheet"
@@ -495,36 +495,96 @@
         </div>
       </section>
 
-      <section class="approach shell" id="approach">
-        <div class="section-index">
-          <span>03 / HOW WE WORK</span>
-          <div></div>
-        </div>
-        <div class="approach-grid">
-          <div>
-            <p>DISCOVERY</p>
-            <strong
-              >Understand the environment and define the requirement.</strong
-            >
+      <section class="approach" id="approach">
+        <div class="approach-building" aria-hidden="true"></div>
+        <div class="shell approach-shell">
+          <div class="section-index">
+            <span>03 / HOW WE WORK</span>
+            <div></div>
           </div>
-          <div>
-            <p>ENGINEERING</p>
-            <strong
-              >Develop the architecture and select compatible products.</strong
-            >
+          <div class="approach-heading">
+            <h2>A streamlined process.<br /><span>Real results.</span></h2>
+            <p>
+              From discovery to delivery, we follow a proven process to ensure
+              your technology goals are met with precision and care.
+            </p>
           </div>
-          <div>
-            <p>COMMERCIAL REVIEW</p>
-            <strong
-              >Validate quantities, availability, scope and project
-              pricing.</strong
-            >
-          </div>
-          <div>
-            <p>DELIVERY</p>
-            <strong
-              >Coordinate sourcing, implementation and ongoing support.</strong
-            >
+          <div class="approach-grid">
+            <article>
+              <div class="approach-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <circle cx="21" cy="21" r="11" />
+                  <path d="m29 29 10 10" />
+                </svg>
+              </div>
+              <p>01 / DISCOVERY</p>
+              <h3>Understand<br />your needs.</h3>
+              <span
+                >We listen, assess, and analyze your environment and
+                requirements.</span
+              >
+              <small></small>
+            </article>
+            <article>
+              <div class="approach-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <circle cx="24" cy="24" r="5" />
+                  <ellipse cx="24" cy="24" rx="18" ry="7" />
+                  <ellipse
+                    cx="24"
+                    cy="24"
+                    rx="18"
+                    ry="7"
+                    transform="rotate(60 24 24)"
+                  />
+                  <ellipse
+                    cx="24"
+                    cy="24"
+                    rx="18"
+                    ry="7"
+                    transform="rotate(120 24 24)"
+                  />
+                </svg>
+              </div>
+              <p>02 / ENGINEERING</p>
+              <h3>Build the<br />right solution.</h3>
+              <span
+                >We design the architecture and select the best products for
+                your goals.</span
+              >
+              <small></small>
+            </article>
+            <article>
+              <div class="approach-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <rect x="12" y="10" width="24" height="31" rx="3" />
+                  <path d="M19 10V7h10v3M18 21l3 3 6-7M18 31h12" />
+                </svg>
+              </div>
+              <p>03 / COMMERCIAL REVIEW</p>
+              <h3>Validate and<br />plan together.</h3>
+              <span
+                >We confirm quantities, availability, scope and pricing — no
+                surprises.</span
+              >
+              <small></small>
+            </article>
+            <article>
+              <div class="approach-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <path d="M7 15h23v20H7zM30 22h6l5 6v7H30zM14 15V9h10v6" />
+                  <circle cx="15" cy="36" r="3" />
+                  <circle cx="35" cy="36" r="3" />
+                </svg>
+              </div>
+              <p>04 / DELIVERY</p>
+              <h3>Implement<br />and deploy.</h3>
+              <span
+                >We handle sourcing, installation and configuration for a smooth
+                rollout.</span
+              >
+              <small></small>
+            </article>
           </div>
         </div>
       </section>
@@ -537,22 +597,32 @@
           </div>
           <div class="leadership-grid">
             <div class="leadership-portrait">
+              <p class="leadership-side-label">VISIBLE<br />EXECUTIVE<br />LEADERSHIP</p>
               <div class="portrait-frame">
-                <span>VISIBLE / EXECUTIVE LEADERSHIP</span>
                 <img
                   src="{{ url_for('static', filename='images/ceo-resil-fuscablo.png') }}"
                   alt="Ms. Resil B. Fuscablo, CEO of Visible Technologies International Corporation"
                 />
-                <i aria-hidden="true"></i>
+                <div class="portrait-signature">
+                  <strong>Resil B. Fuscablo</strong>
+                  <span>CHIEF EXECUTIVE OFFICER</span>
+                  <small>VISIBLE TECHNOLOGIES<br />INTERNATIONAL CORPORATION</small>
+                </div>
               </div>
             </div>
             <div class="leadership-copy">
               <p class="leadership-eyebrow">MEET OUR CEO</p>
-              <h2>Resil B.<br />Fuscablo</h2>
-              <p class="leadership-role">
-                Chief Executive Officer<br />Visible Technologies International
-                Corporation
-              </p>
+              <div class="leadership-intro">
+                <div>
+                  <h2>Resil B.<br /><span>Fuscablo</span></h2>
+                  <p class="leadership-role">Chief Executive Officer<br />Visible Technologies International Corporation</p>
+                </div>
+                <div class="leadership-metrics" aria-label="Leadership qualities">
+                  <div><i>♙</i><p><strong>17+</strong><span>YEARS OF EXPERIENCE</span></p></div>
+                  <div><i>♢</i><p><strong>STRATEGIC</strong><span>LEADERSHIP</span></p></div>
+                  <div><i>◎</i><p><strong>CLIENT-CENTRIC</strong><span>INNOVATION</span></p></div>
+                </div>
+              </div>
               <div class="leadership-biography">
                 <p>
                   With a passion for innovation and a relentless drive for
@@ -573,7 +643,8 @@
               </div>
               <blockquote>
                 <span>LEADERSHIP PRINCIPLE</span>
-                <p>Innovation with purpose. Technology with lasting value.</p>
+                <p>Innovation with purpose.<br />Technology <em>with lasting value.</em></p>
+                <small>BUILDING<br />A SMARTER<br />TOMORROW</small>
               </blockquote>
             </div>
           </div>
@@ -584,11 +655,39 @@
         <div class="shell faq-layout">
           <div class="faq-heading">
             <p class="eyebrow">PROJECT QUESTIONS / ANSWERED</p>
-            <h2>Start with the requirement.<br />We’ll make the path clear.</h2>
+            <h2>
+              Start with the requirement.<br /><span
+                >We’ll make the path clear.</span
+              >
+            </h2>
             <span>
               VTIC helps clients move from an operational concern to a
               practical, commercially reviewed technology solution.
             </span>
+            <div class="faq-benefits" aria-label="How VTIC helps">
+              <div>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 5h16v11H9l-5 4V5Z" />
+                  <path d="M8 9h8M8 12h5" /></svg
+                ><b>Ask<br />Questions</b>
+              </div>
+              <div>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z" /></svg
+                ><b>Get<br />Expert Answers</b>
+              </div>
+              <div>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="10" cy="14" r="7" />
+                  <circle cx="10" cy="14" r="3" />
+                  <path d="m15 9 7-7M18 2h4v4" /></svg
+                ><b>Move<br />Forward Together</b>
+              </div>
+            </div>
+            <a class="faq-cta" href="mailto:sales@vtic.com.ph"
+              >Have a question? <b aria-hidden="true">→</b></a
+            >
+            <small class="faq-cta-note">We’re here to help.</small>
           </div>
           <div class="faq-list">
             <details open>
@@ -671,18 +770,14 @@
       </section>
     </main>
 
-    <footer>
+    <footer class="global-footer">
       <div class="shell footer-grid">
         <div class="footer-company">
           <img
             src="{{ url_for('static', filename='images/vtic-logo-t.png') }}"
             alt="Visible Technologies International Corporation"
           />
-          <p>
-            Technology systems designed around the way your organization needs
-            to work.
-          </p>
-          <small>FOLLOW VISIBLE</small>
+          <p>Technology systems designed around the way your organization needs to work.</p>
           <div
             class="social-links"
             aria-label="Visible Technologies social channels"
@@ -705,14 +800,15 @@
             >
             <span title="LinkedIn" aria-label="LinkedIn">in</span>
           </div>
+          <small>FOLLOW VISIBLE</small>
         </div>
-        <div class="footer-navigation">
+        <nav class="footer-navigation" aria-label="Explore">
           <b>Explore</b>
           <a href="#company">Who we are</a>
           <a href="#capabilities">Capabilities</a>
           <a href="#leadership">Leadership</a>
           <a href="/admin/login">Administrator access</a>
-        </div>
+        </nav>
         <address class="footer-contact">
           <b>Project desk</b>
           <div>
@@ -737,8 +833,7 @@
         </address>
       </div>
       <div class="shell footer-bottom">
-        <span>© 2026 Visible Technologies International Corporation</span
-        ><span>Power up your business. Be Visible.</span>
+        <span>© 2026 Visible Technologies International Corporation</span><span>Power up your business. Be Visible.</span>
       </div>
     </footer>
     <script

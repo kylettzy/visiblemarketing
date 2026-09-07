@@ -19,7 +19,7 @@ vtic_store.db
 # (Optional) Virtual Environment
 # Uncomment if you use a local virtual environment
 # ==========================================
-# .venv/
+.venv/
 # venv/
 
 # ==========================================

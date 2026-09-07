@@ -287,15 +287,25 @@ class PostgresCursor:
     def __init__(self, cursor, lastrowid=None):
         self.cursor = cursor
         self.lastrowid = lastrowid
+        self.columns = (
+            [column.name for column in cursor.description]
+            if cursor.description
+            else []
+        )
+
+    def _row(self, values):
+        if values is None or not self.columns:
+            return values
+        return CompatibleRow(zip(self.columns, values))
 
     def fetchone(self):
-        return self.cursor.fetchone()
+        return self._row(self.cursor.fetchone())
 
     def fetchall(self):
-        return self.cursor.fetchall()
+        return [self._row(row) for row in self.cursor.fetchall()]
 
     def __iter__(self):
-        return iter(self.cursor)
+        return (self._row(row) for row in self.cursor)
 
 
 class PostgresConnection:
@@ -313,9 +323,7 @@ class PostgresConnection:
             ]
         )
         connection_url = urllib.parse.urlunsplit(parsed_url._replace(query=supported_query))
-        self.connection = psycopg.connect(
-            connection_url, row_factory=postgres_row_factory, connect_timeout=10
-        )
+        self.connection = psycopg.connect(connection_url, connect_timeout=10)
 
     def execute(self, sql, parameters=()):
         statement = postgres_sql(sql)
@@ -332,7 +340,7 @@ class PostgresConnection:
             statement = statement.rstrip().rstrip(";") + " RETURNING id"
         cursor = self.connection.execute(statement, parameters)
         returned_row = cursor.fetchone() if returns_id else None
-        lastrowid = returned_row["id"] if returned_row else None
+        lastrowid = returned_row[0] if returned_row else None
         return PostgresCursor(cursor, lastrowid)
 
     def executemany(self, sql, parameters):

@@ -9,6 +9,17 @@ class PostgresCompatibilityTests(unittest.TestCase):
         make_row = application.postgres_row_factory(cursor)
         self.assertEqual(make_row(()), ())
 
+    def test_cursor_wraps_result_rows_for_name_and_numeric_access(self):
+        description = [type("Column", (), {"name": "id"})()]
+        cursor = type(
+            "Cursor",
+            (),
+            {"description": description, "fetchone": lambda self: (7,)},
+        )()
+        row = application.PostgresCursor(cursor).fetchone()
+        self.assertEqual(row["id"], 7)
+        self.assertEqual(row[0], 7)
+
     def test_translates_sqlite_placeholders_and_conflict_syntax(self):
         statement = application.postgres_sql(
             "INSERT OR IGNORE INTO manufacturers (name) VALUES (?)"

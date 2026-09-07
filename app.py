@@ -326,7 +326,12 @@ class PostgresConnection:
             ]
         )
         connection_url = urllib.parse.urlunsplit(parsed_url._replace(query=supported_query))
-        self.connection = psycopg.connect(connection_url, connect_timeout=10)
+        # Supabase's pooled URL is fronted by PgBouncer. Disable psycopg's
+        # automatic prepared statements because transaction pooling can reuse
+        # a backend that already has the same generated statement name.
+        self.connection = psycopg.connect(
+            connection_url, connect_timeout=10, prepare_threshold=None
+        )
 
     def execute(self, sql, parameters=()):
         statement = postgres_sql(sql)

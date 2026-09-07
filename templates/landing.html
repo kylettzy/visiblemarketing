@@ -277,14 +277,49 @@
             <div></div>
           </div>
           <div class="capability-heading">
-            <h2>Connected expertise.<br />One delivery team.</h2>
-            <p>
-              Explore the systems VTIC can design, source and support for your
-              organization.
-            </p>
+            <div>
+              <h2>Connected expertise.<br /><span>One delivery team.</span></h2>
+              <p class="capability-intro">
+                From infrastructure to intelligent systems, we deliver
+                end-to-end IT solutions designed for real operational impact.
+              </p>
+            </div>
+            <div class="capability-summary">
+              <p>
+                Explore the systems VTIC can design, source and support for your
+                organization.
+              </p>
+              <div class="capability-benefits" aria-label="Why choose VTIC">
+                <span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12 2v3M12 19v3M4.9 4.9 7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"
+                    />
+                    <circle cx="12" cy="12" r="5" />
+                  </svg>
+                  Tailored<br />Solutions
+                </span>
+                <span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3" />
+                    <circle cx="17" cy="9" r="2.5" />
+                    <path
+                      d="M3 20v-2a6 6 0 0 1 12 0v2H3ZM15 14a5 5 0 0 1 6 4.9V20h-4"
+                    />
+                  </svg>
+                  Expert<br />Team
+                </span>
+                <span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 20v-5h4v5M10 20V9h4v11M16 20V3h4v17M2 20h20" />
+                  </svg>
+                  Real<br />Impact
+                </span>
+              </div>
+            </div>
           </div>
           <div class="capability-grid">
-            <article>
+            <article class="capability-card capability-card--network">
               <span>01</span>
               <h3>Network & infrastructure</h3>
               <p>
@@ -293,10 +328,10 @@
               </p>
               <small>CONNECTIVITY / PERFORMANCE</small>
               <a class="capability-link" href="/solutions/technology-backbone"
-                >Explore solution →</a
+                ><b aria-hidden="true">→</b> Explore Solution</a
               >
             </article>
-            <article>
+            <article class="capability-card capability-card--cybersecurity">
               <span>02</span>
               <h3>Cybersecurity</h3>
               <p>
@@ -305,10 +340,10 @@
               </p>
               <small>PROTECTION / RESILIENCE</small>
               <a class="capability-link" href="/solutions/information-security"
-                >Explore solution →</a
+                ><b aria-hidden="true">→</b> Explore Solution</a
               >
             </article>
-            <article>
+            <article class="capability-card capability-card--communication">
               <span>03</span>
               <h3>Communication systems</h3>
               <p>
@@ -317,10 +352,10 @@
               </p>
               <small>VOICE / COLLABORATION</small>
               <a class="capability-link" href="/solutions/communication"
-                >Explore solution →</a
+                ><b aria-hidden="true">→</b> Explore Solution</a
               >
             </article>
-            <article>
+            <article class="capability-card capability-card--physical">
               <span>04</span>
               <h3>Physical security</h3>
               <p>
@@ -329,10 +364,10 @@
               </p>
               <small>VISIBILITY / CONTROL</small>
               <a class="capability-link" href="/solutions/physical-security"
-                >Explore solution →</a
+                ><b aria-hidden="true">→</b> Explore Solution</a
               >
             </article>
-            <article>
+            <article class="capability-card capability-card--cloud">
               <span>05</span>
               <h3>Cloud & compute</h3>
               <p>
@@ -341,17 +376,37 @@
               </p>
               <small>CAPACITY / SCALE</small>
               <a class="capability-link" href="/solutions/cloud-computing"
-                >Explore solution →</a
+                ><b aria-hidden="true">→</b> Explore Solution</a
               >
             </article>
             <article class="capability-cta">
               <p>Not sure where to begin?</p>
-              <h3>Describe the challenge. We’ll help define the system.</h3>
-              {% if session.get('customer_id') %}<a href="/solution-advisor"
-                >Open VTIC Advisor →</a
-              >{% else %}<a href="/register">Create an account to begin →</a>{%
-              endif %}
+              <h3>
+                Describe the challenge.<br /><span
+                  >We’ll help define the system.</span
+                >
+              </h3>
+              {% if session.get('customer_id') %}<a
+                href="/solution-advisor"
+                aria-label="Open VTIC Advisor"
+                >→</a
+              >{% else %}<a
+                href="/register"
+                aria-label="Create an account to begin"
+                >→</a
+              >{% endif %}
+              <div
+                class="capability-process"
+                aria-label="Consult, plan and implement"
+              >
+                <span>▢&nbsp; Consult</span><span>▤&nbsp; Plan</span
+                ><span>ϟ&nbsp; Implement</span>
+              </div>
             </article>
+          </div>
+          <div class="capability-footer-note">
+            <span>Solutions for a more connected tomorrow.</span>
+            <span>Visible Technologies International Corp.</span>
           </div>
         </div>
       </section>

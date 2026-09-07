@@ -1,0 +1,9 @@
+.git
+.pytest_cache
+.tmp-*
+.vercel-auth
+.vscode
+__pycache__
+backups
+*.sqlite
+*.sqlite3

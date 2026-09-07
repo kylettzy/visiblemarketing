@@ -2337,7 +2337,7 @@ body .capability-grid .capability-card:hover {
   transform: translateY(-3px);
 }
 
-.capability-card--network {
+body .capability-grid .capability-card--network {
   background-image:
     linear-gradient(
       90deg,
@@ -2348,7 +2348,7 @@ body .capability-grid .capability-card:hover {
     url("../images/capability-network.webp");
 }
 
-.capability-card--cybersecurity {
+body .capability-grid .capability-card--cybersecurity {
   background-image:
     linear-gradient(
       90deg,
@@ -2359,7 +2359,7 @@ body .capability-grid .capability-card:hover {
     url("../images/capability-cybersecurity.webp");
 }
 
-.capability-card--communication {
+body .capability-grid .capability-card--communication {
   background-image:
     linear-gradient(
       90deg,
@@ -2370,7 +2370,7 @@ body .capability-grid .capability-card:hover {
     url("../images/capability-communications.webp");
 }
 
-.capability-card--physical {
+body .capability-grid .capability-card--physical {
   background-image:
     linear-gradient(
       90deg,
@@ -2381,7 +2381,7 @@ body .capability-grid .capability-card:hover {
     url("../images/capability-physical-security.webp");
 }
 
-.capability-card--cloud {
+body .capability-grid .capability-card--cloud {
   background-image:
     linear-gradient(
       90deg,

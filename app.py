@@ -256,6 +256,9 @@ def postgres_sql(sql):
                        )""",
     )
     statement = statement.replace("?", "%s")
+    # psycopg uses percent markers for parameters even when a query has no
+    # bound values, so literal SQL LIKE wildcards must be escaped.
+    statement = re.sub(r"%(?![sbt])", "%%", statement)
     statement = re.sub(
         r"\bCURRENT_TIMESTAMP\b", "(CURRENT_TIMESTAMP::text)", statement,
         flags=re.IGNORECASE,

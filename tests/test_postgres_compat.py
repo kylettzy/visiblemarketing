@@ -32,6 +32,12 @@ class PostgresCompatibilityTests(unittest.TestCase):
         statement = application.postgres_sql(
             "INSERT OR IGNORE INTO manufacturers (name) VALUES (?)"
         )
+
+    def test_escapes_literal_like_wildcards_for_psycopg(self):
+        statement = application.postgres_sql(
+            "SELECT id FROM ai_conversations WHERE title LIKE 'Product chat:%'"
+        )
+        self.assertIn("Product chat:%%", statement)
         self.assertEqual(
             statement,
             "INSERT INTO manufacturers (name) VALUES (%s) ON CONFLICT DO NOTHING",

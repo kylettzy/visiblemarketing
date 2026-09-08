@@ -4121,13 +4121,17 @@ def admin_dashboard():
                 database.execute("SELECT * FROM products ORDER BY updated_at DESC")
             )
         if session.get("admin_role") == "superadmin":
+            now = datetime.now(timezone.utc)
+            recent_cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+            active_cutoff = (now - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
             app_install_stats = dict(
                 database.execute(
                     """SELECT
                            COUNT(*) AS total,
-                           SUM(CASE WHEN installed_at >= datetime('now', '-30 days') THEN 1 ELSE 0 END) AS recent,
-                           SUM(CASE WHEN last_seen_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) AS active
-                       FROM app_installations"""
+                           SUM(CASE WHEN installed_at >= ? THEN 1 ELSE 0 END) AS recent,
+                           SUM(CASE WHEN last_seen_at >= ? THEN 1 ELSE 0 END) AS active
+                       FROM app_installations""",
+                    (recent_cutoff, active_cutoff),
                 ).fetchone()
             )
     return render_template(

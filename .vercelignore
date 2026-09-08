@@ -1,6 +1,8 @@
 .git
 .pytest_cache
 .tmp-*
+.npm-cache
+tmp*/
 .vercel-auth
 .vscode
 __pycache__

@@ -1,6 +1,4 @@
 import os
-import base64
-import hashlib
 import json
 import csv
 import io
@@ -14,7 +12,6 @@ import smtplib
 import re
 import click
 import tempfile
-import hashlib
 from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
 from contextlib import closing
@@ -45,17 +42,6 @@ try:
 except ImportError:
     OAuth = None
 
-try:
-    import psycopg
-except ImportError:
-    psycopg = None
-
-DB_INTEGRITY_ERRORS = (
-    (sqlite3.IntegrityError, psycopg.IntegrityError)
-    if psycopg
-    else (sqlite3.IntegrityError,)
-)
-
 APP_ROOT = Path(__file__).resolve().parent
 load_dotenv(APP_ROOT / ".env")
 
@@ -76,11 +62,6 @@ app.config["SECRET_KEY"] = os.environ.get(
     "VTIC_SECRET_KEY", "development-only-change-me"
 )
 DATABASE = Path(os.environ.get("VTIC_DATABASE_PATH", RUNTIME_ROOT / "vtic_store.db"))
-POSTGRES_URL = (
-    os.environ.get("POSTGRES_URL", "").strip()
-    or os.environ.get("DATABASE_URL", "").strip()
-)
-USING_POSTGRES = POSTGRES_URL.startswith(("postgresql://", "postgres://"))
 UPLOAD_ROOT = RUNTIME_ROOT / "uploads"
 MANUFACTURER_UPLOADS = UPLOAD_ROOT / "manufacturers"
 PRODUCT_UPLOADS = UPLOAD_ROOT / "products"
@@ -132,17 +113,6 @@ OAUTH_PROVIDERS = {
 }
 
 PUBLIC_BASE_URL = os.environ.get("VTIC_PUBLIC_URL", "").strip().rstrip("/")
-# Vercel's Supabase storage integration may point at a different project than
-# the one used for customer authentication. Explicit VTIC_* overrides keep
-# Auth independent without disturbing the working PostgreSQL connection.
-SUPABASE_URL = (
-    os.environ.get("VTIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL", "")
-).strip().rstrip("/")
-SUPABASE_ANON_KEY = (
-    os.environ.get("VTIC_SUPABASE_ANON_KEY")
-    or os.environ.get("SUPABASE_ANON_KEY", "")
-).strip()
-SUPABASE_GOOGLE_AUTH = bool(SUPABASE_URL and SUPABASE_ANON_KEY)
 if PUBLIC_BASE_URL and not PUBLIC_BASE_URL.startswith(("https://", "http://")):
     raise RuntimeError("VTIC_PUBLIC_URL must start with https:// or http://")
 
@@ -158,11 +128,7 @@ if oauth:
 def oauth_provider_status():
     """Return provider availability without exposing OAuth credentials."""
     return {
-        name: (
-            SUPABASE_GOOGLE_AUTH
-            if name == "google"
-            else bool(oauth and config["client_id"] and config["client_secret"])
-        )
+        name: bool(oauth and config["client_id"] and config["client_secret"])
         for name, config in OAUTH_PROVIDERS.items()
     }
 
@@ -177,23 +143,6 @@ def oauth_callback_url(provider):
 @app.route("/static/<path:filename>", endpoint="static")
 def static_files(filename):
     return send_from_directory(STATIC_ROOT, filename)
-
-
-@app.route("/manifest.webmanifest")
-def web_app_manifest():
-    """Expose the installable app manifest at the site root."""
-    response = send_from_directory(STATIC_ROOT, "manifest.webmanifest")
-    response.headers["Cache-Control"] = "public, max-age=3600"
-    return response
-
-
-@app.route("/service-worker.js")
-def service_worker():
-    """Serve the worker at root scope so every storefront route is covered."""
-    response = send_from_directory(STATIC_ROOT, "service-worker.js")
-    response.headers["Cache-Control"] = "no-cache"
-    response.headers["Service-Worker-Allowed"] = "/"
-    return response
 
 
 @app.after_request
@@ -226,200 +175,10 @@ def uploaded_file(kind, filename):
     return send_from_directory(directory, filename)
 
 
-class CompatibleRow(dict):
-    """PostgreSQL row with sqlite3.Row-compatible name and numeric access."""
-
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return tuple(self.values())[key]
-        return super().__getitem__(key)
-
-
-def postgres_row_factory(cursor):
-    if cursor.description is None:
-        return lambda values: values
-    columns = [column.name for column in cursor.description]
-
-    def make_row(values):
-        return CompatibleRow(zip(columns, values))
-
-    return make_row
-
-
-POSTGRES_ID_TABLES = {
-    "admins", "customers", "customer_identities", "activity_logs",
-    "review_requests", "review_request_items", "review_request_messages",
-    "review_request_materials", "calendar_events", "ai_conversations",
-    "ai_messages", "ai_solution_options", "ai_solution_items", "products",
-    "manufacturers", "portfolio_clients", "gallery_items",
-    "portfolio_partner_groups", "portfolio_partners",
-}
-
-
-def postgres_sql(sql):
-    statement = re.sub(r"\s+COLLATE\s+NOCASE", "", sql, flags=re.IGNORECASE)
-    ignore_conflicts = bool(
-        re.match(r"\s*INSERT\s+OR\s+IGNORE\s+INTO\b", statement, re.IGNORECASE)
-    )
-    statement = re.sub(
-        r"\bINSERT\s+OR\s+IGNORE\s+INTO\b", "INSERT INTO", statement,
-        flags=re.IGNORECASE,
-    )
-    statement = statement.replace(
-        "GROUP_CONCAT(DISTINCT r.status)",
-        "STRING_AGG(DISTINCT r.status::text, ',')",
-    )
-    statement = statement.replace(
-        """GROUP_CONCAT(
-                         review.id || ':' || review.status || ':' ||
-                         COALESCE(review.service_scope, '') || ':' ||
-                         COALESCE(review.site_survey_at, '')
-                       )""",
-        """STRING_AGG(
-                         review.id::text || ':' || review.status || ':' ||
-                         COALESCE(review.service_scope, '') || ':' ||
-                         COALESCE(review.site_survey_at, ''), ','
-                       )""",
-    )
-    statement = statement.replace("?", "%s")
-    # psycopg uses percent markers for parameters even when a query has no
-    # bound values, so literal SQL LIKE wildcards must be escaped.
-    statement = re.sub(r"%(?![sbt])", "%%", statement)
-    statement = re.sub(
-        r"\bCURRENT_TIMESTAMP\b", "(CURRENT_TIMESTAMP::text)", statement,
-        flags=re.IGNORECASE,
-    )
-    if ignore_conflicts and " ON CONFLICT " not in statement.upper():
-        statement = statement.rstrip().rstrip(";") + " ON CONFLICT DO NOTHING"
-    return statement
-
-
-def postgres_schema(script):
-    schema = re.sub(r"\s+COLLATE\s+NOCASE", "", script, flags=re.IGNORECASE)
-    schema = re.sub(
-        r"\bid\s+INTEGER\s+PRIMARY\s+KEY\b", "id BIGSERIAL PRIMARY KEY",
-        schema, flags=re.IGNORECASE,
-    )
-    schema = re.sub(
-        r"^\s*FOREIGN KEY\s*\([^\n]+$", "", schema,
-        flags=re.MULTILINE | re.IGNORECASE,
-    )
-    schema = re.sub(r",\s*\)", "\n            )", schema)
-    schema = re.sub(
-        r"\bCURRENT_TIMESTAMP\b", "(CURRENT_TIMESTAMP::text)", schema,
-        flags=re.IGNORECASE,
-    )
-    return schema
-
-
-class PostgresCursor:
-    def __init__(self, cursor, lastrowid=None):
-        self.cursor = cursor
-        self.lastrowid = lastrowid
-        self.columns = (
-            [column.name for column in cursor.description]
-            if cursor.description
-            else []
-        )
-
-    def _row(self, values):
-        if values is None or not self.columns:
-            return values
-        return CompatibleRow(zip(self.columns, values))
-
-    def fetchone(self):
-        return self._row(self.cursor.fetchone())
-
-    def fetchall(self):
-        return [self._row(row) for row in self.cursor.fetchall()]
-
-    def __iter__(self):
-        return (self._row(row) for row in self.cursor)
-
-
-class PostgresConnection:
-    def __init__(self):
-        if psycopg is None:
-            raise RuntimeError("PostgreSQL is configured but psycopg is not installed.")
-        parsed_url = urllib.parse.urlsplit(POSTGRES_URL)
-        supported_query = urllib.parse.urlencode(
-            [
-                (key, value)
-                for key, value in urllib.parse.parse_qsl(
-                    parsed_url.query, keep_blank_values=True
-                )
-                if key.casefold() != "supa"
-            ]
-        )
-        connection_url = urllib.parse.urlunsplit(parsed_url._replace(query=supported_query))
-        # Supabase's pooled URL is fronted by PgBouncer. Disable psycopg's
-        # automatic prepared statements because transaction pooling can reuse
-        # a backend that already has the same generated statement name.
-        self.connection = psycopg.connect(
-            connection_url, connect_timeout=10, prepare_threshold=None
-        )
-
-    def execute(self, sql, parameters=()):
-        statement = postgres_sql(sql)
-        insert_match = re.match(
-            r"\s*INSERT\s+INTO\s+([a-zA-Z_][a-zA-Z0-9_]*)\b",
-            statement, re.IGNORECASE,
-        )
-        returns_id = bool(
-            insert_match
-            and insert_match.group(1).lower() in POSTGRES_ID_TABLES
-            and " RETURNING " not in statement.upper()
-        )
-        if returns_id:
-            statement = statement.rstrip().rstrip(";") + " RETURNING id"
-        cursor = self.connection.execute(statement, parameters)
-        returned_row = cursor.fetchone() if returns_id else None
-        lastrowid = returned_row[0] if returned_row else None
-        return PostgresCursor(cursor, lastrowid)
-
-    def executemany(self, sql, parameters):
-        cursor = self.connection.cursor()
-        cursor.executemany(postgres_sql(sql), parameters)
-        return PostgresCursor(cursor)
-
-    def executescript(self, script):
-        # Use PostgreSQL's simple-query protocol for the complete schema. A
-        # single round trip is important on serverless cold starts and remains
-        # transactional under the surrounding connection context.
-        self.connection.execute(postgres_schema(script), prepare=False)
-
-    def __enter__(self):
-        self.connection.__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return self.connection.__exit__(exc_type, exc_value, traceback)
-
-    def close(self):
-        if not self.connection.closed:
-            self.connection.commit()
-            self.connection.close()
-
-
 def get_db():
-    if USING_POSTGRES:
-        return PostgresConnection()
     connection = sqlite3.connect(DATABASE, timeout=10)
     connection.row_factory = sqlite3.Row
     return connection
-
-
-def table_columns(database, table_name):
-    if USING_POSTGRES:
-        return {
-            row["column_name"]
-            for row in database.execute(
-                """SELECT column_name FROM information_schema.columns
-                   WHERE table_schema = 'public' AND table_name = ?""",
-                (table_name,),
-            )
-        }
-    return {row[1] for row in database.execute(f"PRAGMA table_info({table_name})")}
 
 
 def rows_to_dicts(rows):
@@ -1305,38 +1064,6 @@ def get_catalog_categories(include_all=True):
 
 def initialize_database():
     with get_db() as database:
-        if USING_POSTGRES:
-            schema_ready = database.execute(
-                "SELECT to_regclass('public.admins') AS table_name"
-            ).fetchone()
-            if schema_ready and schema_ready["table_name"]:
-                admin_username = os.environ.get("VTIC_ADMIN_USERNAME", "admin")
-                configured_admin_password = os.environ.get("VTIC_ADMIN_PASSWORD")
-                bootstrap_admin = database.execute(
-                    "SELECT id FROM admins WHERE username = ?",
-                    (admin_username,),
-                ).fetchone()
-                if not bootstrap_admin:
-                    database.execute(
-                        "INSERT INTO admins (username, password_hash) VALUES (?, ?)",
-                        (
-                            admin_username,
-                            generate_password_hash(
-                                configured_admin_password or "ChangeMe-VTIC-2026!"
-                            ),
-                        ),
-                    )
-                elif configured_admin_password:
-                    database.execute(
-                        """UPDATE admins
-                           SET password_hash = ?, status = 'active', status_expires_at = NULL
-                           WHERE id = ?""",
-                        (
-                            generate_password_hash(configured_admin_password),
-                            bootstrap_admin["id"],
-                        ),
-                    )
-                return
         database.executescript(
             """
             CREATE TABLE IF NOT EXISTS admins (
@@ -1374,18 +1101,6 @@ def initialize_database():
                 UNIQUE (provider, provider_subject),
                 FOREIGN KEY (customer_id) REFERENCES customers(id)
             );
-            CREATE TABLE IF NOT EXISTS app_installations (
-                id INTEGER PRIMARY KEY,
-                device_hash TEXT NOT NULL UNIQUE,
-                customer_id INTEGER,
-                install_source TEXT NOT NULL DEFAULT 'standalone_launch',
-                installed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                launch_count INTEGER NOT NULL DEFAULT 1,
-                FOREIGN KEY (customer_id) REFERENCES customers(id)
-            );
-            CREATE INDEX IF NOT EXISTS idx_app_installations_installed_at
-                ON app_installations(installed_at);
             CREATE TABLE IF NOT EXISTS activity_logs (
                 id INTEGER PRIMARY KEY,
                 actor_type TEXT NOT NULL,
@@ -1592,7 +1307,9 @@ def initialize_database():
             CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand);
             """
         )
-        gallery_columns = table_columns(database, "gallery_items")
+        gallery_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(gallery_items)")
+        }
         if "album_name" not in gallery_columns:
             database.execute(
                 "ALTER TABLE gallery_items ADD COLUMN album_name TEXT NOT NULL DEFAULT ''"
@@ -1609,10 +1326,12 @@ def initialize_database():
             database.execute(
                 "ALTER TABLE gallery_items ADD COLUMN is_album_cover INTEGER NOT NULL DEFAULT 0"
             )
-        manufacturer_columns = table_columns(database, "manufacturers")
+        manufacturer_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(manufacturers)")
+        }
         if "logo_url" not in manufacturer_columns:
             database.execute("ALTER TABLE manufacturers ADD COLUMN logo_url TEXT")
-        admin_columns = table_columns(database, "admins")
+        admin_columns = {row[1] for row in database.execute("PRAGMA table_info(admins)")}
         if "role" not in admin_columns:
             database.execute(
                 "ALTER TABLE admins ADD COLUMN role TEXT NOT NULL DEFAULT 'superadmin'"
@@ -1634,7 +1353,9 @@ def initialize_database():
         if "avatar_url" not in admin_columns:
             database.execute("ALTER TABLE admins ADD COLUMN avatar_url TEXT")
         database.execute("UPDATE admins SET role = 'superadmin' WHERE role IS NULL")
-        customer_columns = table_columns(database, "customers")
+        customer_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(customers)")
+        }
         if "status" not in customer_columns:
             database.execute(
                 "ALTER TABLE customers ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"
@@ -1645,7 +1366,9 @@ def initialize_database():
             database.execute("ALTER TABLE customers ADD COLUMN status_expires_at TEXT")
         if "avatar_url" not in customer_columns:
             database.execute("ALTER TABLE customers ADD COLUMN avatar_url TEXT")
-        review_columns = table_columns(database, "review_requests")
+        review_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(review_requests)")
+        }
         if "ai_solution_option_id" not in review_columns:
             database.execute(
                 "ALTER TABLE review_requests ADD COLUMN ai_solution_option_id INTEGER"
@@ -1679,7 +1402,9 @@ def initialize_database():
         database.execute(
             "UPDATE review_requests SET status = 'submitted' WHERE status = 'pending'"
         )
-        conversation_columns = table_columns(database, "ai_conversations")
+        conversation_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(ai_conversations)")
+        }
         if "admin_id" not in conversation_columns:
             database.execute(
                 "ALTER TABLE ai_conversations ADD COLUMN admin_id INTEGER"
@@ -1692,7 +1417,9 @@ def initialize_database():
                 """UPDATE ai_conversations SET conversation_type = 'product'
                    WHERE title LIKE 'Product chat:%'"""
             )
-        message_columns = table_columns(database, "review_request_messages")
+        message_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(review_request_messages)")
+        }
         if "read_by_customer" not in message_columns:
             database.execute(
                 "ALTER TABLE review_request_messages ADD COLUMN read_by_customer INTEGER NOT NULL DEFAULT 0"
@@ -1707,7 +1434,9 @@ def initialize_database():
             database.execute(
                 "UPDATE review_request_messages SET read_by_admin = 1 WHERE sender_type = 'admin'"
             )
-        preference_columns = table_columns(database, "admin_conversation_preferences")
+        preference_columns = {
+            row[1] for row in database.execute("PRAGMA table_info(admin_conversation_preferences)")
+        }
         if "muted_until" not in preference_columns:
             database.execute(
                 "ALTER TABLE admin_conversation_preferences ADD COLUMN muted_until TEXT"
@@ -1730,13 +1459,6 @@ def initialize_database():
                     )
                     for item in PRODUCTS
                 ],
-            )
-        if USING_POSTGRES:
-            database.execute(
-                """SELECT setval(
-                       pg_get_serial_sequence('products', 'id'),
-                       COALESCE(MAX(id), 1), true
-                   ) FROM products"""
             )
         database.execute(
             """INSERT OR IGNORE INTO manufacturers (name)
@@ -1820,8 +1542,7 @@ def initialize_database():
                     bootstrap_admin["id"],
                 ),
             )
-        if not USING_POSTGRES:
-            database.execute("PRAGMA optimize")
+        database.execute("PRAGMA optimize")
 
 
 initialize_database()
@@ -1997,7 +1718,7 @@ def customer_register():
                     return jsonify(ok=True, redirect=url_for("customer_login"))
                 flash("Account created. You can now sign in.", "success")
                 return redirect(url_for("customer_login"))
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 message = "An account already uses that email address."
                 if request.headers.get("X-Requested-With") == "fetch":
                     return jsonify(ok=False, message=message, fields=["email"]), 409
@@ -2027,21 +1748,6 @@ def customer_oauth_start(provider):
     config = OAUTH_PROVIDERS.get(provider)
     if not config:
         abort(404)
-    if provider == "google" and SUPABASE_GOOGLE_AUTH:
-        verifier = secrets.token_urlsafe(64)
-        challenge = base64.urlsafe_b64encode(
-            hashlib.sha256(verifier.encode("ascii")).digest()
-        ).decode("ascii").rstrip("=")
-        session["supabase_pkce_verifier"] = verifier
-        parameters = urllib.parse.urlencode(
-            {
-                "provider": "google",
-                "redirect_to": oauth_callback_url("google"),
-                "code_challenge": challenge,
-                "code_challenge_method": "s256",
-            }
-        )
-        return redirect(f"{SUPABASE_URL}/auth/v1/authorize?{parameters}")
     if not oauth or not config["client_id"] or not config["client_secret"]:
         flash(
             f"{config['label']} sign-in is not configured yet. Use email registration for now.",
@@ -2059,51 +1765,19 @@ def customer_oauth_start(provider):
 @app.route("/oauth/<provider>/callback", methods=["GET", "POST"])
 def customer_oauth_callback(provider):
     config = OAUTH_PROVIDERS.get(provider)
-    if not config:
+    if not config or not oauth:
         abort(404)
-    if provider != "google" and not oauth:
+    client = oauth.create_client(provider)
+    if not client:
         abort(404)
     try:
-        client = None
-        if provider == "google" and SUPABASE_GOOGLE_AUTH:
-            code = request.args.get("code", "").strip()
-            verifier = session.pop("supabase_pkce_verifier", "")
-            if not code or not verifier:
-                raise ValueError("Supabase did not return a valid authorization code.")
-            token_request = urllib.request.Request(
-                f"{SUPABASE_URL}/auth/v1/token?grant_type=pkce",
-                data=json.dumps(
-                    {"auth_code": code, "code_verifier": verifier}
-                ).encode("utf-8"),
-                headers={
-                    "apikey": SUPABASE_ANON_KEY,
-                    "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
-                    "Content-Type": "application/json",
-                },
-                method="POST",
-            )
-            with urllib.request.urlopen(token_request, timeout=15) as response:
-                token = json.loads(response.read().decode("utf-8"))
-            profile = token.get("user") or {}
-            metadata = profile.get("user_metadata") or {}
-            subject = str(profile.get("id", ""))
-            email = str(profile.get("email", "")).strip().lower()
-            full_name = str(
-                metadata.get("full_name") or metadata.get("name") or ""
-            ).strip()
-            if not profile.get("email_confirmed_at"):
-                raise ValueError("Supabase did not verify this email address.")
-        else:
-            client = oauth.create_client(provider)
-            if not client:
-                abort(404)
-            token = client.authorize_access_token()
+        token = client.authorize_access_token()
         if provider == "facebook":
             profile = client.get("me?fields=id,name,email").json()
             subject = str(profile.get("id", ""))
             email = str(profile.get("email", "")).strip().lower()
             full_name = str(profile.get("name", "")).strip()
-        elif not (provider == "google" and SUPABASE_GOOGLE_AUTH):
+        else:
             profile = token.get("userinfo") or client.parse_id_token(
                 token, nonce=session.pop("_oauth_nonce", None)
             )
@@ -2180,16 +1854,6 @@ def customer_logout():
 @app.route("/")
 def home():
     return render_template("landing.html")
-
-
-@app.route("/privacy")
-def privacy_policy():
-    return render_template("privacy.html")
-
-
-@app.route("/terms")
-def terms_of_service():
-    return render_template("terms.html")
 
 
 SOLUTION_PAGES = {
@@ -3667,7 +3331,7 @@ def admin_account():
                 )
                 flash("Account credentials updated successfully.", "success")
                 return redirect(url_for("admin_account"))
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash("That username is already in use.", "error")
 
     return render_template(
@@ -3719,9 +3383,6 @@ def admin_help():
 @app.route("/admin/database/backup")
 @superadmin_required
 def admin_database_backup():
-    if USING_POSTGRES:
-        flash("Managed PostgreSQL backups are handled in Supabase.", "info")
-        return redirect(url_for("admin_account"))
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     temporary = tempfile.NamedTemporaryFile(
         prefix="vtic-backup-", suffix=".db", dir=RUNTIME_ROOT, delete=False
@@ -3750,9 +3411,6 @@ def admin_database_backup():
 @app.route("/admin/database/restore", methods=["POST"])
 @superadmin_required
 def admin_database_restore():
-    if USING_POSTGRES:
-        flash("Restore this managed PostgreSQL database from Supabase backups.", "info")
-        return redirect(url_for("admin_account"))
     validate_csrf()
     uploaded = request.files.get("database_file")
     current_password = request.form.get("current_password", "")
@@ -3987,7 +3645,7 @@ def admin_account_create(account_type):
                 return redirect(url_for("admin_accounts"))
             except ValueError as error:
                 flash(str(error), "error")
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash(
                     "That username or email address is already in use.", "error"
                 )
@@ -4090,7 +3748,7 @@ def admin_account_edit(account_type, account_id):
                 return redirect(url_for("admin_accounts"))
             except ValueError as error:
                 flash(str(error), "error")
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash(
                     "That username or email address is already in use.", "error"
                 )
@@ -4107,7 +3765,6 @@ def admin_account_edit(account_type, account_id):
 @login_required
 def admin_dashboard():
     query = request.args.get("q", "").strip()
-    app_install_stats = None
     with get_db() as database:
         if query:
             catalog = rows_to_dicts(
@@ -4120,55 +3777,7 @@ def admin_dashboard():
             catalog = rows_to_dicts(
                 database.execute("SELECT * FROM products ORDER BY updated_at DESC")
             )
-        if session.get("admin_role") == "superadmin":
-            now = datetime.now(timezone.utc)
-            recent_cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
-            active_cutoff = (now - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
-            app_install_stats = dict(
-                database.execute(
-                    """SELECT
-                           COUNT(*) AS total,
-                           SUM(CASE WHEN installed_at >= ? THEN 1 ELSE 0 END) AS recent,
-                           SUM(CASE WHEN last_seen_at >= ? THEN 1 ELSE 0 END) AS active
-                       FROM app_installations""",
-                    (recent_cutoff, active_cutoff),
-                ).fetchone()
-            )
-    return render_template(
-        "admin_dashboard.html",
-        products=catalog,
-        query=query,
-        app_install_stats=app_install_stats,
-    )
-
-
-@app.post("/api/app-installations")
-def record_app_installation():
-    """Count a browser installation once without storing device identifiers."""
-    payload = request.get_json(silent=True) or {}
-    device_id = str(payload.get("device_id", "")).strip().lower()
-    source = str(payload.get("source", "standalone_launch")).strip().lower()
-    if not re.fullmatch(r"[a-z0-9-]{16,80}", device_id):
-        return jsonify(ok=False, error="invalid_device_id"), 400
-    if source not in {"appinstalled", "standalone_launch"}:
-        source = "standalone_launch"
-
-    device_hash = hashlib.sha256(
-        f"{app.config['SECRET_KEY']}:{device_id}".encode("utf-8")
-    ).hexdigest()
-    customer_id = session.get("customer_id")
-    with get_db() as database:
-        database.execute(
-            """INSERT INTO app_installations
-                   (device_hash, customer_id, install_source)
-               VALUES (?, ?, ?)
-               ON CONFLICT(device_hash) DO UPDATE SET
-                   customer_id = COALESCE(excluded.customer_id, app_installations.customer_id),
-                   last_seen_at = CURRENT_TIMESTAMP,
-                   launch_count = app_installations.launch_count + 1""",
-            (device_hash, customer_id, source),
-        )
-    return jsonify(ok=True), 201
+    return render_template("admin_dashboard.html", products=catalog, query=query)
 
 
 @app.route("/admin/activity")
@@ -4226,8 +3835,7 @@ def admin_review_requests():
                    LEFT JOIN ai_solution_options o ON o.id = r.ai_solution_option_id
                    LEFT JOIN ai_conversations c ON c.id = o.conversation_id
                    LEFT JOIN admins owner ON owner.id = r.assigned_marketing_admin_id
-                   GROUP BY r.id, o.name, c.requirements_summary,
-                            owner.username, owner.full_name
+                   GROUP BY r.id
                    ORDER BY r.id DESC"""
             )
         )
@@ -4339,8 +3947,7 @@ def admin_messages():
                     WHERE {access_sql}
                       AND pref.deleted_at IS NULL
                       AND COALESCE(pref.is_archived, 0) = ?
-                    GROUP BY r.id, pref.is_muted, pref.muted_until,
-                             pref.is_archived, pref.is_blocked
+                    GROUP BY r.id
                     ORDER BY COALESCE(MAX(message.id), 0) DESC, r.id DESC""",
                 (
                     session["admin_id"],
@@ -5195,9 +4802,7 @@ def admin_catered_customers():
                     JOIN admins a ON a.id = r.assigned_marketing_admin_id
                     LEFT JOIN customers c ON c.id = r.customer_id
                     {owner_filter}
-                    GROUP BY r.assigned_marketing_admin_id, a.username,
-                             a.full_name, a.avatar_url, r.customer_id,
-                             r.customer_name, r.customer_email, c.avatar_url
+                    GROUP BY r.assigned_marketing_admin_id, r.customer_id
                     ORDER BY admin_name, latest_request_at DESC""",
                 parameters,
             )
@@ -5766,7 +5371,7 @@ def admin_portfolio_group_create():
                 )
             log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_group_create", name)
             flash("Partner category added.", "success")
-        except DB_INTEGRITY_ERRORS:
+        except sqlite3.IntegrityError:
             flash("That partner-category slug already exists.", "error")
     return redirect(url_for("admin_portfolio"))
 
@@ -5791,7 +5396,7 @@ def admin_portfolio_group_edit(item_id):
                 )
             log_activity("admin", session["admin_id"], session["admin_username"], "portfolio_group_update", name)
             flash("Partner category updated.", "success")
-        except DB_INTEGRITY_ERRORS:
+        except sqlite3.IntegrityError:
             flash("That partner-category slug already exists.", "error")
     return redirect(url_for("admin_portfolio"))
 
@@ -5919,7 +5524,7 @@ def admin_manufacturers():
                     "manufacturer_create", name
                 )
                 flash(f"{name} was added to the manufacturer list.", "success")
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash("That manufacturer already exists.", "error")
         return redirect(url_for("admin_manufacturers"))
 
@@ -5978,7 +5583,7 @@ def admin_manufacturer_edit(manufacturer_id):
                 )
                 flash("Manufacturer updated successfully.", "success")
                 return redirect(url_for("admin_manufacturers"))
-            except DB_INTEGRITY_ERRORS:
+            except sqlite3.IntegrityError:
                 flash("Another manufacturer already uses that name.", "error")
     return render_manufacturer_workspace(row)
 

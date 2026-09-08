@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    {% include '_pwa.html' %}
     <title>Project Review List | VTIC Systems</title>
     <meta name="csrf-token" content="{{ csrf_token }}" />
     <link
@@ -22,7 +21,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/storefront_chatbot.css') }}"
     />
-    {% include '_theme.html' %} {% include '_mobile_storefront_styles.html' %}
+    {% include '_theme.html' %}
   </head>
   <body>
     {% set storefront_section = 'cart' %} {% include '_storefront_header.html'
@@ -63,8 +62,8 @@
           </label>
           <button id="checkout" disabled>Select products to continue</button
           ><small
-            >No pricing is shown in the client portal. The VTIC team will review
-            only the products you select and prepare the commercial
+            >No pricing is shown in the client portal. The VTIC team will
+            review only the products you select and prepare the commercial
             response.</small
           >
           <div id="review-status" role="status" aria-live="polite"></div>
@@ -80,8 +79,8 @@
         <a href="/products">Browse product catalog →</a>
       </section>
     </main>
-    {% include '_storefront_footer.html' %} {% include
-    '_storefront_chatbot.html' %}
+    {% include '_storefront_footer.html' %}
+    {% include '_storefront_chatbot.html' %}
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/storefront-chatbot.js') }}"></script>
   </body>

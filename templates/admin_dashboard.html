@@ -27,36 +27,7 @@
       {% with messages = get_flashed_messages(with_categories=true) %}{% for
       category, message in messages %}
       <div class="alert {{ category }}">{{ message }}</div>
-      {% endfor %}{% endwith %} {% if app_install_stats is not none %}
-      <section
-        id="app-installations"
-        class="app-install-summary"
-        aria-labelledby="app-install-heading"
-      >
-        <div>
-          <p>INSTALLABLE APP</p>
-          <h2 id="app-install-heading">App installations</h2>
-          <span
-            >Unique devices that installed or launched the standalone VTIC
-            app.</span
-          >
-        </div>
-        <dl>
-          <div>
-            <dt>Detected installs</dt>
-            <dd>{{ app_install_stats.total }}</dd>
-          </div>
-          <div>
-            <dt>Last 30 days</dt>
-            <dd>{{ app_install_stats.recent or 0 }}</dd>
-          </div>
-          <div>
-            <dt>Active in 7 days</dt>
-            <dd>{{ app_install_stats.active or 0 }}</dd>
-          </div>
-        </dl>
-      </section>
-      {% endif %}
+      {% endfor %}{% endwith %}
       <section class="toolbar">
         <form>
           <input

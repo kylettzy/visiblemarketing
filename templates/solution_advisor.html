@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    {% include '_pwa.html' %}
     <meta name="csrf-token" content="{{ csrf_token }}" />
     <title>VTIC Advisor | VTIC Systems</title>
     <link
@@ -18,7 +17,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/admin_storefront_menu.css') }}"
     />
-    {% include '_theme.html' %} {% include '_mobile_storefront_styles.html' %}
+    {% include '_theme.html' %}
   </head>
   <body data-ai-configured="{{ 'true' if ai_configured else 'false' }}">
     {% set storefront_section = 'advisor' %} {% include
@@ -83,10 +82,7 @@
       </div>
       {% endif %}
       <div class="advisor-layout">
-        <aside
-          class="conversation-history"
-          aria-label="Past advisor consultations"
-        >
+        <aside class="conversation-history" aria-label="Past advisor consultations">
           <header>
             <div>
               <span>YOUR WORKSPACE</span>
